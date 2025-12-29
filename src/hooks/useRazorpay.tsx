@@ -71,14 +71,22 @@ export const useRazorpay = () => {
       // Load Razorpay script
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) {
-        throw new Error('Failed to load payment gateway');
+        throw new Error('Failed to load payment gateway. Please check your internet connection.');
       }
 
       // Get current session
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        throw new Error('Authentication error. Please login again.');
+      }
+      
       if (!session) {
         throw new Error('Please login to continue');
       }
+
+      console.log('Creating Razorpay order for plan:', planType);
 
       // Create order
       const { data: orderData, error: orderError } = await supabase.functions.invoke(
@@ -88,9 +96,16 @@ export const useRazorpay = () => {
         }
       );
 
-      if (orderError || !orderData?.order_id) {
+      console.log('Order response:', { orderData, orderError });
+
+      if (orderError) {
         console.error('Order creation error:', orderError);
-        throw new Error(orderData?.error || 'Failed to create payment order');
+        throw new Error(orderError.message || 'Failed to create payment order');
+      }
+      
+      if (!orderData?.order_id) {
+        console.error('Invalid order response:', orderData);
+        throw new Error(orderData?.error || 'Failed to create payment order - no order ID received');
       }
 
       // Configure Razorpay
@@ -110,6 +125,8 @@ export const useRazorpay = () => {
         },
         handler: async (response: RazorpayResponse) => {
           try {
+            console.log('Payment successful, verifying...', response);
+            
             // Verify payment
             const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
               'verify-razorpay-payment',
@@ -123,8 +140,15 @@ export const useRazorpay = () => {
               }
             );
 
-            if (verifyError || !verifyData?.success) {
+            console.log('Verification response:', { verifyData, verifyError });
+
+            if (verifyError) {
               console.error('Payment verification error:', verifyError);
+              throw new Error(verifyError.message || 'Payment verification failed');
+            }
+            
+            if (!verifyData?.success) {
+              console.error('Verification failed:', verifyData);
               throw new Error(verifyData?.error || 'Payment verification failed');
             }
 
@@ -132,6 +156,7 @@ export const useRazorpay = () => {
             onSuccess();
           } catch (err) {
             const message = err instanceof Error ? err.message : 'Payment verification failed';
+            console.error('Verification catch error:', err);
             toast.error(message);
             onError?.(message);
           } finally {
