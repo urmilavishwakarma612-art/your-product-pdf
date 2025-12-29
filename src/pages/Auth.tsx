@@ -275,13 +275,13 @@ const Auth = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="mt-8 text-center text-sm text-muted-foreground"
+            className="mt-8 text-center text-sm text-muted-foreground relative z-20"
           >
             {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-primary hover:text-primary/80 font-medium transition-colors"
+              className="text-primary hover:text-primary/80 font-medium transition-colors p-2 -m-2 touch-manipulation"
             >
               {isLogin ? "Sign up" : "Log in"}
             </button>
