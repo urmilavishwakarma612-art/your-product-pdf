@@ -14,7 +14,8 @@ import {
   Search,
   Filter,
   X,
-  Bookmark
+  Bookmark,
+  BookmarkCheck
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,6 +31,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { OverallProgress } from "@/components/patterns/OverallProgress";
+import { AIMentor } from "@/components/patterns/AIMentor";
 
 interface Pattern {
   id: string;
@@ -60,6 +63,10 @@ interface Question {
 interface UserProgress {
   question_id: string;
   is_solved: boolean;
+}
+
+interface Bookmark {
+  question_id: string;
 }
 
 // Topic structure for grouping patterns
@@ -114,6 +121,8 @@ const Patterns = () => {
   const [difficultyFilter, setDifficultyFilter] = useState<Set<string>>(new Set());
   const [topicFilter, setTopicFilter] = useState<Set<string>>(new Set());
   const [companyFilter, setCompanyFilter] = useState<Set<string>>(new Set());
+  const [bookmarkFilter, setBookmarkFilter] = useState(false);
+  const [selectedQuestionForMentor, setSelectedQuestionForMentor] = useState<Question | null>(null);
 
   const { data: patterns, isLoading: patternsLoading } = useQuery({
     queryKey: ["patterns"],
@@ -176,6 +185,22 @@ const Patterns = () => {
     enabled: !!user,
   });
 
+  // Fetch user bookmarks
+  const { data: userBookmarks } = useQuery({
+    queryKey: ["user-bookmarks", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("bookmarks")
+        .select("question_id")
+        .eq("user_id", user.id);
+      
+      if (error) throw error;
+      return data as Bookmark[];
+    },
+    enabled: !!user,
+  });
+
   const toggleSolvedMutation = useMutation({
     mutationFn: async ({ questionId, isSolved }: { questionId: string; isSolved: boolean }) => {
       if (!user) throw new Error("Not authenticated");
@@ -209,6 +234,35 @@ const Patterns = () => {
     },
   });
 
+  const toggleBookmarkMutation = useMutation({
+    mutationFn: async ({ questionId, isBookmarked }: { questionId: string; isBookmarked: boolean }) => {
+      if (!user) throw new Error("Not authenticated");
+
+      if (isBookmarked) {
+        const { error } = await supabase
+          .from("bookmarks")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("question_id", questionId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("bookmarks")
+          .insert({
+            user_id: user.id,
+            question_id: questionId,
+          });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-bookmarks"] });
+    },
+    onError: () => {
+      toast.error("Failed to update bookmark");
+    },
+  });
+
   const getPatternQuestions = (patternId: string) => {
     return questions?.filter(q => q.pattern_id === patternId) || [];
   };
@@ -226,6 +280,10 @@ const Patterns = () => {
 
   const isQuestionSolved = (questionId: string) => {
     return userProgress?.some(p => p.question_id === questionId && p.is_solved);
+  };
+
+  const isQuestionBookmarked = (questionId: string) => {
+    return userBookmarks?.some(b => b.question_id === questionId);
   };
 
   const togglePattern = (patternId: string) => {
@@ -246,6 +304,14 @@ const Patterns = () => {
       return;
     }
     toggleSolvedMutation.mutate({ questionId, isSolved: !currentlySolved });
+  };
+
+  const handleBookmarkToggle = (questionId: string, isBookmarked: boolean) => {
+    if (!user) {
+      toast.error("Please login to bookmark questions");
+      return;
+    }
+    toggleBookmarkMutation.mutate({ questionId, isBookmarked });
   };
 
   const difficultyConfig = {
@@ -285,7 +351,8 @@ const Patterns = () => {
     const matchesSearch = !searchQuery || question.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesDifficulty = difficultyFilter.size === 0 || difficultyFilter.has(question.difficulty);
     const matchesCompany = companyFilter.size === 0 || (question.companies || []).some(c => companyFilter.has(c));
-    return matchesSearch && matchesDifficulty && matchesCompany;
+    const matchesBookmark = !bookmarkFilter || isQuestionBookmarked(question.id);
+    return matchesSearch && matchesDifficulty && matchesCompany && matchesBookmark;
   };
 
   // Filter patterns based on topic filter
@@ -301,9 +368,23 @@ const Patterns = () => {
     setTopicFilter(new Set());
     setCompanyFilter(new Set());
     setSearchQuery("");
+    setBookmarkFilter(false);
   };
 
-  const hasActiveFilters = difficultyFilter.size > 0 || topicFilter.size > 0 || companyFilter.size > 0 || searchQuery;
+  const hasActiveFilters = difficultyFilter.size > 0 || topicFilter.size > 0 || companyFilter.size > 0 || searchQuery || bookmarkFilter;
+
+  // Calculate overall progress stats
+  const totalQuestions = questions?.length || 0;
+  const solvedQuestionIds = new Set(userProgress?.filter(p => p.is_solved).map(p => p.question_id) || []);
+  const totalSolved = questions?.filter(q => solvedQuestionIds.has(q.id)).length || 0;
+  
+  const easyQuestions = questions?.filter(q => q.difficulty === "easy") || [];
+  const mediumQuestions = questions?.filter(q => q.difficulty === "medium") || [];
+  const hardQuestions = questions?.filter(q => q.difficulty === "hard") || [];
+  
+  const easySolved = easyQuestions.filter(q => solvedQuestionIds.has(q.id)).length;
+  const mediumSolved = mediumQuestions.filter(q => solvedQuestionIds.has(q.id)).length;
+  const hardSolved = hardQuestions.filter(q => solvedQuestionIds.has(q.id)).length;
 
   if (patternsLoading) {
     return (
@@ -318,6 +399,18 @@ const Patterns = () => {
       <Navbar />
       
       <main className="container mx-auto px-4 pt-24 pb-12 max-w-5xl">
+        {/* Overall Progress */}
+        <OverallProgress
+          totalSolved={totalSolved}
+          totalQuestions={totalQuestions}
+          easySolved={easySolved}
+          easyTotal={easyQuestions.length}
+          mediumSolved={mediumSolved}
+          mediumTotal={mediumQuestions.length}
+          hardSolved={hardSolved}
+          hardTotal={hardQuestions.length}
+        />
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Pattern Wise Sheet</h1>
@@ -428,6 +521,16 @@ const Patterns = () => {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Bookmark Filter */}
+          <Button 
+            variant={bookmarkFilter ? "default" : "outline"} 
+            className="gap-2"
+            onClick={() => setBookmarkFilter(!bookmarkFilter)}
+          >
+            <BookmarkCheck className="w-4 h-4" />
+            Bookmarked
+          </Button>
 
           {/* Clear Filters */}
           {hasActiveFilters && (
@@ -645,10 +748,15 @@ const Patterns = () => {
                                             <Code2 className="w-5 h-5 text-emerald-500" />
                                           </Link>
                                           <button
+                                            onClick={() => handleBookmarkToggle(question.id, !!isQuestionBookmarked(question.id))}
                                             className="p-2 rounded-lg hover:bg-muted transition-colors"
-                                            title="Bookmark"
+                                            title={isQuestionBookmarked(question.id) ? "Remove Bookmark" : "Bookmark"}
                                           >
-                                            <Bookmark className="w-5 h-5 text-muted-foreground" />
+                                            {isQuestionBookmarked(question.id) ? (
+                                              <BookmarkCheck className="w-5 h-5 text-primary" />
+                                            ) : (
+                                              <Bookmark className="w-5 h-5 text-muted-foreground" />
+                                            )}
                                           </button>
                                         </div>
                                       </div>
@@ -675,6 +783,12 @@ const Patterns = () => {
           </div>
         )}
       </main>
+
+      {/* AI Mentor */}
+      <AIMentor 
+        questionTitle={selectedQuestionForMentor?.title || "General DSA Question"}
+        questionDescription={selectedQuestionForMentor?.title}
+      />
     </div>
   );
 };

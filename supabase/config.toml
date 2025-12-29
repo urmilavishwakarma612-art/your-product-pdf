@@ -1,1 +1,4 @@
 project_id = "mqnoszjhlotxqdjgubqt"
+
+[functions.ai-mentor]
+verify_jwt = false
