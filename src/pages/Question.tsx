@@ -13,13 +13,16 @@ import {
   Code,
   CheckCircle2,
   Loader2,
-  Sparkles
+  Sparkles,
+  Lock,
+  Crown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import {
   Accordion,
   AccordionContent,
@@ -46,6 +49,8 @@ interface Question {
 interface Pattern {
   id: string;
   name: string;
+  is_free: boolean;
+  phase: number;
 }
 
 interface UserProgress {
@@ -62,6 +67,7 @@ interface UserProgress {
 const Question = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { canAccessPattern } = useSubscription();
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -88,7 +94,7 @@ const Question = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("patterns")
-        .select("id, name")
+        .select("id, name, is_free, phase")
         .eq("id", question?.pattern_id)
         .single();
       
@@ -97,6 +103,9 @@ const Question = () => {
     },
     enabled: !!question?.pattern_id,
   });
+
+  // Check if user can access this question's pattern
+  const isLocked = pattern ? !canAccessPattern(pattern) : false;
 
   const { data: progress, refetch: refetchProgress } = useQuery({
     queryKey: ["question-progress", id, user?.id],
@@ -271,6 +280,61 @@ const Question = () => {
           <Link to="/patterns">
             <Button>Back to Patterns</Button>
           </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Show locked state if pattern is premium and user doesn't have access
+  if (isLocked) {
+    return (
+      <div className="min-h-screen bg-background bg-grid">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-4xl">
+          <Link to="/patterns" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6">
+            <ArrowLeft className="w-4 h-4" /> Back to Patterns
+          </Link>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-card p-8 sm:p-12 text-center"
+          >
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/20 mb-6">
+              <Lock className="w-10 h-10 text-primary" />
+            </div>
+            
+            <h1 className="text-2xl sm:text-3xl font-bold mb-3">{question.title}</h1>
+            
+            <div className="flex items-center justify-center gap-2 mb-6">
+              {pattern && (
+                <Badge variant="outline" className="text-primary border-primary/30">
+                  {pattern.name}
+                </Badge>
+              )}
+              <span className="pro-badge">
+                <Crown className="w-3 h-3" />
+                Pro Content
+              </span>
+            </div>
+            
+            <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+              This question is part of our advanced curriculum. Upgrade to Pro to unlock all 100+ premium problems and master advanced patterns.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link to="/#pricing">
+                <Button size="lg" className="btn-primary-glow">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Upgrade to Pro
+                </Button>
+              </Link>
+              <Link to="/patterns">
+                <Button variant="outline" size="lg">
+                  Continue with Free Content
+                </Button>
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </div>
     );

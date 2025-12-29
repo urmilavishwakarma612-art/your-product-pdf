@@ -16,10 +16,14 @@ import {
   X,
   Bookmark,
   BookmarkCheck,
-  Bot
+  Bot,
+  Lock,
+  Unlock,
+  Crown
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Navbar } from "@/components/landing/Navbar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +39,8 @@ import { Button } from "@/components/ui/button";
 import { OverallProgress } from "@/components/patterns/OverallProgress";
 import { AIMentor } from "@/components/patterns/AIMentor";
 import { SpacedRepetition } from "@/components/patterns/SpacedRepetition";
+import { UpgradeModal } from "@/components/premium/UpgradeModal";
+import { UpgradeBanner } from "@/components/premium/UpgradeBanner";
 
 interface Pattern {
   id: string;
@@ -82,6 +88,7 @@ interface Bookmark {
 
 const Patterns = () => {
   const { user } = useAuth();
+  const { isPremium, canAccessPattern } = useSubscription();
   const queryClient = useQueryClient();
   const [expandedPatterns, setExpandedPatterns] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
@@ -91,6 +98,8 @@ const Patterns = () => {
   const [bookmarkFilter, setBookmarkFilter] = useState(false);
   const [statusFilter, setStatusFilter] = useState<"all" | "solved" | "unsolved">("all");
   const [selectedQuestionForMentor, setSelectedQuestionForMentor] = useState<Question | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeContext, setUpgradeContext] = useState<string>("pattern");
 
   const { data: topics } = useQuery({
     queryKey: ["topics"],
@@ -266,7 +275,14 @@ const Patterns = () => {
     return userBookmarks?.some(b => b.question_id === questionId);
   };
 
-  const togglePattern = (patternId: string) => {
+  const togglePattern = (patternId: string, pattern: Pattern) => {
+    // Check if user can access this pattern
+    if (!canAccessPattern(pattern)) {
+      setUpgradeContext("pattern");
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setExpandedPatterns(prev => {
       const newSet = new Set(prev);
       if (newSet.has(patternId)) {
@@ -278,9 +294,14 @@ const Patterns = () => {
     });
   };
 
-  const handleCheckboxChange = (questionId: string, currentlySolved: boolean) => {
+  const handleCheckboxChange = (questionId: string, currentlySolved: boolean, pattern: Pattern) => {
     if (!user) {
       toast.error("Please login to track progress");
+      return;
+    }
+    if (!canAccessPattern(pattern)) {
+      setUpgradeContext("question");
+      setShowUpgradeModal(true);
       return;
     }
     toggleSolvedMutation.mutate({ questionId, isSolved: !currentlySolved });
@@ -292,6 +313,14 @@ const Patterns = () => {
       return;
     }
     toggleBookmarkMutation.mutate({ questionId, isBookmarked });
+  };
+
+  const handleQuestionClick = (e: React.MouseEvent, pattern: Pattern) => {
+    if (!canAccessPattern(pattern)) {
+      e.preventDefault();
+      setUpgradeContext("question");
+      setShowUpgradeModal(true);
+    }
   };
 
   const difficultyConfig = {
@@ -368,6 +397,11 @@ const Patterns = () => {
   const mediumSolved = mediumQuestions.filter(q => solvedQuestionIds.has(q.id)).length;
   const hardSolved = hardQuestions.filter(q => solvedQuestionIds.has(q.id)).length;
 
+  // Check if Phase 1 is completed
+  const phase1Patterns = patterns?.filter(p => p.phase === 1) || [];
+  const phase1QuestionIds = phase1Patterns.flatMap(p => getPatternQuestions(p.id).map(q => q.id));
+  const phase1Completed = phase1QuestionIds.length > 0 && phase1QuestionIds.every(id => solvedQuestionIds.has(id));
+
   if (patternsLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -381,6 +415,17 @@ const Patterns = () => {
       <Navbar />
       
       <main className="container mx-auto px-3 sm:px-4 pt-20 sm:pt-24 pb-8 sm:pb-12 max-w-5xl">
+        {/* Upgrade Banner for free users */}
+        {!isPremium && user && (
+          <UpgradeBanner 
+            onUpgradeClick={() => {
+              setUpgradeContext("feature");
+              setShowUpgradeModal(true);
+            }}
+            completedPhase1={phase1Completed}
+          />
+        )}
+
         {/* Overall Progress */}
         <OverallProgress
           totalSolved={totalSolved}
@@ -635,29 +680,57 @@ const Patterns = () => {
                     const { solved, total } = getPatternProgress(pattern.id);
                     const isExpanded = expandedPatterns.has(pattern.id);
                     const progressPercent = total > 0 ? (solved / total) * 100 : 0;
+                    const isLocked = !canAccessPattern(pattern);
 
                     return (
                       <div
                         key={pattern.id}
-                        className="rounded-lg border border-border bg-card overflow-hidden"
+                        className={`rounded-lg border bg-card overflow-hidden transition-all ${
+                          isLocked 
+                            ? "border-border/50 pattern-locked" 
+                            : "border-border hover:border-primary/30"
+                        }`}
                       >
                         {/* Pattern Header */}
                         <button
-                          onClick={() => togglePattern(pattern.id)}
-                          className="w-full px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between hover:bg-muted/30 transition-colors"
+                          onClick={() => togglePattern(pattern.id, pattern)}
+                          className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between transition-colors ${
+                            isLocked ? "hover:bg-muted/10" : "hover:bg-muted/30"
+                          }`}
                         >
                           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                            <ChevronRight 
-                              className={`w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground transition-transform duration-200 shrink-0 ${
-                                isExpanded ? "rotate-90" : ""
-                              }`}
-                            />
-                            <span className="font-medium text-foreground text-sm sm:text-base truncate">
+                            {/* Lock/Unlock Icon or Chevron */}
+                            {isLocked ? (
+                              <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
+                            ) : (
+                              <ChevronRight 
+                                className={`w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground transition-transform duration-200 shrink-0 ${
+                                  isExpanded ? "rotate-90" : ""
+                                }`}
+                              />
+                            )}
+                            <span className={`font-medium text-sm sm:text-base truncate ${
+                              isLocked ? "text-muted-foreground" : "text-foreground"
+                            }`}>
                               {pattern.name}
                               <span className="text-muted-foreground font-normal ml-1">
                                 ({allPatternQuestions.length})
                               </span>
                             </span>
+                            
+                            {/* Free/Pro Badge */}
+                            {pattern.is_free || pattern.phase === 1 ? (
+                              <span className="free-badge shrink-0">
+                                <Unlock className="w-2.5 h-2.5" />
+                                Free
+                              </span>
+                            ) : (
+                              <span className="pro-badge shrink-0">
+                                <Crown className="w-2.5 h-2.5" />
+                                Pro
+                              </span>
+                            )}
+
                             {hasActiveFilters && (
                               <Badge variant="secondary" className="text-[10px] sm:text-xs shrink-0">
                                 {patternQuestions.length}
@@ -668,7 +741,9 @@ const Patterns = () => {
                             <span className="text-xs sm:text-sm text-muted-foreground">{solved}/{total}</span>
                             <div className="w-12 sm:w-24 h-1 sm:h-1.5 bg-muted rounded-full overflow-hidden">
                               <div 
-                                className="h-full bg-primary rounded-full transition-all duration-300"
+                                className={`h-full rounded-full transition-all duration-300 ${
+                                  isLocked ? "bg-muted-foreground/30" : "bg-primary"
+                                }`}
                                 style={{ width: `${progressPercent}%` }}
                               />
                             </div>
@@ -677,7 +752,7 @@ const Patterns = () => {
 
                         {/* Questions List */}
                         <AnimatePresence>
-                          {isExpanded && (
+                          {isExpanded && !isLocked && (
                             <motion.div
                               initial={{ height: 0, opacity: 0 }}
                               animate={{ height: "auto", opacity: 1 }}
@@ -707,7 +782,7 @@ const Patterns = () => {
                                           {/* Checkbox */}
                                           <Checkbox
                                             checked={solved}
-                                            onCheckedChange={() => handleCheckboxChange(question.id, !!solved)}
+                                            onCheckedChange={() => handleCheckboxChange(question.id, !!solved, pattern)}
                                             className="h-4 w-4 sm:h-5 sm:w-5 rounded border-2 border-muted-foreground/40 data-[state=checked]:bg-primary data-[state=checked]:border-primary shrink-0"
                                           />
 
@@ -715,6 +790,7 @@ const Patterns = () => {
                                           <div className="flex items-center gap-2 flex-1 min-w-0">
                                             <Link 
                                               to={`/question/${question.id}`}
+                                              onClick={(e) => handleQuestionClick(e, pattern)}
                                               className="font-medium text-sm sm:text-base text-foreground hover:text-primary transition-colors truncate"
                                             >
                                               {question.title}
@@ -762,6 +838,7 @@ const Patterns = () => {
                                         <div className="flex items-center gap-1 mt-1.5 ml-6 sm:ml-8">
                                           <Link
                                             to={`/question/${question.id}`}
+                                            onClick={(e) => handleQuestionClick(e, pattern)}
                                             className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md hover:bg-muted transition-colors text-amber-500"
                                             title="Notes"
                                           >
@@ -778,6 +855,7 @@ const Patterns = () => {
                                           </button>
                                           <Link
                                             to={`/question/${question.id}`}
+                                            onClick={(e) => handleQuestionClick(e, pattern)}
                                             className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md hover:bg-muted transition-colors text-emerald-500"
                                             title="Solution"
                                           >
@@ -862,6 +940,13 @@ const Patterns = () => {
         questionDescription={selectedQuestionForMentor?.title}
         isOpen={!!selectedQuestionForMentor}
         onClose={() => setSelectedQuestionForMentor(null)}
+      />
+
+      {/* Upgrade Modal */}
+      <UpgradeModal 
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        triggerContext={upgradeContext}
       />
     </div>
   );
