@@ -74,6 +74,10 @@ export default {
         hard: "hsl(var(--hard))",
         xp: "hsl(var(--xp))",
         streak: "hsl(var(--streak))",
+        violet: {
+          DEFAULT: "hsl(var(--violet))",
+          foreground: "hsl(var(--violet-foreground))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -131,8 +135,9 @@ export default {
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-primary": "linear-gradient(135deg, hsl(175 45% 45%) 0%, hsl(245 30% 45%) 100%)",
-        "gradient-accent": "linear-gradient(135deg, hsl(38 60% 50%) 0%, hsl(25 50% 45%) 100%)",
+        "gradient-primary": "linear-gradient(135deg, hsl(175 60% 40%) 0%, hsl(270 50% 45%) 100%)",
+        "gradient-accent": "linear-gradient(135deg, hsl(38 55% 45%) 0%, hsl(270 45% 40%) 100%)",
+        "gradient-premium": "linear-gradient(135deg, hsl(175 60% 40%) 0%, hsl(245 30% 35%) 50%, hsl(270 50% 45%) 100%)",
       },
     },
   },
