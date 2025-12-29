@@ -323,14 +323,14 @@ const Patterns = () => {
     return acc;
   }, {} as Record<string, Pattern[]>) || {};
 
-  // Get all unique companies from questions
-  const allCompanies = [...new Set(questions?.flatMap(q => q.companies || []) || [])].sort();
+  // Get all unique companies from questions (trim whitespace to avoid duplicates)
+  const allCompanies = [...new Set(questions?.flatMap(q => (q.companies || []).map(c => c.trim()).filter(c => c)) || [])].sort();
 
   // Filter questions based on search and filters
   const filterQuestion = (question: Question) => {
     const matchesSearch = !searchQuery || question.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesDifficulty = difficultyFilter.size === 0 || difficultyFilter.has(question.difficulty);
-    const matchesCompany = companyFilter.size === 0 || (question.companies || []).some(c => companyFilter.has(c));
+    const matchesCompany = companyFilter.size === 0 || (question.companies || []).some(c => companyFilter.has(c.trim()));
     const matchesBookmark = !bookmarkFilter || isQuestionBookmarked(question.id);
     const matchesStatus = statusFilter === "all" || 
       (statusFilter === "solved" && isQuestionSolved(question.id)) ||
@@ -503,7 +503,7 @@ const Patterns = () => {
                 <div className="px-2 py-1.5 text-sm text-muted-foreground">No companies yet</div>
               ) : (
                 allCompanies.map((company) => {
-                  const count = questions?.filter(q => (q.companies || []).includes(company)).length || 0;
+                  const count = questions?.filter(q => (q.companies || []).map(c => c.trim()).includes(company)).length || 0;
                   return (
                     <DropdownMenuCheckboxItem
                       key={company}
