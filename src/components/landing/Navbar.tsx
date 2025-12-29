@@ -98,26 +98,50 @@ export function Navbar() {
 }
 
 function NavLinks({ mobile, onClick }: { mobile?: boolean; onClick?: () => void }) {
-  const links = [
-    { href: "#phases", label: "Phases" },
-    { href: "#features", label: "Features" },
-    { href: "#pricing", label: "Pricing" },
+  const { user } = useAuth();
+  
+  const publicLinks = [
+    { href: "/", label: "Home", isRoute: true },
+    { href: "#features", label: "Features", isRoute: false },
+    { href: "#phases", label: "Phases", isRoute: false },
+    { href: "#pricing", label: "Pricing", isRoute: false },
   ];
+
+  const authLinks = [
+    { href: "/", label: "Home", isRoute: true },
+    { href: "/patterns", label: "Patterns", isRoute: true },
+    { href: "/dashboard", label: "Dashboard", isRoute: true },
+  ];
+
+  const links = user ? authLinks : publicLinks;
 
   return (
     <div className={mobile ? "space-y-2" : "flex items-center gap-6"}>
-      {links.map((link) => (
-        <a
-          key={link.href}
-          href={link.href}
-          onClick={onClick}
-          className={`text-muted-foreground hover:text-foreground transition-colors ${
-            mobile ? "block py-2" : ""
-          }`}
-        >
-          {link.label}
-        </a>
-      ))}
+      {links.map((link) =>
+        link.isRoute ? (
+          <Link
+            key={link.href}
+            to={link.href}
+            onClick={onClick}
+            className={`text-muted-foreground hover:text-foreground transition-colors ${
+              mobile ? "block py-2" : ""
+            }`}
+          >
+            {link.label}
+          </Link>
+        ) : (
+          <a
+            key={link.href}
+            href={link.href}
+            onClick={onClick}
+            className={`text-muted-foreground hover:text-foreground transition-colors ${
+              mobile ? "block py-2" : ""
+            }`}
+          >
+            {link.label}
+          </a>
+        )
+      )}
     </div>
   );
 }
