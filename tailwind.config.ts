@@ -131,8 +131,8 @@ export default {
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-primary": "linear-gradient(135deg, hsl(180 100% 50%) 0%, hsl(260 80% 55%) 100%)",
-        "gradient-accent": "linear-gradient(135deg, hsl(330 100% 60%) 0%, hsl(280 100% 65%) 100%)",
+        "gradient-primary": "linear-gradient(135deg, hsl(0 0% 25%) 0%, hsl(0 0% 10%) 100%)",
+        "gradient-accent": "linear-gradient(135deg, hsl(0 0% 20%) 0%, hsl(0 0% 8%) 100%)",
       },
     },
   },
