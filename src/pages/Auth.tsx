@@ -303,12 +303,13 @@ const Auth = () => {
                 </div>
               </div>
 
-              <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+              <motion.div className="relative z-20" whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
                 <Button 
                   type="button" 
                   variant="outline" 
-                  className="w-full h-12 rounded-xl border-border/50 hover:bg-muted/50" 
+                  className="w-full h-12 rounded-xl border-border/50 hover:bg-muted/50 touch-manipulation"
                   onClick={handleGoogleSignIn}
+                  onPointerUp={handleGoogleSignIn}
                 >
                   <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
                     <path
