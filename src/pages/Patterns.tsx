@@ -34,6 +34,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { OverallProgress } from "@/components/patterns/OverallProgress";
 import { AIMentor } from "@/components/patterns/AIMentor";
+import { SpacedRepetition } from "@/components/patterns/SpacedRepetition";
 
 interface Pattern {
   id: string;
@@ -411,6 +412,9 @@ const Patterns = () => {
           hardSolved={hardSolved}
           hardTotal={hardQuestions.length}
         />
+
+        {/* Spaced Repetition */}
+        <SpacedRepetition />
 
         {/* Header */}
         <div className="mb-8">
