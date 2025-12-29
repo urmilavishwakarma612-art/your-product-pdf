@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/landing/Navbar";
 import { motion } from "framer-motion";
-import { Zap, Trophy, Flame, Target, LogOut, BookOpen, ArrowRight } from "lucide-react";
+import { Zap, Trophy, Flame, Target, LogOut, BookOpen, ArrowRight, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
@@ -112,6 +112,9 @@ const Dashboard = () => {
                     Admin Panel
                   </Button>
                 )}
+                <Button variant="outline" onClick={() => navigate(`/profile/${profile?.username}`)}>
+                  <User className="w-4 h-4 mr-2" /> View Profile
+                </Button>
                 <Button variant="ghost" onClick={signOut}>
                   <LogOut className="w-4 h-4 mr-2" /> Sign out
                 </Button>

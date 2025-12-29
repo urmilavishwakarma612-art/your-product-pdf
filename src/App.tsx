@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Patterns from "./pages/Patterns";
 import Question from "./pages/Question";
+import UserProfile from "./pages/UserProfile";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPatterns from "./pages/admin/AdminPatterns";
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/patterns" element={<Patterns />} />
             <Route path="/question/:id" element={<Question />} />
+            <Route path="/profile/:username" element={<UserProfile />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="patterns" element={<AdminPatterns />} />
