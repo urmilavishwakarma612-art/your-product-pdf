@@ -30,6 +30,9 @@ const AdminSubscriptions = lazy(() => import("./pages/admin/AdminSubscriptions")
 const AdminEmailTemplates = lazy(() => import("./pages/admin/AdminEmailTemplates"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsConditions = lazy(() => import("./pages/TermsConditions"));
+const RefundPolicy = lazy(() => import("./pages/RefundPolicy"));
 
 const queryClient = new QueryClient();
 
@@ -62,6 +65,9 @@ const App = () => (
                 <Route path="email-templates" element={<AdminEmailTemplates />} />
               </Route>
               <Route path="/shipping" element={<ShippingPolicy />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsConditions />} />
+              <Route path="/refund" element={<RefundPolicy />} />
               <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
