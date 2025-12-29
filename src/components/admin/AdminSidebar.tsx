@@ -7,7 +7,8 @@ import {
   ArrowLeft,
   Building2,
   FolderTree,
-  MessageSquareQuote
+  MessageSquareQuote,
+  CreditCard
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, Link } from "react-router-dom";
@@ -30,6 +31,7 @@ const menuItems = [
   { title: "Questions", url: "/admin/questions", icon: FileQuestion },
   { title: "Companies", url: "/admin/companies", icon: Building2 },
   { title: "Users", url: "/admin/users", icon: Users },
+  { title: "Subscriptions", url: "/admin/subscriptions", icon: CreditCard },
   { title: "Badges", url: "/admin/badges", icon: Trophy },
   { title: "Testimonials", url: "/admin/testimonials", icon: MessageSquareQuote },
 ];
