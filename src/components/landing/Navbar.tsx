@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ProfileDropdown } from "./ProfileDropdown";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,12 +29,10 @@ export function Navbar() {
           </div>
 
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
             {user ? (
-              <Link to="/dashboard">
-                <Button className="btn-primary-glow">Dashboard</Button>
-              </Link>
+              <ProfileDropdown />
             ) : (
               <>
                 <Link to="/auth">
@@ -73,9 +72,11 @@ export function Navbar() {
                   <ThemeToggle />
                 </div>
                 {user ? (
-                  <Link to="/dashboard" onClick={() => setIsOpen(false)}>
-                    <Button className="w-full">Dashboard</Button>
-                  </Link>
+                  <>
+                    <Link to="/dashboard" onClick={() => setIsOpen(false)}>
+                      <Button className="w-full">Dashboard</Button>
+                    </Link>
+                  </>
                 ) : (
                   <>
                     <Link to="/auth" onClick={() => setIsOpen(false)}>
