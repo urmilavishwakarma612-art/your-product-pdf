@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 3D Transform utilities */
+.preserve-3d {
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
 /* Nexalgotrix Premium Design System
    Pure black dark theme with vibrant neon accents
 */
