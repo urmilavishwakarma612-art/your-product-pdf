@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
-import { 
-  ChevronRight, 
+import { Link, useLocation } from "react-router-dom";
+import {
+  ChevronRight,
   ChevronDown,
   Youtube,
   BookOpen,
@@ -41,6 +41,14 @@ import { AIMentor } from "@/components/patterns/AIMentor";
 import { SpacedRepetition } from "@/components/patterns/SpacedRepetition";
 import { UpgradeModal } from "@/components/premium/UpgradeModal";
 import { UpgradeBanner } from "@/components/premium/UpgradeBanner";
+
+type PlanType = 'monthly' | 'lifetime';
+
+type PendingUpgrade = {
+  plan?: PlanType;
+  context?: string;
+  next?: string;
+};
 
 interface Pattern {
   id: string;
@@ -90,6 +98,8 @@ const Patterns = () => {
   const { user } = useAuth();
   const { isPremium, canAccessPattern } = useSubscription();
   const queryClient = useQueryClient();
+  const location = useLocation();
+
   const [expandedPatterns, setExpandedPatterns] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState<Set<string>>(new Set());
@@ -100,6 +110,42 @@ const Patterns = () => {
   const [selectedQuestionForMentor, setSelectedQuestionForMentor] = useState<Question | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeContext, setUpgradeContext] = useState<string>("pattern");
+  const [pendingPlan, setPendingPlan] = useState<PlanType | undefined>(undefined);
+
+  const shouldAutoOpenUpgrade = useMemo(() => {
+    // Only auto-open on the page where the user came back after login.
+    const pendingRaw = sessionStorage.getItem('upgrade_pending');
+    if (!pendingRaw) return false;
+
+    try {
+      const pending = JSON.parse(pendingRaw) as PendingUpgrade;
+      const pendingNext = pending?.next;
+      const current = `${location.pathname}${location.search}`;
+      if (pendingNext && pendingNext !== current) return false;
+      return true;
+    } catch {
+      return false;
+    }
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    if (!user || isPremium) return;
+    if (!shouldAutoOpenUpgrade) return;
+
+    const pendingRaw = sessionStorage.getItem('upgrade_pending');
+    if (!pendingRaw) return;
+
+    try {
+      const pending = JSON.parse(pendingRaw) as PendingUpgrade;
+      setPendingPlan(pending.plan ?? 'lifetime');
+      setUpgradeContext(pending.context ?? 'feature');
+      setShowUpgradeModal(true);
+    } catch {
+      // ignore
+    } finally {
+      sessionStorage.removeItem('upgrade_pending');
+    }
+  }, [user, isPremium, shouldAutoOpenUpgrade]);
 
   const { data: topics } = useQuery({
     queryKey: ["topics"],
@@ -947,6 +993,7 @@ const Patterns = () => {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         triggerContext={upgradeContext}
+        initialPlan={pendingPlan}
       />
     </div>
   );

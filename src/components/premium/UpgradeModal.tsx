@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles, Zap, Brain, Trophy, Target, Check, Crown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -5,12 +6,14 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useRazorpay } from "@/hooks/useRazorpay";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useState } from "react";
+
+type PlanType = 'monthly' | 'lifetime';
 
 interface UpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
   triggerContext?: string;
+  initialPlan?: PlanType;
 }
 
 const benefits = [
@@ -21,16 +24,27 @@ const benefits = [
   { icon: Sparkles, text: "Priority content updates" },
 ];
 
-export const UpgradeModal = ({ isOpen, onClose, triggerContext }: UpgradeModalProps) => {
+export const UpgradeModal = ({ isOpen, onClose, triggerContext, initialPlan }: UpgradeModalProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { initiatePayment, isLoading } = useRazorpay();
   const { refetch } = useSubscription();
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'lifetime'>('lifetime');
+  const [selectedPlan, setSelectedPlan] = useState<PlanType>(initialPlan ?? 'lifetime');
+
+  useEffect(() => {
+    if (isOpen && initialPlan) {
+      setSelectedPlan(initialPlan);
+    }
+  }, [isOpen, initialPlan]);
 
   const handleUpgrade = async () => {
     if (!user) {
-      navigate("/auth");
+      const next = `${window.location.pathname}${window.location.search}`;
+      sessionStorage.setItem(
+        'upgrade_pending',
+        JSON.stringify({ plan: selectedPlan, context: triggerContext ?? 'feature', next })
+      );
+      navigate(`/auth?next=${encodeURIComponent(next)}&upgrade=1`);
       onClose();
       return;
     }

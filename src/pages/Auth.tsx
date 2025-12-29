@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Lock, User, ArrowLeft, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,15 +12,47 @@ import logoImage from "@/assets/logo.png";
 
 type AuthMode = "login" | "signup" | "forgot";
 
+type PendingUpgrade = {
+  plan?: 'monthly' | 'lifetime';
+  context?: string;
+  next?: string;
+};
+
 const Auth = () => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const nextPath = useMemo(() => {
+    const next = searchParams.get('next');
+    return next && next.startsWith('/') ? next : '/dashboard';
+  }, [searchParams]);
+
+  const isUpgradeFlow = useMemo(() => searchParams.get('upgrade') === '1', [searchParams]);
+
+  useEffect(() => {
+    // If user is already logged in and landed on /auth via redirect, forward them.
+    if (user) {
+      navigate(nextPath, { replace: true });
+    }
+  }, [user, navigate, nextPath]);
+
+  const persistUpgradeIntentIfNeeded = () => {
+    if (!isUpgradeFlow) return;
+
+    // If UpgradeModal already stored details, keep them; otherwise create minimal pending state.
+    const existing = sessionStorage.getItem('upgrade_pending');
+    if (existing) return;
+
+    const pending: PendingUpgrade = { next: nextPath, context: 'feature', plan: 'lifetime' };
+    sessionStorage.setItem('upgrade_pending', JSON.stringify(pending));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,16 +64,18 @@ const Auth = () => {
         if (error) {
           toast({ title: "Login failed", description: error.message, variant: "destructive" });
         } else {
+          persistUpgradeIntentIfNeeded();
           toast({ title: "Welcome back!", description: "You're now logged in." });
-          navigate("/dashboard");
+          navigate(nextPath, { replace: true });
         }
       } else if (mode === "signup") {
         const { error } = await signUp(email, password, username);
         if (error) {
           toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
         } else {
+          persistUpgradeIntentIfNeeded();
           toast({ title: "Account created!", description: "Welcome to Nexalgotrix!" });
-          navigate("/dashboard");
+          navigate(nextPath, { replace: true });
         }
       } else if (mode === "forgot") {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -60,10 +94,12 @@ const Auth = () => {
   };
 
   const handleGoogleSignIn = async () => {
+    // Keep the same post-auth destination for the upgrade flow.
+    const next = nextPath;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: `${window.location.origin}${next}`,
       },
     });
     if (error) {
