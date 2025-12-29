@@ -134,6 +134,17 @@ serve(async (req) => {
       );
     }
 
+    // Update payment record
+    await supabaseAdmin
+      .from('payments')
+      .update({
+        razorpay_payment_id: razorpay_payment_id,
+        razorpay_signature: razorpay_signature,
+        status: 'completed',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('razorpay_order_id', razorpay_order_id);
+
     console.log('Subscription activated for user:', user.id, 'Expires:', expiresAt.toISOString());
 
     // Send confirmation email using the existing subscription-email function

@@ -13,7 +13,7 @@ const corsHeaders = {
 interface SubscriptionEmailRequest {
   email: string;
   username: string;
-  type: "granted" | "revoked" | "expiring";
+  type: "granted" | "revoked" | "expiring" | "payment_failed";
   expiresAt?: string;
   daysUntilExpiry?: number;
 }
@@ -57,6 +57,15 @@ const getDefaultTemplate = (type: string): EmailTemplate => {
       primary_color: "#f59e0b",
       footer_text: "Master DSA with pattern-based learning.",
     },
+    payment_failed: {
+      subject: "⚠️ Payment Failed - Action Required",
+      heading: "Payment Failed",
+      body_text: "We were unable to process your payment for Nexalgotrix Pro. Don't worry, you can try again. Please check your payment details and retry. If you continue to face issues, contact us at nexalgotrix@gmail.com.",
+      cta_text: "Retry Payment",
+      cta_url: "https://nexalgotrix.com/patterns",
+      primary_color: "#ef4444",
+      footer_text: "Need help? Contact nexalgotrix@gmail.com",
+    },
   };
   return defaults[type] || defaults.granted;
 };
@@ -68,7 +77,8 @@ const getEmailHtml = (
   expiresAt?: string,
   daysUntilExpiry?: number
 ): string => {
-  const emoji = type === 'granted' ? '🎉' : type === 'revoked' ? '📋' : '⏰';
+  const emojiMap: Record<string, string> = { granted: '🎉', revoked: '📋', expiring: '⏰', payment_failed: '⚠️' };
+  const emoji = emojiMap[type] || '📧';
   const bodyText = template.body_text.replace(/\{\{username\}\}/g, username);
   
   let expiryInfo = '';
