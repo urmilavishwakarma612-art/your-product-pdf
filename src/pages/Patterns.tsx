@@ -141,6 +141,25 @@ const Patterns = () => {
     },
   });
 
+  const { data: companiesData } = useQuery({
+    queryKey: ["companies"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("companies")
+        .select("name, logo_url")
+        .order("name", { ascending: true });
+      
+      if (error) throw error;
+      return data as { name: string; logo_url: string | null }[];
+    },
+  });
+
+  // Create a map for quick company logo lookup
+  const companyLogoMap = companiesData?.reduce((acc, company) => {
+    acc[company.name] = company.logo_url;
+    return acc;
+  }, {} as Record<string, string | null>) || {};
+
   const { data: userProgress } = useQuery({
     queryKey: ["user-progress", user?.id],
     queryFn: async () => {
@@ -543,26 +562,23 @@ const Patterns = () => {
                                             {/* Company Tags */}
                                             {question.companies && question.companies.length > 0 && (
                                               <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                                {question.companies.slice(0, 3).map((company, idx) => {
-                                                  const colors = [
-                                                    "bg-blue-500/10 text-blue-500",
-                                                    "bg-green-500/10 text-green-500",
-                                                    "bg-purple-500/10 text-purple-500",
-                                                    "bg-orange-500/10 text-orange-500",
-                                                    "bg-pink-500/10 text-pink-500",
-                                                  ];
+                                                {question.companies.slice(0, 4).map((company) => {
+                                                  const logoUrl = companyLogoMap[company];
                                                   return (
                                                     <span 
                                                       key={company} 
-                                                      className={`text-xs px-1.5 py-0.5 rounded ${colors[idx % colors.length]}`}
+                                                      className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-muted/80 text-muted-foreground"
                                                     >
+                                                      {logoUrl ? (
+                                                        <img src={logoUrl} alt="" className="w-3.5 h-3.5 object-contain" />
+                                                      ) : null}
                                                       {company}
                                                     </span>
                                                   );
                                                 })}
-                                                {question.companies.length > 3 && (
+                                                {question.companies.length > 4 && (
                                                   <span className="text-xs text-muted-foreground">
-                                                    +{question.companies.length - 3}
+                                                    +{question.companies.length - 4}
                                                   </span>
                                                 )}
                                               </div>

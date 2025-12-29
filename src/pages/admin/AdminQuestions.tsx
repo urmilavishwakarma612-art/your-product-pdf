@@ -61,6 +61,7 @@ const AdminQuestions = () => {
   const [selectedPattern, setSelectedPattern] = useState<string>("");
   const [formPatternId, setFormPatternId] = useState<string>("");
   const [formDifficulty, setFormDifficulty] = useState<string>("easy");
+  const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -75,6 +76,19 @@ const AdminQuestions = () => {
       
       if (error) throw error;
       return data as Pattern[];
+    },
+  });
+
+  const { data: companies } = useQuery({
+    queryKey: ["admin-companies-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("companies")
+        .select("id, name, logo_url")
+        .order("name", { ascending: true });
+      
+      if (error) throw error;
+      return data as { id: string; name: string; logo_url: string | null }[];
     },
   });
 
@@ -159,6 +173,7 @@ const AdminQuestions = () => {
     setEditingQuestion(null);
     setFormPatternId("");
     setFormDifficulty("easy");
+    setSelectedCompanies([]);
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -167,9 +182,6 @@ const AdminQuestions = () => {
     
     const hintsText = formData.get("hints") as string;
     const hints = hintsText ? hintsText.split("\n").filter(h => h.trim()) : [];
-    
-    const companiesText = formData.get("companies") as string;
-    const companies = companiesText ? companiesText.split(",").map(c => c.trim()).filter(c => c) : [];
 
     const question = {
       pattern_id: formPatternId,
@@ -185,7 +197,7 @@ const AdminQuestions = () => {
       optimal_solution: formData.get("optimal_solution") as string || null,
       display_order: parseInt(formData.get("display_order") as string) || 0,
       xp_reward: parseInt(formData.get("xp_reward") as string) || 10,
-      companies: companies,
+      companies: selectedCompanies,
     };
 
     if (editingQuestion) {
@@ -199,6 +211,7 @@ const AdminQuestions = () => {
     setEditingQuestion(question);
     setFormPatternId(question.pattern_id);
     setFormDifficulty(question.difficulty);
+    setSelectedCompanies(question.companies || []);
     setIsOpen(true);
   };
 
@@ -360,13 +373,40 @@ const AdminQuestions = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="companies">Companies (comma-separated)</Label>
-                  <Input
-                    id="companies"
-                    name="companies"
-                    defaultValue={Array.isArray(editingQuestion?.companies) ? editingQuestion.companies.join(", ") : ""}
-                    placeholder="Amazon, Google, Meta, Microsoft..."
-                  />
+                  <Label>Companies</Label>
+                  <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-border bg-background min-h-[42px]">
+                    {companies?.map((company) => {
+                      const isSelected = selectedCompanies.includes(company.name);
+                      return (
+                        <button
+                          key={company.id}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedCompanies(prev => prev.filter(c => c !== company.name));
+                            } else {
+                              setSelectedCompanies(prev => [...prev, company.name]);
+                            }
+                          }}
+                          className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-sm transition-colors ${
+                            isSelected 
+                              ? "bg-primary text-primary-foreground" 
+                              : "bg-muted hover:bg-muted/80"
+                          }`}
+                        >
+                          {company.logo_url && (
+                            <img src={company.logo_url} alt="" className="w-4 h-4 object-contain" />
+                          )}
+                          {company.name}
+                        </button>
+                      );
+                    })}
+                    {(!companies || companies.length === 0) && (
+                      <span className="text-muted-foreground text-sm">
+                        No companies added. Add companies in the Companies section first.
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-2">

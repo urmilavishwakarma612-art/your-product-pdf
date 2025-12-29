@@ -13,6 +13,7 @@ import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPatterns from "./pages/admin/AdminPatterns";
 import AdminQuestions from "./pages/admin/AdminQuestions";
+import AdminCompanies from "./pages/admin/AdminCompanies";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminBadges from "./pages/admin/AdminBadges";
 import NotFound from "./pages/NotFound";
@@ -36,6 +37,7 @@ const App = () => (
               <Route index element={<AdminDashboard />} />
               <Route path="patterns" element={<AdminPatterns />} />
               <Route path="questions" element={<AdminQuestions />} />
+              <Route path="companies" element={<AdminCompanies />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="badges" element={<AdminBadges />} />
             </Route>
