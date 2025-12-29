@@ -286,12 +286,16 @@ export type Database = {
           approach_viewed: boolean
           brute_force_viewed: boolean
           created_at: string
+          ease_factor: number
           hints_used: number
           id: string
+          interval_days: number
           is_revision: boolean
           is_solved: boolean
+          next_review_at: string | null
           notes: string | null
           question_id: string
+          review_count: number
           solution_viewed: boolean
           solved_at: string | null
           updated_at: string
@@ -302,12 +306,16 @@ export type Database = {
           approach_viewed?: boolean
           brute_force_viewed?: boolean
           created_at?: string
+          ease_factor?: number
           hints_used?: number
           id?: string
+          interval_days?: number
           is_revision?: boolean
           is_solved?: boolean
+          next_review_at?: string | null
           notes?: string | null
           question_id: string
+          review_count?: number
           solution_viewed?: boolean
           solved_at?: string | null
           updated_at?: string
@@ -318,12 +326,16 @@ export type Database = {
           approach_viewed?: boolean
           brute_force_viewed?: boolean
           created_at?: string
+          ease_factor?: number
           hints_used?: number
           id?: string
+          interval_days?: number
           is_revision?: boolean
           is_solved?: boolean
+          next_review_at?: string | null
           notes?: string | null
           question_id?: string
+          review_count?: number
           solution_viewed?: boolean
           solved_at?: string | null
           updated_at?: string

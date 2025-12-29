@@ -156,12 +156,20 @@ const Question = () => {
       
       const xpEarned = Math.round(question.xp_reward * xpMultiplier);
       
+      // Schedule first review for tomorrow (spaced repetition)
+      const nextReviewAt = new Date();
+      nextReviewAt.setDate(nextReviewAt.getDate() + 1);
+
       const progressData = {
         is_solved: true,
         solved_at: new Date().toISOString(),
         xp_earned: xpEarned,
         notes: notes,
         hints_used: hintsRevealed,
+        next_review_at: nextReviewAt.toISOString(),
+        review_count: 0,
+        ease_factor: 2.5,
+        interval_days: 1,
       };
 
       if (progress) {
@@ -215,11 +223,14 @@ const Question = () => {
     onSuccess: (xpEarned) => {
       toast({
         title: "Question Solved! 🎉",
-        description: `You earned ${xpEarned} XP!`,
+        description: `You earned ${xpEarned} XP! Review scheduled for tomorrow.`,
       });
       refetchProgress();
       queryClient.invalidateQueries({ queryKey: ["user-progress"] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["review-questions"] });
+      queryClient.invalidateQueries({ queryKey: ["upcoming-reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["total-scheduled"] });
     },
     onError: (error) => {
       toast({
