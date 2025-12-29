@@ -493,3 +493,13 @@
 .reveal-on-scroll {
   animation: reveal 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
