@@ -4,6 +4,7 @@ import { Menu, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,7 +28,8 @@ export function Navbar() {
           </div>
 
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-2">
+            <ThemeToggle />
             {user ? (
               <Link to="/dashboard">
                 <Button className="btn-primary-glow">Dashboard</Button>
@@ -66,6 +68,10 @@ export function Navbar() {
             <div className="container px-4 py-4 space-y-4">
               <NavLinks mobile onClick={() => setIsOpen(false)} />
               <div className="pt-4 border-t border-border space-y-2">
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-muted-foreground">Theme</span>
+                  <ThemeToggle />
+                </div>
                 {user ? (
                   <Link to="/dashboard" onClick={() => setIsOpen(false)}>
                     <Button className="w-full">Dashboard</Button>
