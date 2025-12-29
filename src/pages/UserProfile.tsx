@@ -7,13 +7,16 @@ import { ActivityGraph } from "@/components/profile/ActivityGraph";
 import { BadgesSection } from "@/components/profile/BadgesSection";
 import { RecentActivity } from "@/components/profile/RecentActivity";
 import { DifficultyBreakdown } from "@/components/profile/DifficultyBreakdown";
+import { PaymentHistory } from "@/components/profile/PaymentHistory";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function UserProfile() {
   const params = useParams<{ username: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const rawUsername = params.username ? decodeURIComponent(params.username) : "";
   const normalizedUsername = rawUsername.trim();
@@ -160,6 +163,9 @@ export default function UserProfile() {
   // Calculate solved count
   const solvedCount = activityData.reduce((sum, d) => sum + d.count, 0);
 
+  // Check if viewing own profile
+  const isOwnProfile = user?.id === profile?.id;
+
   if (profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -238,6 +244,9 @@ export default function UserProfile() {
 
           {/* Recent Activity */}
           <RecentActivity recentProblems={recentProblems} />
+
+          {/* Payment History - Only show on own profile */}
+          {isOwnProfile && <PaymentHistory />}
         </div>
       </div>
     </div>

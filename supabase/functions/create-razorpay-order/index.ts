@@ -96,6 +96,25 @@ serve(async (req) => {
     const order = await orderResponse.json();
     console.log('Razorpay order created:', order.id);
 
+    // Record the payment in our database
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    await supabaseAdmin
+      .from('payments')
+      .insert({
+        user_id: user.id,
+        razorpay_order_id: order.id,
+        amount: selectedPlan.amount,
+        currency: 'INR',
+        plan_type: plan_type,
+        status: 'pending',
+      });
+
+    console.log('Payment record created for order:', order.id);
+
     // Get user profile for prefill
     const { data: profile } = await supabaseClient
       .from('profiles')
