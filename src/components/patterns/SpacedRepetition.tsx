@@ -217,34 +217,35 @@ export const SpacedRepetition = () => {
   if (!hasReviews && (totalScheduled || 0) === 0) return null;
 
   return (
-    <div className="mb-8 rounded-xl border border-border bg-card overflow-hidden">
+    <div className="mb-6 sm:mb-8 rounded-xl border border-border bg-card overflow-hidden">
       {/* Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-5 py-4 flex items-center justify-between hover:bg-muted/30 transition-colors"
+        className="w-full px-3 sm:px-5 py-3 sm:py-4 flex items-center justify-between hover:bg-muted/30 transition-colors"
       >
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Brain className="w-5 h-5 text-primary" />
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10">
+            <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
           </div>
           <div className="text-left">
-            <h3 className="font-semibold text-foreground flex items-center gap-2">
-              Spaced Repetition
+            <h3 className="font-semibold text-foreground text-sm sm:text-base flex items-center gap-2">
+              <span className="hidden xs:inline">Spaced Repetition</span>
+              <span className="xs:hidden">Reviews</span>
               {dueCount > 0 && (
-                <Badge variant="destructive" className="text-xs">
+                <Badge variant="destructive" className="text-[10px] sm:text-xs">
                   {dueCount} Due
                 </Badge>
               )}
             </h3>
-            <p className="text-xs text-muted-foreground">
-              {totalScheduled || 0} problems scheduled for review
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
+              {totalScheduled || 0} problems scheduled
             </p>
           </div>
         </div>
         {isExpanded ? (
-          <ChevronUp className="w-5 h-5 text-muted-foreground" />
+          <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
         ) : (
-          <ChevronDown className="w-5 h-5 text-muted-foreground" />
+          <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
         )}
       </button>
 
@@ -257,12 +258,12 @@ export const SpacedRepetition = () => {
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-5 pb-5 border-t border-border pt-4">
+            <div className="px-3 sm:px-5 pb-4 sm:pb-5 border-t border-border pt-3 sm:pt-4">
               {/* Due for Review */}
               {dueCount > 0 && (
                 <div className="mb-4">
-                  <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-                    <Flame className="w-4 h-4 text-orange-500" />
+                  <h4 className="text-xs sm:text-sm font-medium text-foreground mb-2 sm:mb-3 flex items-center gap-2">
+                    <Flame className="w-3 h-3 sm:w-4 sm:h-4 text-orange-500" />
                     Due for Review
                   </h4>
                   <div className="space-y-2">
@@ -272,51 +273,51 @@ export const SpacedRepetition = () => {
                       return (
                         <div
                           key={review.id}
-                          className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50"
+                          className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/30 border border-border/50 gap-2"
                         >
                           <div className="flex-1 min-w-0">
                             <Link
                               to={`/question/${review.question.id}`}
-                              className="font-medium text-sm text-foreground hover:text-primary transition-colors truncate block"
+                              className="font-medium text-xs sm:text-sm text-foreground hover:text-primary transition-colors truncate block"
                             >
                               {review.question.title}
                             </Link>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className={`text-xs ${difficulty.text}`}>
+                            <div className="flex items-center gap-2 mt-0.5 sm:mt-1">
+                              <span className={`text-[10px] sm:text-xs ${difficulty.text}`}>
                                 {difficulty.label}
                               </span>
-                              <span className="text-xs text-muted-foreground">
-                                • Reviewed {review.review_count}x
+                              <span className="text-[10px] sm:text-xs text-muted-foreground">
+                                • {review.review_count}x
                               </span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 ml-3">
+                          <div className="flex items-center gap-1 shrink-0">
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-8 px-2 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                              className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10"
                               onClick={() => reviewMutation.mutate({ progressId: review.id, quality: 2 })}
-                              title="Forgot - Review again soon"
+                              title="Forgot"
                             >
-                              <X className="w-4 h-4" />
+                              <X className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-8 px-2 text-amber-500 hover:text-amber-600 hover:bg-amber-500/10"
+                              className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-amber-500 hover:text-amber-600 hover:bg-amber-500/10"
                               onClick={() => reviewMutation.mutate({ progressId: review.id, quality: 3 })}
-                              title="Hard - Short interval"
+                              title="Hard"
                             >
-                              <RotateCcw className="w-4 h-4" />
+                              <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-8 px-2 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10"
+                              className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10"
                               onClick={() => reviewMutation.mutate({ progressId: review.id, quality: 5 })}
-                              title="Easy - Longer interval"
+                              title="Easy"
                             >
-                              <CheckCircle2 className="w-4 h-4" />
+                              <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
                           </div>
                         </div>
@@ -329,21 +330,21 @@ export const SpacedRepetition = () => {
               {/* Upcoming Reviews */}
               {(upcomingReviews?.length || 0) > 0 && (
                 <div>
-                  <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-blue-500" />
-                    Upcoming Reviews
+                  <h4 className="text-xs sm:text-sm font-medium text-foreground mb-2 sm:mb-3 flex items-center gap-2">
+                    <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
+                    Upcoming
                   </h4>
                   <div className="space-y-1">
                     {upcomingReviews?.map((review) => (
                       <div
                         key={review.id}
-                        className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/20 transition-colors"
+                        className="flex items-center justify-between py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg hover:bg-muted/20 transition-colors"
                       >
-                        <span className="text-sm text-muted-foreground truncate">
+                        <span className="text-xs sm:text-sm text-muted-foreground truncate">
                           {review.question.title}
                         </span>
-                        <Badge variant="outline" className="text-xs shrink-0 ml-2">
-                          <Clock className="w-3 h-3 mr-1" />
+                        <Badge variant="outline" className="text-[10px] sm:text-xs shrink-0 ml-2">
+                          <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
                           {formatTimeUntilReview(review.next_review_at)}
                         </Badge>
                       </div>
@@ -353,8 +354,8 @@ export const SpacedRepetition = () => {
               )}
 
               {dueCount === 0 && (upcomingReviews?.length || 0) === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  All caught up! Solve more problems to add them to your review queue.
+                <p className="text-xs sm:text-sm text-muted-foreground text-center py-3 sm:py-4">
+                  All caught up! Solve more problems to add them to review.
                 </p>
               )}
             </div>

@@ -380,7 +380,7 @@ const Patterns = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <main className="container mx-auto px-4 pt-24 pb-12 max-w-5xl">
+      <main className="container mx-auto px-3 sm:px-4 pt-20 sm:pt-24 pb-8 sm:pb-12 max-w-5xl">
         {/* Overall Progress */}
         <OverallProgress
           totalSolved={totalSolved}
@@ -397,34 +397,35 @@ const Patterns = () => {
         <SpacedRepetition />
 
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Pattern Wise Sheet</h1>
-          <p className="text-muted-foreground">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Pattern Wise Sheet</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Master data structures and algorithms topic by topic
           </p>
         </div>
 
         {/* Search & Filters */}
-        <div className="flex flex-wrap items-center gap-3 mb-8">
-          <div className="relative flex-1 min-w-[200px] max-w-md">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6 sm:mb-8">
+          <div className="relative w-full sm:flex-1 sm:min-w-[200px] sm:max-w-md order-first">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search problems..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-card border-border"
+              className="pl-10 bg-card border-border text-sm"
             />
           </div>
           
           {/* Difficulty Filter */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                Difficulty
+              <Button variant="outline" size="sm" className="gap-1 sm:gap-2 text-xs sm:text-sm h-9">
+                <span className="hidden xs:inline">Difficulty</span>
+                <span className="xs:hidden">Diff</span>
                 {difficultyFilter.size > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-5 px-1.5">{difficultyFilter.size}</Badge>
+                  <Badge variant="secondary" className="ml-1 h-4 sm:h-5 px-1 sm:px-1.5 text-[10px] sm:text-xs">{difficultyFilter.size}</Badge>
                 )}
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
@@ -454,12 +455,12 @@ const Patterns = () => {
           {/* Topic Filter */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-1 sm:gap-2 text-xs sm:text-sm h-9">
                 Topic
                 {topicFilter.size > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-5 px-1.5">{topicFilter.size}</Badge>
+                  <Badge variant="secondary" className="ml-1 h-4 sm:h-5 px-1 sm:px-1.5 text-[10px] sm:text-xs">{topicFilter.size}</Badge>
                 )}
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
@@ -490,12 +491,13 @@ const Patterns = () => {
           {/* Company Filter */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                Company
+              <Button variant="outline" size="sm" className="gap-1 sm:gap-2 text-xs sm:text-sm h-9">
+                <span className="hidden xs:inline">Company</span>
+                <span className="xs:hidden">Co.</span>
                 {companyFilter.size > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-5 px-1.5">{companyFilter.size}</Badge>
+                  <Badge variant="secondary" className="ml-1 h-4 sm:h-5 px-1 sm:px-1.5 text-[10px] sm:text-xs">{companyFilter.size}</Badge>
                 )}
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="max-h-60 overflow-y-auto">
@@ -529,12 +531,12 @@ const Patterns = () => {
           {/* Status Filter */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-1 sm:gap-2 text-xs sm:text-sm h-9">
                 Status
                 {statusFilter !== "all" && (
-                  <Badge variant="secondary" className="ml-1 h-5 px-1.5">1</Badge>
+                  <Badge variant="secondary" className="ml-1 h-4 sm:h-5 px-1 sm:px-1.5 text-[10px] sm:text-xs">1</Badge>
                 )}
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
@@ -568,18 +570,19 @@ const Patterns = () => {
           {/* Bookmark Filter */}
           <Button 
             variant={bookmarkFilter ? "default" : "outline"} 
-            className="gap-2"
+            size="sm"
+            className="gap-1 sm:gap-2 text-xs sm:text-sm h-9"
             onClick={() => setBookmarkFilter(!bookmarkFilter)}
           >
-            <BookmarkCheck className="w-4 h-4" />
-            Bookmarked
+            <BookmarkCheck className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Bookmarked</span>
           </Button>
 
           {/* Clear Filters */}
           {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground">
-              <X className="w-4 h-4" />
-              Clear
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground h-9 text-xs sm:text-sm">
+              <X className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Clear</span>
             </Button>
           )}
         </div>
@@ -638,29 +641,29 @@ const Patterns = () => {
                         {/* Pattern Header */}
                         <button
                           onClick={() => togglePattern(pattern.id)}
-                          className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/30 transition-colors"
+                          className="w-full px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between hover:bg-muted/30 transition-colors"
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                             <ChevronRight 
-                              className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
+                              className={`w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground transition-transform duration-200 shrink-0 ${
                                 isExpanded ? "rotate-90" : ""
                               }`}
                             />
-                            <span className="font-medium text-foreground">
+                            <span className="font-medium text-foreground text-sm sm:text-base truncate">
                               {pattern.name}
                               <span className="text-muted-foreground font-normal ml-1">
                                 ({allPatternQuestions.length})
                               </span>
                             </span>
                             {hasActiveFilters && (
-                              <Badge variant="secondary" className="text-xs">
-                                {patternQuestions.length} match
+                              <Badge variant="secondary" className="text-[10px] sm:text-xs shrink-0">
+                                {patternQuestions.length}
                               </Badge>
                             )}
                           </div>
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm text-muted-foreground">{solved}/{total}</span>
-                            <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-2">
+                            <span className="text-xs sm:text-sm text-muted-foreground">{solved}/{total}</span>
+                            <div className="w-12 sm:w-24 h-1 sm:h-1.5 bg-muted rounded-full overflow-hidden">
                               <div 
                                 className="h-full bg-primary rounded-full transition-all duration-300"
                                 style={{ width: `${progressPercent}%` }}
@@ -692,126 +695,192 @@ const Patterns = () => {
                                     return (
                                       <div
                                         key={question.id}
-                                        className={`px-4 py-3 flex items-center gap-4 border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors ${
+                                        className={`px-3 sm:px-4 py-2.5 sm:py-3 border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors ${
                                           solved ? "bg-success/5" : ""
                                         }`}
                                       >
-                                        {/* Checkbox */}
-                                        <Checkbox
-                                          checked={solved}
-                                          onCheckedChange={() => handleCheckboxChange(question.id, !!solved)}
-                                          className="h-5 w-5 rounded border-2 border-muted-foreground/40 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                                        />
+                                        {/* Mobile: Stack layout, Desktop: Flex row */}
+                                        <div className="flex items-start sm:items-center gap-2 sm:gap-4">
+                                          {/* Checkbox */}
+                                          <Checkbox
+                                            checked={solved}
+                                            onCheckedChange={() => handleCheckboxChange(question.id, !!solved)}
+                                            className="h-4 w-4 sm:h-5 sm:w-5 rounded border-2 border-muted-foreground/40 data-[state=checked]:bg-primary data-[state=checked]:border-primary mt-0.5 sm:mt-0 shrink-0"
+                                          />
 
-                                        {/* Title & Company Tags */}
-                                        <div className="flex-1 min-w-0">
-                                          <Link 
-                                            to={`/question/${question.id}`}
-                                            className="font-medium text-foreground hover:text-primary transition-colors"
-                                          >
-                                            {question.title}
-                                          </Link>
-                                          {/* Company Tags - Circular pills */}
-                                          {question.companies && question.companies.length > 0 && (
-                                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                                              {question.companies.slice(0, 5).map((company) => {
-                                                const logoUrl = companyLogoMap[company];
-                                                return (
-                                                  <span 
-                                                    key={company} 
-                                                    className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full border border-border bg-background text-muted-foreground"
-                                                  >
-                                                    {logoUrl ? (
-                                                      <img 
-                                                        src={logoUrl} 
-                                                        alt="" 
-                                                        className="w-4 h-4 rounded-full object-contain" 
-                                                      />
-                                                    ) : (
-                                                      <span className="w-4 h-4 rounded-full bg-muted flex items-center justify-center text-[10px] font-medium">
-                                                        {company.charAt(0)}
-                                                      </span>
-                                                    )}
-                                                    {company}
-                                                  </span>
-                                                );
-                                              })}
-                                              {question.companies.length > 5 && (
-                                                <span className="text-xs text-muted-foreground">
-                                                  +{question.companies.length - 5}
-                                                </span>
-                                              )}
+                                          {/* Title & Company Tags */}
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                              <Link 
+                                                to={`/question/${question.id}`}
+                                                className="font-medium text-sm sm:text-base text-foreground hover:text-primary transition-colors"
+                                              >
+                                                {question.title}
+                                              </Link>
+                                              {/* Difficulty Badge - inline on mobile */}
+                                              <Badge 
+                                                variant="outline" 
+                                                className={`${difficulty.text} border-current bg-transparent font-medium text-[10px] sm:text-xs px-1.5 sm:px-3 py-0.5 sm:py-1 shrink-0`}
+                                              >
+                                                {difficulty.label}
+                                              </Badge>
                                             </div>
-                                          )}
-                                        </div>
-
-                                        {/* Difficulty Badge */}
-                                        <Badge 
-                                          variant="outline" 
-                                          className={`${difficulty.text} border-current bg-transparent font-medium px-3 py-1`}
-                                        >
-                                          {difficulty.label}
-                                        </Badge>
-
-                                        {/* Action Icons */}
-                                        <div className="flex items-center gap-1">
-                                          {question.leetcode_link && (
-                                            <a
-                                              href={question.leetcode_link}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors text-[#FFA116]"
-                                              title="Solve on LeetCode"
-                                            >
-                                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                                <path d="M13.483 0a1.374 1.374 0 0 0-.961.438L7.116 6.226l-3.854 4.126a5.266 5.266 0 0 0-1.209 2.104 5.35 5.35 0 0 0-.125.513 5.527 5.527 0 0 0 .062 2.362 5.83 5.83 0 0 0 .349 1.017 5.938 5.938 0 0 0 1.271 1.818l4.277 4.193.039.038c2.248 2.165 5.852 2.133 8.063-.074l2.396-2.392c.54-.54.54-1.414.003-1.955a1.378 1.378 0 0 0-1.951-.003l-2.396 2.392a3.021 3.021 0 0 1-4.205.038l-.02-.019-4.276-4.193c-.652-.64-.972-1.469-.948-2.263a2.68 2.68 0 0 1 .066-.523 2.545 2.545 0 0 1 .619-1.164L9.13 8.114c1.058-1.134 3.204-1.27 4.43-.278l3.501 2.831c.593.48 1.461.387 1.94-.207a1.384 1.384 0 0 0-.207-1.943l-3.5-2.831c-.8-.647-1.766-1.045-2.774-1.202l2.015-2.158A1.384 1.384 0 0 0 13.483 0zm-2.866 12.815a1.38 1.38 0 0 0-1.38 1.382 1.38 1.38 0 0 0 1.38 1.382H20.79a1.38 1.38 0 0 0 1.38-1.382 1.38 1.38 0 0 0-1.38-1.382z"/>
-                                              </svg>
-                                              <span className="text-xs font-medium">LeetCode</span>
-                                            </a>
-                                          )}
-                                          {question.youtube_link && (
-                                            <a
-                                              href={question.youtube_link}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="p-2 rounded-lg hover:bg-muted transition-colors"
-                                              title="Watch Video"
-                                            >
-                                              <Youtube className="w-5 h-5 text-red-500" />
-                                            </a>
-                                          )}
-                                          <Link
-                                            to={`/question/${question.id}`}
-                                            className="p-2 rounded-lg hover:bg-muted transition-colors"
-                                            title="Read Notes"
-                                          >
-                                            <FileText className="w-5 h-5 text-amber-500" />
-                                          </Link>
-                                          <Link
-                                            to={`/question/${question.id}`}
-                                            className="p-2 rounded-lg hover:bg-muted transition-colors"
-                                            title="View Solution"
-                                          >
-                                            <Code2 className="w-5 h-5 text-emerald-500" />
-                                          </Link>
-                                          <button
-                                            onClick={() => setSelectedQuestionForMentor(question)}
-                                            className="p-2 rounded-lg hover:bg-muted transition-colors"
-                                            title="AI Mentor"
-                                          >
-                                            <Bot className="w-5 h-5 text-primary" />
-                                          </button>
-                                          <button
-                                            onClick={() => handleBookmarkToggle(question.id, !!isQuestionBookmarked(question.id))}
-                                            className="p-2 rounded-lg hover:bg-muted transition-colors"
-                                            title={isQuestionBookmarked(question.id) ? "Remove Bookmark" : "Bookmark"}
-                                          >
-                                            {isQuestionBookmarked(question.id) ? (
-                                              <BookmarkCheck className="w-5 h-5 text-primary" />
-                                            ) : (
-                                              <Bookmark className="w-5 h-5 text-muted-foreground" />
+                                            
+                                            {/* Company Tags - Circular pills */}
+                                            {question.companies && question.companies.length > 0 && (
+                                              <div className="flex items-center gap-1 sm:gap-2 mt-1.5 flex-wrap">
+                                                {question.companies.slice(0, 3).map((company) => {
+                                                  const trimmedCompany = company.trim();
+                                                  const logoUrl = companyLogoMap[trimmedCompany];
+                                                  return (
+                                                    <span 
+                                                      key={trimmedCompany} 
+                                                      className="inline-flex items-center gap-1 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full border border-border bg-background text-muted-foreground"
+                                                    >
+                                                      {logoUrl ? (
+                                                        <img 
+                                                          src={logoUrl} 
+                                                          alt="" 
+                                                          className="w-3 h-3 sm:w-4 sm:h-4 rounded-full object-contain" 
+                                                        />
+                                                      ) : (
+                                                        <span className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-muted flex items-center justify-center text-[8px] sm:text-[10px] font-medium">
+                                                          {trimmedCompany.charAt(0)}
+                                                        </span>
+                                                      )}
+                                                      <span className="hidden sm:inline">{trimmedCompany}</span>
+                                                    </span>
+                                                  );
+                                                })}
+                                                {question.companies.length > 3 && (
+                                                  <span className="text-[10px] sm:text-xs text-muted-foreground">
+                                                    +{question.companies.length - 3}
+                                                  </span>
+                                                )}
+                                              </div>
                                             )}
-                                          </button>
+
+                                            {/* Action Icons - Mobile: below title, Desktop: inline */}
+                                            <div className="flex items-center gap-0.5 sm:hidden mt-2">
+                                              {question.leetcode_link && (
+                                                <a
+                                                  href={question.leetcode_link}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="p-1.5 rounded-lg hover:bg-muted transition-colors text-[#FFA116]"
+                                                  title="LeetCode"
+                                                >
+                                                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M13.483 0a1.374 1.374 0 0 0-.961.438L7.116 6.226l-3.854 4.126a5.266 5.266 0 0 0-1.209 2.104 5.35 5.35 0 0 0-.125.513 5.527 5.527 0 0 0 .062 2.362 5.83 5.83 0 0 0 .349 1.017 5.938 5.938 0 0 0 1.271 1.818l4.277 4.193.039.038c2.248 2.165 5.852 2.133 8.063-.074l2.396-2.392c.54-.54.54-1.414.003-1.955a1.378 1.378 0 0 0-1.951-.003l-2.396 2.392a3.021 3.021 0 0 1-4.205.038l-.02-.019-4.276-4.193c-.652-.64-.972-1.469-.948-2.263a2.68 2.68 0 0 1 .066-.523 2.545 2.545 0 0 1 .619-1.164L9.13 8.114c1.058-1.134 3.204-1.27 4.43-.278l3.501 2.831c.593.48 1.461.387 1.94-.207a1.384 1.384 0 0 0-.207-1.943l-3.5-2.831c-.8-.647-1.766-1.045-2.774-1.202l2.015-2.158A1.384 1.384 0 0 0 13.483 0zm-2.866 12.815a1.38 1.38 0 0 0-1.38 1.382 1.38 1.38 0 0 0 1.38 1.382H20.79a1.38 1.38 0 0 0 1.38-1.382 1.38 1.38 0 0 0-1.38-1.382z"/>
+                                                  </svg>
+                                                </a>
+                                              )}
+                                              {question.youtube_link && (
+                                                <a
+                                                  href={question.youtube_link}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                                                  title="Video"
+                                                >
+                                                  <Youtube className="w-4 h-4 text-red-500" />
+                                                </a>
+                                              )}
+                                              <Link
+                                                to={`/question/${question.id}`}
+                                                className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                                                title="Notes"
+                                              >
+                                                <FileText className="w-4 h-4 text-amber-500" />
+                                              </Link>
+                                              <Link
+                                                to={`/question/${question.id}`}
+                                                className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                                                title="Solution"
+                                              >
+                                                <Code2 className="w-4 h-4 text-emerald-500" />
+                                              </Link>
+                                              <button
+                                                onClick={() => setSelectedQuestionForMentor(question)}
+                                                className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                                                title="AI Mentor"
+                                              >
+                                                <Bot className="w-4 h-4 text-primary" />
+                                              </button>
+                                              <button
+                                                onClick={() => handleBookmarkToggle(question.id, !!isQuestionBookmarked(question.id))}
+                                                className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                                                title={isQuestionBookmarked(question.id) ? "Remove Bookmark" : "Bookmark"}
+                                              >
+                                                {isQuestionBookmarked(question.id) ? (
+                                                  <BookmarkCheck className="w-4 h-4 text-primary" />
+                                                ) : (
+                                                  <Bookmark className="w-4 h-4 text-muted-foreground" />
+                                                )}
+                                              </button>
+                                            </div>
+                                          </div>
+
+                                          {/* Desktop Action Icons */}
+                                          <div className="hidden sm:flex items-center gap-1 shrink-0">
+                                            {question.leetcode_link && (
+                                              <a
+                                                href={question.leetcode_link}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors text-[#FFA116]"
+                                                title="Solve on LeetCode"
+                                              >
+                                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                  <path d="M13.483 0a1.374 1.374 0 0 0-.961.438L7.116 6.226l-3.854 4.126a5.266 5.266 0 0 0-1.209 2.104 5.35 5.35 0 0 0-.125.513 5.527 5.527 0 0 0 .062 2.362 5.83 5.83 0 0 0 .349 1.017 5.938 5.938 0 0 0 1.271 1.818l4.277 4.193.039.038c2.248 2.165 5.852 2.133 8.063-.074l2.396-2.392c.54-.54.54-1.414.003-1.955a1.378 1.378 0 0 0-1.951-.003l-2.396 2.392a3.021 3.021 0 0 1-4.205.038l-.02-.019-4.276-4.193c-.652-.64-.972-1.469-.948-2.263a2.68 2.68 0 0 1 .066-.523 2.545 2.545 0 0 1 .619-1.164L9.13 8.114c1.058-1.134 3.204-1.27 4.43-.278l3.501 2.831c.593.48 1.461.387 1.94-.207a1.384 1.384 0 0 0-.207-1.943l-3.5-2.831c-.8-.647-1.766-1.045-2.774-1.202l2.015-2.158A1.384 1.384 0 0 0 13.483 0zm-2.866 12.815a1.38 1.38 0 0 0-1.38 1.382 1.38 1.38 0 0 0 1.38 1.382H20.79a1.38 1.38 0 0 0 1.38-1.382 1.38 1.38 0 0 0-1.38-1.382z"/>
+                                                </svg>
+                                                <span className="text-xs font-medium">LeetCode</span>
+                                              </a>
+                                            )}
+                                            {question.youtube_link && (
+                                              <a
+                                                href={question.youtube_link}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="p-2 rounded-lg hover:bg-muted transition-colors"
+                                                title="Watch Video"
+                                              >
+                                                <Youtube className="w-5 h-5 text-red-500" />
+                                              </a>
+                                            )}
+                                            <Link
+                                              to={`/question/${question.id}`}
+                                              className="p-2 rounded-lg hover:bg-muted transition-colors"
+                                              title="Read Notes"
+                                            >
+                                              <FileText className="w-5 h-5 text-amber-500" />
+                                            </Link>
+                                            <Link
+                                              to={`/question/${question.id}`}
+                                              className="p-2 rounded-lg hover:bg-muted transition-colors"
+                                              title="View Solution"
+                                            >
+                                              <Code2 className="w-5 h-5 text-emerald-500" />
+                                            </Link>
+                                            <button
+                                              onClick={() => setSelectedQuestionForMentor(question)}
+                                              className="p-2 rounded-lg hover:bg-muted transition-colors"
+                                              title="AI Mentor"
+                                            >
+                                              <Bot className="w-5 h-5 text-primary" />
+                                            </button>
+                                            <button
+                                              onClick={() => handleBookmarkToggle(question.id, !!isQuestionBookmarked(question.id))}
+                                              className="p-2 rounded-lg hover:bg-muted transition-colors"
+                                              title={isQuestionBookmarked(question.id) ? "Remove Bookmark" : "Bookmark"}
+                                            >
+                                              {isQuestionBookmarked(question.id) ? (
+                                                <BookmarkCheck className="w-5 h-5 text-primary" />
+                                              ) : (
+                                                <Bookmark className="w-5 h-5 text-muted-foreground" />
+                                              )}
+                                            </button>
+                                          </div>
                                         </div>
                                       </div>
                                     );
