@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
-import { Zap, Github, Twitter, Linkedin, Heart } from "lucide-react";
+import { Github, Twitter, Linkedin, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
-
+import logoImage from "@/assets/logo.png";
 const footerLinks = {
   product: [
     { label: "Patterns", href: "/patterns" },
@@ -45,9 +45,9 @@ export function Footer() {
               <Link to="/" className="flex items-center gap-2 sm:gap-2.5 group">
                 <motion.div
                   whileHover={{ scale: 1.05, rotate: 5 }}
-                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-primary via-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/25"
+                  className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center"
                 >
-                  <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
+                  <img src={logoImage} alt="Nexalgotrix Logo" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
                 </motion.div>
                 <span className="font-bold text-lg sm:text-xl group-hover:text-primary transition-colors">Nexalgotrix</span>
               </Link>
