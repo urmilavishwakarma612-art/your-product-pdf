@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Zap, Mail, Lock, User, ArrowLeft, Sparkles } from "lucide-react";
+import { Mail, Lock, User, ArrowLeft, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-
+import logoImage from "@/assets/logo.png";
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -133,9 +133,9 @@ const Auth = () => {
           >
             <motion.div 
               whileHover={{ scale: 1.05, rotate: 5 }}
-              className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary via-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/25"
+              className="w-12 h-12 flex items-center justify-center"
             >
-              <Zap className="w-7 h-7 text-primary-foreground" />
+              <img src={logoImage} alt="Nexalgotrix Logo" className="w-12 h-12 object-contain" />
             </motion.div>
             <span className="font-bold text-2xl">Nexalgotrix</span>
           </motion.div>
