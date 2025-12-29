@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Zap } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ProfileDropdown } from "./ProfileDropdown";
-
+import logoImage from "@/assets/logo.png";
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -46,9 +46,9 @@ export function Navbar() {
             <motion.div
               whileHover={{ scale: 1.05, rotate: 5 }}
               whileTap={{ scale: 0.95 }}
-              className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary via-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/25"
+              className="w-9 h-9 flex items-center justify-center"
             >
-              <Zap className="w-5 h-5 text-primary-foreground" />
+              <img src={logoImage} alt="Nexalgotrix Logo" className="w-9 h-9 object-contain" />
             </motion.div>
             <span className="font-bold text-lg tracking-tight group-hover:text-primary transition-colors duration-300">
               Nexalgotrix
