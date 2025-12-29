@@ -201,6 +201,12 @@ export default function UserProfile() {
             level={profile.current_level}
             createdAt={profile.created_at}
             subscriptionStatus={profile.subscription_status}
+            bio={profile.bio}
+            githubUrl={profile.github_url}
+            linkedinUrl={profile.linkedin_url}
+            leetcodeUrl={profile.leetcode_url}
+            instagramUrl={profile.instagram_url}
+            twitterUrl={profile.twitter_url}
           />
 
           {/* Stats Grid */}

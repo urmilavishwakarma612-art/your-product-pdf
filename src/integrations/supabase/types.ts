@@ -142,43 +142,61 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string
           current_level: number
           current_streak: number
+          github_url: string | null
           id: string
+          instagram_url: string | null
           last_solved_at: string | null
+          leetcode_url: string | null
+          linkedin_url: string | null
           longest_streak: number
           subscription_expires_at: string | null
           subscription_status: string
           total_xp: number
+          twitter_url: string | null
           updated_at: string
           username: string | null
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           current_level?: number
           current_streak?: number
+          github_url?: string | null
           id: string
+          instagram_url?: string | null
           last_solved_at?: string | null
+          leetcode_url?: string | null
+          linkedin_url?: string | null
           longest_streak?: number
           subscription_expires_at?: string | null
           subscription_status?: string
           total_xp?: number
+          twitter_url?: string | null
           updated_at?: string
           username?: string | null
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           current_level?: number
           current_streak?: number
+          github_url?: string | null
           id?: string
+          instagram_url?: string | null
           last_solved_at?: string | null
+          leetcode_url?: string | null
+          linkedin_url?: string | null
           longest_streak?: number
           subscription_expires_at?: string | null
           subscription_status?: string
           total_xp?: number
+          twitter_url?: string | null
           updated_at?: string
           username?: string | null
         }
