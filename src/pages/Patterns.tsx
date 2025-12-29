@@ -417,8 +417,8 @@ const Patterns = () => {
             />
           </div>
 
-          {/* Filter Row - Horizontal Scroll on Mobile */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        {/* Filter Row - Wrap on Mobile */}
+          <div className="flex flex-wrap items-center gap-2">
             {/* Difficulty Filter */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
