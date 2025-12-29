@@ -89,6 +89,7 @@ const Patterns = () => {
   const [topicFilter, setTopicFilter] = useState<Set<string>>(new Set());
   const [companyFilter, setCompanyFilter] = useState<Set<string>>(new Set());
   const [bookmarkFilter, setBookmarkFilter] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<"all" | "solved" | "unsolved">("all");
   const [selectedQuestionForMentor, setSelectedQuestionForMentor] = useState<Question | null>(null);
 
   const { data: topics } = useQuery({
@@ -331,7 +332,10 @@ const Patterns = () => {
     const matchesDifficulty = difficultyFilter.size === 0 || difficultyFilter.has(question.difficulty);
     const matchesCompany = companyFilter.size === 0 || (question.companies || []).some(c => companyFilter.has(c));
     const matchesBookmark = !bookmarkFilter || isQuestionBookmarked(question.id);
-    return matchesSearch && matchesDifficulty && matchesCompany && matchesBookmark;
+    const matchesStatus = statusFilter === "all" || 
+      (statusFilter === "solved" && isQuestionSolved(question.id)) ||
+      (statusFilter === "unsolved" && !isQuestionSolved(question.id));
+    return matchesSearch && matchesDifficulty && matchesCompany && matchesBookmark && matchesStatus;
   };
 
   // Filter patterns based on topic filter
@@ -346,9 +350,10 @@ const Patterns = () => {
     setCompanyFilter(new Set());
     setSearchQuery("");
     setBookmarkFilter(false);
+    setStatusFilter("all");
   };
 
-  const hasActiveFilters = difficultyFilter.size > 0 || topicFilter.size > 0 || companyFilter.size > 0 || searchQuery || bookmarkFilter;
+  const hasActiveFilters = difficultyFilter.size > 0 || topicFilter.size > 0 || companyFilter.size > 0 || searchQuery || bookmarkFilter || statusFilter !== "all";
 
   // Calculate overall progress stats
   const totalQuestions = questions?.length || 0;
@@ -521,6 +526,45 @@ const Patterns = () => {
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* Status Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                Status
+                {statusFilter !== "all" && (
+                  <Badge variant="secondary" className="ml-1 h-5 px-1.5">1</Badge>
+                )}
+                <ChevronDown className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {[
+                { value: "all", label: "All" },
+                { value: "solved", label: "Solved" },
+                { value: "unsolved", label: "Unsolved" }
+              ].map((status) => {
+                let count = 0;
+                if (status.value === "all") count = questions?.length || 0;
+                else if (status.value === "solved") count = totalSolved;
+                else count = totalQuestions - totalSolved;
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={status.value}
+                    checked={statusFilter === status.value}
+                    onCheckedChange={(checked) => {
+                      if (checked) setStatusFilter(status.value as "all" | "solved" | "unsolved");
+                    }}
+                  >
+                    <span className="flex items-center justify-between w-full">
+                      <span>{status.label}</span>
+                      <span className="text-muted-foreground text-xs ml-2">({count})</span>
+                    </span>
+                  </DropdownMenuCheckboxItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {/* Bookmark Filter */}
           <Button 
             variant={bookmarkFilter ? "default" : "outline"} 
@@ -602,7 +646,12 @@ const Patterns = () => {
                                 isExpanded ? "rotate-90" : ""
                               }`}
                             />
-                            <span className="font-medium text-foreground">{pattern.name}</span>
+                            <span className="font-medium text-foreground">
+                              {pattern.name}
+                              <span className="text-muted-foreground font-normal ml-1">
+                                ({allPatternQuestions.length})
+                              </span>
+                            </span>
                             {hasActiveFilters && (
                               <Badge variant="secondary" className="text-xs">
                                 {patternQuestions.length} match
