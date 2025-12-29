@@ -27,10 +27,10 @@ export const OverallProgress = ({
 
   return (
     <div className="bg-card border border-border rounded-xl p-4 mb-8">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         {/* Circular Progress */}
         <div className="flex items-center gap-4">
-          <div className="relative w-16 h-16">
+          <div className="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
               {/* Background circle */}
               <circle
@@ -66,35 +66,35 @@ export const OverallProgress = ({
               </defs>
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-sm font-bold text-foreground">{percentage}%</span>
+              <span className="text-xs sm:text-sm font-bold text-foreground">{percentage}%</span>
             </div>
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">Overall Progress</h3>
-            <p className="text-sm text-muted-foreground">
+            <h3 className="font-semibold text-foreground text-sm sm:text-base">Overall Progress</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {totalSolved}<span className="text-muted-foreground/60">/{totalQuestions}</span>
             </p>
           </div>
         </div>
 
         {/* Difficulty Breakdown */}
-        <div className="flex items-center gap-6 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+        <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:gap-6 text-xs sm:text-sm">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-500 shrink-0" />
             <span className="text-foreground font-medium">Easy</span>
             <span className="text-muted-foreground">
               {easySolved}<span className="text-muted-foreground/60">/{easyTotal}</span>
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-            <span className="text-foreground font-medium">Medium</span>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-amber-500 shrink-0" />
+            <span className="text-foreground font-medium">Med</span>
             <span className="text-muted-foreground">
               {mediumSolved}<span className="text-muted-foreground/60">/{mediumTotal}</span>
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-500 shrink-0" />
             <span className="text-foreground font-medium">Hard</span>
             <span className="text-muted-foreground">
               {hardSolved}<span className="text-muted-foreground/60">/{hardTotal}</span>
