@@ -12,7 +12,8 @@ import {
   Check,
   X,
   Calendar,
-  Sparkles
+  Sparkles,
+  Mail
 } from "lucide-react";
 import {
   Table,
@@ -48,6 +49,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 interface Profile {
@@ -59,6 +61,7 @@ interface Profile {
   subscription_expires_at: string | null;
   created_at: string;
   last_solved_at: string | null;
+  email?: string;
 }
 
 const AdminSubscriptions = () => {
@@ -68,6 +71,7 @@ const AdminSubscriptions = () => {
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [showGrantDialog, setShowGrantDialog] = useState(false);
   const [grantDuration, setGrantDuration] = useState<string>("30");
+  const [sendEmailNotification, setSendEmailNotification] = useState(true);
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["admin-subscriptions"],
@@ -83,15 +87,58 @@ const AdminSubscriptions = () => {
     },
   });
 
+  // Send email notification
+  const sendSubscriptionEmail = async (
+    userId: string, 
+    username: string | null,
+    type: "granted" | "revoked" | "expiring",
+    expiresAt?: string | null
+  ) => {
+    try {
+      // Get user email from edge function (uses service role)
+      const { data: emailData, error: emailError } = await supabase.functions.invoke("get-user-email", {
+        body: { userId },
+      });
+      
+      if (emailError || !emailData?.email) {
+        console.log("No email found for user:", userId);
+        return;
+      }
+
+      const response = await supabase.functions.invoke("subscription-email", {
+        body: {
+          email: emailData.email,
+          username: username || "Learner",
+          type,
+          expiresAt,
+        },
+      });
+
+      if (response.error) {
+        console.error("Failed to send email:", response.error);
+        toast.error("Subscription updated but email notification failed");
+      } else {
+        console.log("Email sent successfully to:", emailData.email);
+        toast.success("Email notification sent");
+      }
+    } catch (error) {
+      console.error("Error sending email notification:", error);
+    }
+  };
+
   const updateSubscriptionMutation = useMutation({
     mutationFn: async ({ 
       userId, 
       status, 
-      expiresAt 
+      expiresAt,
+      username,
+      shouldSendEmail
     }: { 
       userId: string; 
       status: string; 
       expiresAt: string | null;
+      username: string | null;
+      shouldSendEmail: boolean;
     }) => {
       const { error } = await supabase
         .from("profiles")
@@ -102,6 +149,12 @@ const AdminSubscriptions = () => {
         .eq("id", userId);
       
       if (error) throw error;
+
+      // Send email notification if enabled
+      if (shouldSendEmail) {
+        const emailType = status === "pro" ? "granted" : "revoked";
+        await sendSubscriptionEmail(userId, username, emailType, expiresAt);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-subscriptions"] });
@@ -125,6 +178,8 @@ const AdminSubscriptions = () => {
       userId: selectedUser.id,
       status: "pro",
       expiresAt,
+      username: selectedUser.username,
+      shouldSendEmail: sendEmailNotification,
     });
   };
 
@@ -133,6 +188,8 @@ const AdminSubscriptions = () => {
       userId: user.id,
       status: "free",
       expiresAt: null,
+      username: user.username,
+      shouldSendEmail: sendEmailNotification,
     });
   };
 
@@ -392,6 +449,18 @@ const AdminSubscriptions = () => {
                 )}
               </p>
             )}
+
+            <div className="flex items-center space-x-2 pt-2 border-t">
+              <Checkbox 
+                id="sendEmail" 
+                checked={sendEmailNotification}
+                onCheckedChange={(checked) => setSendEmailNotification(checked as boolean)}
+              />
+              <Label htmlFor="sendEmail" className="text-sm cursor-pointer flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                Send email notification
+              </Label>
+            </div>
           </div>
 
           <DialogFooter>
