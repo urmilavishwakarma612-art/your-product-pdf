@@ -1,13 +1,16 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles, Zap, Brain, Trophy, Target, Check, Crown } from "lucide-react";
+import { X, Sparkles, Zap, Brain, Trophy, Target, Check, Crown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useRazorpay } from "@/hooks/useRazorpay";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useState } from "react";
 
 interface UpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  triggerContext?: string; // e.g., "pattern", "question", "feature"
+  triggerContext?: string;
 }
 
 const benefits = [
@@ -21,16 +24,24 @@ const benefits = [
 export const UpgradeModal = ({ isOpen, onClose, triggerContext }: UpgradeModalProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { initiatePayment, isLoading } = useRazorpay();
+  const { refetch } = useSubscription();
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'lifetime'>('lifetime');
 
-  const handleUpgrade = () => {
+  const handleUpgrade = async () => {
     if (!user) {
       navigate("/auth");
-    } else {
-      // Future: Navigate to payment/checkout
-      // For now, show coming soon or navigate to a pricing page
-      window.open("/#pricing", "_self");
+      onClose();
+      return;
     }
-    onClose();
+
+    initiatePayment(
+      selectedPlan,
+      () => {
+        refetch();
+        onClose();
+      }
+    );
   };
 
   return (
@@ -61,7 +72,8 @@ export const UpgradeModal = ({ isOpen, onClose, triggerContext }: UpgradeModalPr
               {/* Close button */}
               <button
                 onClick={onClose}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors z-10"
+                disabled={isLoading}
+                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors z-10 disabled:opacity-50"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -116,15 +128,56 @@ export const UpgradeModal = ({ isOpen, onClose, triggerContext }: UpgradeModalPr
                   ))}
                 </div>
 
-                {/* Pricing */}
-                <div className="bg-muted/30 rounded-lg p-4 mb-6 text-center">
-                  <div className="flex items-center justify-center gap-3 mb-2">
-                    <span className="text-3xl font-bold gradient-text">₹49</span>
-                    <span className="text-muted-foreground">/month</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    or ₹449 one-time (early bird offer)
-                  </p>
+                {/* Plan Selection */}
+                <div className="space-y-3 mb-6">
+                  {/* Lifetime Plan */}
+                  <button
+                    onClick={() => setSelectedPlan('lifetime')}
+                    disabled={isLoading}
+                    className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
+                      selectedPlan === 'lifetime'
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border bg-muted/30 hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">Lifetime Access</span>
+                          <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                            Best Value
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">One-time early bird offer</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-2xl font-bold gradient-text">₹449</span>
+                        <p className="text-xs text-muted-foreground">forever</p>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Monthly Plan */}
+                  <button
+                    onClick={() => setSelectedPlan('monthly')}
+                    disabled={isLoading}
+                    className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
+                      selectedPlan === 'monthly'
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border bg-muted/30 hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="font-semibold">Monthly</span>
+                        <p className="text-xs text-muted-foreground mt-1">Cancel anytime</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-2xl font-bold">₹49</span>
+                        <p className="text-xs text-muted-foreground">/month</p>
+                      </div>
+                    </div>
+                  </button>
                 </div>
 
                 {/* CTA Buttons */}
@@ -133,14 +186,25 @@ export const UpgradeModal = ({ isOpen, onClose, triggerContext }: UpgradeModalPr
                     onClick={handleUpgrade}
                     className="w-full btn-primary-glow"
                     size="lg"
+                    disabled={isLoading}
                   >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    {user ? "Upgrade Now" : "Sign Up & Upgrade"}
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        {user ? `Pay ${selectedPlan === 'lifetime' ? '₹449' : '₹49'}` : "Sign Up & Upgrade"}
+                      </>
+                    )}
                   </Button>
                   <Button 
                     onClick={onClose}
                     variant="ghost"
                     className="w-full text-muted-foreground"
+                    disabled={isLoading}
                   >
                     Continue with Free Plan
                   </Button>
@@ -148,7 +212,7 @@ export const UpgradeModal = ({ isOpen, onClose, triggerContext }: UpgradeModalPr
 
                 {/* Trust badge */}
                 <p className="text-center text-xs text-muted-foreground mt-4">
-                  🔒 Secure payment • Cancel anytime
+                  🔒 Secure payment via Razorpay • Cancel anytime
                 </p>
               </div>
             </div>
