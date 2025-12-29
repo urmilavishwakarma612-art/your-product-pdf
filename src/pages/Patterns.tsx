@@ -13,7 +13,9 @@ import {
   CheckCircle2,
   Search,
   Filter,
-  X
+  X,
+  Bookmark,
+  ExternalLink
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
@@ -541,90 +543,69 @@ const Patterns = () => {
                                     return (
                                       <div
                                         key={question.id}
-                                        className={`px-4 py-3 flex items-center justify-between border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors ${
+                                        className={`px-4 py-3 flex items-center gap-4 border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors ${
                                           solved ? "bg-success/5" : ""
                                         }`}
                                       >
-                                        {/* Left: Checkbox, Title, Company Tags */}
-                                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                                          <Checkbox
-                                            checked={solved}
-                                            onCheckedChange={() => handleCheckboxChange(question.id, !!solved)}
-                                            className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                                          />
-                                          <div className="flex-1 min-w-0">
-                                            <Link 
-                                              to={`/question/${question.id}`}
-                                              className="font-medium text-foreground hover:text-primary transition-colors line-clamp-1"
-                                            >
-                                              {question.title}
-                                            </Link>
-                                            {/* Company Tags */}
-                                            {question.companies && question.companies.length > 0 && (
-                                              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                                {question.companies.slice(0, 4).map((company) => {
-                                                  const logoUrl = companyLogoMap[company];
-                                                  return (
-                                                    <span 
-                                                      key={company} 
-                                                      className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-muted/80 text-muted-foreground"
-                                                    >
-                                                      {logoUrl ? (
-                                                        <img src={logoUrl} alt="" className="w-3.5 h-3.5 object-contain" />
-                                                      ) : null}
-                                                      {company}
-                                                    </span>
-                                                  );
-                                                })}
-                                                {question.companies.length > 4 && (
-                                                  <span className="text-xs text-muted-foreground">
-                                                    +{question.companies.length - 4}
-                                                  </span>
-                                                )}
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
+                                        {/* Checkbox */}
+                                        <Checkbox
+                                          checked={solved}
+                                          onCheckedChange={() => handleCheckboxChange(question.id, !!solved)}
+                                          className="h-5 w-5 rounded border-2 border-muted-foreground/40 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                        />
 
-                                        {/* Center: Difficulty Badge */}
-                                        <div className="px-4">
-                                          <Badge 
-                                            variant="outline" 
-                                            className={`${difficulty.bg} ${difficulty.text} ${difficulty.border} border`}
-                                          >
-                                            {difficulty.label}
-                                          </Badge>
-                                        </div>
-
-                                        {/* Right: Action Icons */}
-                                        <div className="flex items-center gap-1">
-                                          {question.youtube_link && (
-                                            <a
-                                              href={question.youtube_link}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="p-2 rounded-lg hover:bg-muted transition-colors"
-                                              title="Watch Video"
-                                            >
-                                              <Youtube className="w-4 h-4 text-red-500" />
-                                            </a>
-                                          )}
-                                          <a
-                                            href={question.article_link || "#"}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className={`p-2 rounded-lg hover:bg-muted transition-colors ${!question.article_link ? "opacity-30" : ""}`}
-                                            title="Read Notes"
-                                          >
-                                            <FileText className="w-4 h-4 text-amber-500" />
-                                          </a>
-                                          <Link
+                                        {/* Title & Company Tags */}
+                                        <div className="flex-1 min-w-0">
+                                          <Link 
                                             to={`/question/${question.id}`}
-                                            className="p-2 rounded-lg hover:bg-muted transition-colors"
-                                            title="View Solution"
+                                            className="font-medium text-foreground hover:text-primary transition-colors"
                                           >
-                                            <Code2 className="w-4 h-4 text-emerald-500" />
+                                            {question.title}
                                           </Link>
+                                          {/* Company Tags - Circular pills */}
+                                          {question.companies && question.companies.length > 0 && (
+                                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                              {question.companies.slice(0, 5).map((company) => {
+                                                const logoUrl = companyLogoMap[company];
+                                                return (
+                                                  <span 
+                                                    key={company} 
+                                                    className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full border border-border bg-background text-muted-foreground"
+                                                  >
+                                                    {logoUrl ? (
+                                                      <img 
+                                                        src={logoUrl} 
+                                                        alt="" 
+                                                        className="w-4 h-4 rounded-full object-contain" 
+                                                      />
+                                                    ) : (
+                                                      <span className="w-4 h-4 rounded-full bg-muted flex items-center justify-center text-[10px] font-medium">
+                                                        {company.charAt(0)}
+                                                      </span>
+                                                    )}
+                                                    {company}
+                                                  </span>
+                                                );
+                                              })}
+                                              {question.companies.length > 5 && (
+                                                <span className="text-xs text-muted-foreground">
+                                                  +{question.companies.length - 5}
+                                                </span>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        {/* Difficulty Badge */}
+                                        <Badge 
+                                          variant="outline" 
+                                          className={`${difficulty.text} border-current bg-transparent font-medium px-3 py-1`}
+                                        >
+                                          {difficulty.label}
+                                        </Badge>
+
+                                        {/* Action Icons */}
+                                        <div className="flex items-center gap-1">
                                           {question.leetcode_link && (
                                             <a
                                               href={question.leetcode_link}
@@ -633,9 +614,40 @@ const Patterns = () => {
                                               className="p-2 rounded-lg hover:bg-muted transition-colors"
                                               title="Solve on LeetCode"
                                             >
-                                              <BookOpen className="w-4 h-4 text-orange-500" />
+                                              <ExternalLink className="w-5 h-5 text-primary" />
                                             </a>
                                           )}
+                                          {question.youtube_link && (
+                                            <a
+                                              href={question.youtube_link}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="p-2 rounded-lg hover:bg-muted transition-colors"
+                                              title="Watch Video"
+                                            >
+                                              <Youtube className="w-5 h-5 text-red-500" />
+                                            </a>
+                                          )}
+                                          <Link
+                                            to={`/question/${question.id}`}
+                                            className="p-2 rounded-lg hover:bg-muted transition-colors"
+                                            title="Read Notes"
+                                          >
+                                            <FileText className="w-5 h-5 text-amber-500" />
+                                          </Link>
+                                          <Link
+                                            to={`/question/${question.id}`}
+                                            className="p-2 rounded-lg hover:bg-muted transition-colors"
+                                            title="View Solution"
+                                          >
+                                            <Code2 className="w-5 h-5 text-emerald-500" />
+                                          </Link>
+                                          <button
+                                            className="p-2 rounded-lg hover:bg-muted transition-colors"
+                                            title="Bookmark"
+                                          >
+                                            <Bookmark className="w-5 h-5 text-muted-foreground" />
+                                          </button>
                                         </div>
                                       </div>
                                     );
