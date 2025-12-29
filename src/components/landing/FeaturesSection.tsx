@@ -14,6 +14,7 @@ import {
   BookOpen,
   Sparkles
 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -125,25 +126,25 @@ export function FeaturesSection() {
                 icon={<Lightbulb className="w-5 h-5" />}
                 title="Hint Mode"
                 description="Subtle direction without revealing the approach"
-                color="warning"
+                colorVariant="emerald"
               />
               <AIModeCard
                 icon={<Route className="w-5 h-5" />}
                 title="Approach"
                 description="Pattern name + high-level steps"
-                color="primary"
+                colorVariant="magenta"
               />
               <AIModeCard
                 icon={<Code className="w-5 h-5" />}
                 title="Brute Force"
                 description="Inefficient but working solution"
-                color="secondary"
+                colorVariant="purple"
               />
               <AIModeCard
                 icon={<Rocket className="w-5 h-5" />}
                 title="Optimal"
                 description="Best solution with dry run"
-                color="accent"
+                colorVariant="teal"
               />
             </motion.div>
           </div>
@@ -161,25 +162,25 @@ export function FeaturesSection() {
             icon={<Trophy className="w-6 h-6" />}
             title="XP System"
             description="Earn XP for every problem. More for harder ones, bonus for minimal hints."
-            color="xp"
+            colorVariant="purple"
           />
           <FeatureCard
             icon={<Flame className="w-6 h-6" />}
             title="Daily Streaks"
             description="Build consistency. Don't break the chain. Unlock streak milestones."
-            color="streak"
+            colorVariant="crimson"
           />
           <FeatureCard
             icon={<Medal className="w-6 h-6" />}
             title="Badges"
             description="Collect pattern mastery badges, consistency badges, and more."
-            color="primary"
+            colorVariant="emerald"
           />
           <FeatureCard
             icon={<TrendingUp className="w-6 h-6" />}
             title="Leaderboard"
             description="Compete globally. Weekly resets. Climb to the top."
-            color="secondary"
+            colorVariant="teal"
           />
         </motion.div>
 
@@ -218,40 +219,39 @@ interface AIModeCardProps {
   icon: React.ReactNode;
   title: string;
   description: string;
-  color: "primary" | "secondary" | "accent" | "warning";
+  colorVariant: "emerald" | "magenta" | "purple" | "teal" | "crimson";
 }
 
-function AIModeCard({ icon, title, description, color }: AIModeCardProps) {
-  const colorClasses = {
-    primary: "border-primary/30 hover:border-primary/60 text-primary hover:shadow-[0_0_30px_hsla(180,100%,50%,0.15)]",
-    secondary: "border-secondary/30 hover:border-secondary/60 text-secondary hover:shadow-[0_0_30px_hsla(260,80%,55%,0.15)]",
-    accent: "border-accent/30 hover:border-accent/60 text-accent hover:shadow-[0_0_30px_hsla(330,100%,60%,0.15)]",
-    warning: "border-warning/30 hover:border-warning/60 text-warning hover:shadow-[0_0_30px_hsla(45,100%,55%,0.15)]",
-  };
-
-  const bgClasses = {
-    primary: "bg-primary/10",
-    secondary: "bg-secondary/10",
-    accent: "bg-accent/10",
-    warning: "bg-warning/10",
+function AIModeCard({ icon, title, description, colorVariant }: AIModeCardProps) {
+  const iconBgClasses = {
+    emerald: "bg-white/20",
+    magenta: "bg-white/20",
+    purple: "bg-white/20",
+    teal: "bg-white/20",
+    crimson: "bg-white/20",
   };
 
   return (
-    <motion.div
-      variants={itemVariants}
-      whileHover={{ y: -6, scale: 1.02 }}
-      className={`p-3 sm:p-5 rounded-xl border bg-card/50 backdrop-blur-sm ${colorClasses[color]} transition-all duration-400 cursor-default`}
+    <Card
+      variant={colorVariant}
+      className="p-3 sm:p-5 cursor-default"
     >
-      <motion.div 
-        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg ${bgClasses[color]} flex items-center justify-center mb-2 sm:mb-4`}
-        whileHover={{ rotate: [0, -10, 10, 0], scale: 1.1 }}
-        transition={{ duration: 0.4 }}
+      <motion.div
+        variants={itemVariants}
+        whileHover={{ y: -6, scale: 1.02 }}
+        className="h-full"
       >
-        <span className="scale-75 sm:scale-100">{icon}</span>
+        <motion.div 
+          className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg ${iconBgClasses[colorVariant]} flex items-center justify-center mb-2 sm:mb-4`}
+          whileHover={{ rotate: [0, -10, 10, 0], scale: 1.1 }}
+          transition={{ duration: 0.4 }}
+        >
+          <span className="scale-75 sm:scale-100">{icon}</span>
+        </motion.div>
+        <h4 className="font-semibold mb-1 sm:mb-2 text-sm sm:text-base">{title}</h4>
+        <p className="text-xs sm:text-sm text-white/70 leading-relaxed">{description}</p>
       </motion.div>
-      <h4 className="font-semibold mb-1 sm:mb-2 text-foreground text-sm sm:text-base">{title}</h4>
-      <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{description}</p>
-    </motion.div>
+    </Card>
   );
 }
 
@@ -259,33 +259,31 @@ interface FeatureCardProps {
   icon: React.ReactNode;
   title: string;
   description: string;
-  color: string;
+  colorVariant: "emerald" | "magenta" | "purple" | "teal" | "crimson";
 }
 
-function FeatureCard({ icon, title, description, color }: FeatureCardProps) {
-  const colorMap: Record<string, string> = {
-    xp: "text-[hsl(280,100%,65%)] bg-[hsl(280,100%,65%,0.1)] border-[hsl(280,100%,65%,0.3)] hover:border-[hsl(280,100%,65%,0.6)] hover:shadow-[0_0_30px_hsla(280,100%,65%,0.15)]",
-    streak: "text-[hsl(25,100%,55%)] bg-[hsl(25,100%,55%,0.1)] border-[hsl(25,100%,55%,0.3)] hover:border-[hsl(25,100%,55%,0.6)] hover:shadow-[0_0_30px_hsla(25,100%,55%,0.15)]",
-    primary: "text-primary bg-primary/10 border-primary/30 hover:border-primary/60 hover:shadow-[0_0_30px_hsla(180,100%,50%,0.15)]",
-    secondary: "text-secondary bg-secondary/10 border-secondary/30 hover:border-secondary/60 hover:shadow-[0_0_30px_hsla(260,80%,55%,0.15)]",
-  };
-
+function FeatureCard({ icon, title, description, colorVariant }: FeatureCardProps) {
   return (
-    <motion.div
-      variants={itemVariants}
-      whileHover={{ y: -8, scale: 1.02 }}
-      className={`interactive-card p-4 sm:p-6 text-center transition-all duration-400`}
+    <Card
+      variant={colorVariant}
+      className="p-4 sm:p-6 text-center cursor-default"
     >
-      <motion.div 
-        className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl ${colorMap[color]?.split(' ').slice(0, 2).join(' ')} flex items-center justify-center mx-auto mb-3 sm:mb-5`}
-        whileHover={{ rotate: [0, -10, 10, 0], scale: 1.1 }}
-        transition={{ duration: 0.4 }}
+      <motion.div
+        variants={itemVariants}
+        whileHover={{ y: -8, scale: 1.02 }}
+        className="h-full"
       >
-        <span className="scale-75 sm:scale-100">{icon}</span>
+        <motion.div 
+          className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl bg-white/20 flex items-center justify-center mx-auto mb-3 sm:mb-5"
+          whileHover={{ rotate: [0, -10, 10, 0], scale: 1.1 }}
+          transition={{ duration: 0.4 }}
+        >
+          <span className="scale-75 sm:scale-100">{icon}</span>
+        </motion.div>
+        <h4 className="font-semibold text-sm sm:text-lg mb-2 sm:mb-3">{title}</h4>
+        <p className="text-xs sm:text-sm text-white/70 leading-relaxed">{description}</p>
       </motion.div>
-      <h4 className="font-semibold text-sm sm:text-lg mb-2 sm:mb-3">{title}</h4>
-      <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{description}</p>
-    </motion.div>
+    </Card>
   );
 }
 
