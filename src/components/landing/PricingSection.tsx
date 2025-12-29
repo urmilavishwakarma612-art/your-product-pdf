@@ -36,7 +36,7 @@ export function PricingSection() {
     <section 
       ref={sectionRef}
       id="pricing" 
-      className="py-32 relative overflow-hidden"
+      className="py-16 sm:py-24 lg:py-32 relative overflow-hidden"
     >
       {/* Animated gradient background */}
       <motion.div
@@ -45,8 +45,8 @@ export function PricingSection() {
       />
       
       {/* Decorative orbs */}
-      <div className="absolute top-20 right-20 w-80 h-80 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-20 left-20 w-96 h-96 bg-secondary/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-20 right-20 w-48 sm:w-80 h-48 sm:h-80 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-20 left-20 w-64 sm:w-96 h-64 sm:h-96 bg-secondary/5 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="container px-4 relative z-10">
         <motion.div
@@ -54,26 +54,26 @@ export function PricingSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="text-center max-w-3xl mx-auto mb-20"
+          className="text-center max-w-3xl mx-auto mb-12 sm:mb-16 lg:mb-20"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6"
+            className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 border border-primary/20 mb-4 sm:mb-6"
           >
-            <Zap className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Pricing</span>
+            <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
+            <span className="text-xs sm:text-sm font-medium text-primary">Pricing</span>
           </motion.div>
-          <h2 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight">
+          <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 tracking-tight">
             Simple, <span className="gradient-text">Transparent</span> Pricing
           </h2>
-          <p className="text-xl text-muted-foreground leading-relaxed">
+          <p className="text-base sm:text-lg lg:text-xl text-muted-foreground leading-relaxed">
             Start free, upgrade when you're ready. Phase 1 is completely free forever.
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto">
           {/* Free Plan */}
           <motion.div
             initial={{ opacity: 0, x: -40 }}
@@ -81,16 +81,16 @@ export function PricingSection() {
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             whileHover={{ y: -8 }}
-            className="interactive-card p-8 md:p-10 relative"
+            className="interactive-card p-5 sm:p-8 md:p-10 relative"
           >
-            <div className="mb-8">
-              <h3 className="text-2xl font-bold mb-2">Free</h3>
-              <p className="text-muted-foreground">Perfect to get started</p>
+            <div className="mb-6 sm:mb-8">
+              <h3 className="text-xl sm:text-2xl font-bold mb-2">Free</h3>
+              <p className="text-sm sm:text-base text-muted-foreground">Perfect to get started</p>
             </div>
 
-            <div className="mb-10">
-              <span className="text-6xl font-bold">₹0</span>
-              <span className="text-muted-foreground ml-2 text-lg">forever</span>
+            <div className="mb-6 sm:mb-10">
+              <span className="text-4xl sm:text-5xl lg:text-6xl font-bold">₹0</span>
+              <span className="text-muted-foreground ml-2 text-base sm:text-lg">forever</span>
             </div>
 
             <motion.ul 
@@ -98,7 +98,7 @@ export function PricingSection() {
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
-              className="space-y-4 mb-10"
+              className="space-y-3 sm:space-y-4 mb-6 sm:mb-10"
             >
               {[
                 "Complete Phase 1 - Foundation",
@@ -113,17 +113,17 @@ export function PricingSection() {
                   variants={itemVariants}
                   className="flex items-center gap-3 group"
                 >
-                  <div className="w-5 h-5 rounded-full bg-success/15 flex items-center justify-center flex-shrink-0 group-hover:bg-success/25 transition-colors">
-                    <Check className="w-3 h-3 text-success" />
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-success/15 flex items-center justify-center flex-shrink-0 group-hover:bg-success/25 transition-colors">
+                    <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-success" />
                   </div>
-                  <span className="text-muted-foreground group-hover:text-foreground transition-colors">{feature}</span>
+                  <span className="text-sm sm:text-base text-muted-foreground group-hover:text-foreground transition-colors">{feature}</span>
                 </motion.li>
               ))}
             </motion.ul>
 
             <Link to="/auth">
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button variant="outline" className="w-full rounded-xl h-12 text-base" size="lg">
+                <Button variant="outline" className="w-full rounded-xl h-10 sm:h-12 text-sm sm:text-base" size="lg">
                   Get Started Free
                 </Button>
               </motion.div>
@@ -142,7 +142,7 @@ export function PricingSection() {
             {/* Glow effect */}
             <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-secondary to-accent rounded-2xl blur opacity-30 group-hover:opacity-40 transition-opacity" />
             
-            <div className="interactive-card p-8 md:p-10 relative border-primary/30 hover:border-primary/50">
+            <div className="interactive-card p-5 sm:p-8 md:p-10 relative border-primary/30 hover:border-primary/50">
               {/* Popular Badge */}
               <motion.div 
                 initial={{ opacity: 0, y: -20 }}
@@ -153,32 +153,32 @@ export function PricingSection() {
                 <motion.div 
                   animate={{ y: [0, -3, 0] }}
                   transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  className="flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-primary to-secondary text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/25"
+                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-primary to-secondary text-primary-foreground text-xs sm:text-sm font-semibold shadow-lg shadow-primary/25"
                 >
-                  <Crown className="w-4 h-4" />
+                  <Crown className="w-3 h-3 sm:w-4 sm:h-4" />
                   Most Popular
                 </motion.div>
               </motion.div>
 
-              <div className="mb-8 pt-4">
-                <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
+              <div className="mb-6 sm:mb-8 pt-4">
+                <h3 className="text-xl sm:text-2xl font-bold mb-2 flex items-center gap-2">
                   Pro 
                   <motion.div
                     animate={{ rotate: [0, 15, -15, 0] }}
                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                   >
-                    <Sparkles className="w-5 h-5 text-primary" />
+                    <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                   </motion.div>
                 </h3>
-                <p className="text-muted-foreground">Full DSA mastery unlocked</p>
+                <p className="text-sm sm:text-base text-muted-foreground">Full DSA mastery unlocked</p>
               </div>
 
-              <div className="mb-10">
+              <div className="mb-6 sm:mb-10">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-6xl font-bold gradient-text">₹49</span>
-                  <span className="text-muted-foreground text-lg">/month</span>
+                  <span className="text-4xl sm:text-5xl lg:text-6xl font-bold gradient-text">₹49</span>
+                  <span className="text-muted-foreground text-base sm:text-lg">/month</span>
                 </div>
-                <p className="text-sm text-muted-foreground mt-3">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-2 sm:mt-3">
                   or ₹449 one-time (early bird)
                 </p>
               </div>
@@ -188,7 +188,7 @@ export function PricingSection() {
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true }}
-                className="space-y-4 mb-10"
+                className="space-y-3 sm:space-y-4 mb-6 sm:mb-10"
               >
                 {[
                   "Everything in Free",
@@ -204,17 +204,17 @@ export function PricingSection() {
                     variants={itemVariants}
                     className="flex items-center gap-3 group"
                   >
-                    <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/25 transition-colors">
-                      <Check className="w-3 h-3 text-primary" />
+                    <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/25 transition-colors">
+                      <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary" />
                     </div>
-                    <span className="group-hover:text-foreground transition-colors">{feature}</span>
+                    <span className="text-sm sm:text-base group-hover:text-foreground transition-colors">{feature}</span>
                   </motion.li>
                 ))}
               </motion.ul>
 
               <Link to="/auth">
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Button className="w-full btn-primary-glow rounded-xl h-12 text-base" size="lg">
+                  <Button className="w-full btn-primary-glow rounded-xl h-10 sm:h-12 text-sm sm:text-base" size="lg">
                     Upgrade to Pro
                   </Button>
                 </motion.div>
@@ -229,16 +229,16 @@ export function PricingSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.4 }}
-          className="flex flex-wrap items-center justify-center gap-6 mt-16 text-muted-foreground"
+          className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-10 sm:mt-16 text-xs sm:text-sm text-muted-foreground"
         >
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-success" />
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
             <span>Secure payment via Razorpay</span>
           </div>
           <div className="w-1 h-1 rounded-full bg-border hidden sm:block" />
           <span>Cancel anytime</span>
           <div className="w-1 h-1 rounded-full bg-border hidden sm:block" />
-          <span>7-day money back guarantee</span>
+          <span>7-day money back</span>
         </motion.div>
       </div>
     </section>
