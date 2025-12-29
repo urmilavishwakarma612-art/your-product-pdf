@@ -27,6 +27,7 @@ const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminBadges = lazy(() => import("./pages/admin/AdminBadges"));
 const AdminTestimonials = lazy(() => import("./pages/admin/AdminTestimonials"));
 const AdminSubscriptions = lazy(() => import("./pages/admin/AdminSubscriptions"));
+const AdminEmailTemplates = lazy(() => import("./pages/admin/AdminEmailTemplates"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -57,6 +58,7 @@ const App = () => (
                 <Route path="badges" element={<AdminBadges />} />
                 <Route path="testimonials" element={<AdminTestimonials />} />
                 <Route path="subscriptions" element={<AdminSubscriptions />} />
+                <Route path="email-templates" element={<AdminEmailTemplates />} />
               </Route>
               <Route path="*" element={<NotFound />} />
               </Routes>
