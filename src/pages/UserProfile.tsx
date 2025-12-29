@@ -15,14 +15,14 @@ export default function UserProfile() {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
 
-  // Fetch profile by username
+  // Fetch profile by username (case-insensitive)
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["profile", username],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("username", username)
+        .ilike("username", username!)
         .single();
       if (error) throw error;
       return data;
