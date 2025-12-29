@@ -12,22 +12,25 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 export default function UserProfile() {
-  const { username } = useParams<{ username: string }>();
+  const params = useParams<{ username: string }>();
   const navigate = useNavigate();
 
-  // Fetch profile by username (case-insensitive)
+  const rawUsername = params.username ? decodeURIComponent(params.username) : "";
+  const normalizedUsername = rawUsername.trim();
+
+  // Fetch profile by username (case-insensitive, trimmed)
   const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ["profile", username],
+    queryKey: ["profile", normalizedUsername],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .ilike("username", username!)
-        .single();
+        .ilike("username", normalizedUsername)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
-    enabled: !!username,
+    enabled: normalizedUsername.length > 0,
   });
 
   // Fetch user badges
@@ -170,7 +173,7 @@ export default function UserProfile() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <h1 className="text-2xl font-bold">User not found</h1>
         <p className="text-muted-foreground">
-          The user "{username}" doesn't exist.
+          The user "{normalizedUsername}" doesn't exist.
         </p>
         <Button onClick={() => navigate("/")} variant="outline">
           Go Home
