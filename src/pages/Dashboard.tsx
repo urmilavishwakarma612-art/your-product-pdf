@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/landing/Navbar";
 import { motion } from "framer-motion";
-import { Zap, Trophy, Flame, Target, LogOut, BookOpen, ArrowRight, User } from "lucide-react";
+import { Zap, Trophy, Flame, Target, LogOut, BookOpen, ArrowRight, User, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
@@ -240,13 +240,20 @@ const Dashboard = () => {
 
 function StatCard({ icon, label, value, colorClass }: { icon: React.ReactNode; label: string; value: string; colorClass: string }) {
   return (
-    <div className="glass-card p-4">
-      <div className={`w-10 h-10 rounded-lg ${colorClass} flex items-center justify-center mb-3`}>
+    <motion.div 
+      whileHover={{ y: -4, scale: 1.02 }}
+      className="interactive-card p-5"
+    >
+      <motion.div 
+        whileHover={{ rotate: [0, -10, 10, 0], scale: 1.1 }}
+        transition={{ duration: 0.4 }}
+        className={`w-12 h-12 rounded-xl ${colorClass} flex items-center justify-center mb-4`}
+      >
         {icon}
-      </div>
-      <div className="text-2xl font-bold">{value}</div>
+      </motion.div>
+      <div className="text-3xl font-bold mb-1">{value}</div>
       <div className="text-sm text-muted-foreground">{label}</div>
-    </div>
+    </motion.div>
   );
 }
 
