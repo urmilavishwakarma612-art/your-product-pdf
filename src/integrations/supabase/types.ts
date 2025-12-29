@@ -94,6 +94,51 @@ export type Database = {
         }
         Relationships: []
       }
+      email_templates: {
+        Row: {
+          body_text: string
+          created_at: string
+          cta_text: string
+          cta_url: string
+          footer_text: string | null
+          heading: string
+          id: string
+          logo_url: string | null
+          primary_color: string
+          subject: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          body_text: string
+          created_at?: string
+          cta_text?: string
+          cta_url?: string
+          footer_text?: string | null
+          heading: string
+          id?: string
+          logo_url?: string | null
+          primary_color?: string
+          subject: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          body_text?: string
+          created_at?: string
+          cta_text?: string
+          cta_url?: string
+          footer_text?: string | null
+          heading?: string
+          id?: string
+          logo_url?: string | null
+          primary_color?: string
+          subject?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       patterns: {
         Row: {
           color: string | null
