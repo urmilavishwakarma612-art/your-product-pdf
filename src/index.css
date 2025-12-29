@@ -27,13 +27,17 @@
     --popover: 0 0% 6%;
     --popover-foreground: 0 0% 95%;
 
-    /* Primary - Refined Teal (muted, elegant) */
-    --primary: 175 45% 45%;
+    /* Primary - Vibrant Teal */
+    --primary: 175 65% 42%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary - Soft Indigo */
-    --secondary: 245 30% 45%;
+    --secondary: 245 35% 50%;
     --secondary-foreground: 0 0% 100%;
+
+    /* Violet - Premium Purple Accent */
+    --violet: 270 55% 50%;
+    --violet-foreground: 0 0% 100%;
 
     /* Muted surfaces */
     --muted: 0 0% 10%;
@@ -74,17 +78,19 @@
     --badge-silver: 220 15% 65%;
     --badge-bronze: 28 45% 45%;
 
-    /* Premium Gradients - Elegant color transitions */
-    --gradient-primary: linear-gradient(135deg, hsl(175 45% 45%) 0%, hsl(245 30% 45%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(38 60% 50%) 0%, hsl(25 50% 45%) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(155 45% 40%) 0%, hsl(175 45% 45%) 100%);
+    /* Premium Gradients - Vibrant teal to violet transitions */
+    --gradient-primary: linear-gradient(135deg, hsl(175 65% 42%) 0%, hsl(270 55% 50%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(38 60% 50%) 0%, hsl(270 50% 45%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(155 50% 42%) 0%, hsl(175 65% 42%) 100%);
     --gradient-dark: linear-gradient(180deg, hsl(0 0% 6%) 0%, hsl(0 0% 0%) 100%);
     --gradient-glass: linear-gradient(135deg, hsla(0, 0%, 8%, 0.9) 0%, hsla(0, 0%, 4%, 0.8) 100%);
+    --gradient-premium: linear-gradient(135deg, hsl(175 65% 42%) 0%, hsl(245 35% 50%) 50%, hsl(270 55% 50%) 100%);
 
-    /* Glow Effects - Subtle colored glows */
-    --glow-primary: 0 0 35px hsla(175, 45%, 45%, 0.25);
+    /* Glow Effects - Vibrant colored glows */
+    --glow-primary: 0 0 40px hsla(175, 65%, 42%, 0.3);
     --glow-accent: 0 0 35px hsla(38, 60%, 50%, 0.2);
-    --glow-secondary: 0 0 35px hsla(245, 30%, 45%, 0.2);
+    --glow-secondary: 0 0 35px hsla(245, 35%, 50%, 0.25);
+    --glow-violet: 0 0 40px hsla(270, 55%, 50%, 0.3);
 
     /* Sidebar */
     --sidebar-background: 0 0% 3%;
@@ -105,9 +111,11 @@
     --card-foreground: 0 0% 8%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 8%;
-    --primary: 175 50% 38%;
+    --primary: 175 60% 38%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 245 35% 50%;
+    --secondary: 245 40% 48%;
+    --violet: 270 50% 55%;
+    --violet-foreground: 0 0% 100%;
     --secondary-foreground: 0 0% 100%;
     --muted: 0 0% 95%;
     --muted-foreground: 0 0% 45%;
