@@ -112,7 +112,12 @@ const Dashboard = () => {
                     Admin Panel
                   </Button>
                 )}
-                <Button variant="outline" onClick={() => navigate(`/profile/${profile?.username}`)}>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    navigate(`/profile/${encodeURIComponent((profile?.username || "").trim())}`)
+                  }
+                >
                   <User className="w-4 h-4 mr-2" /> View Profile
                 </Button>
                 <Button variant="ghost" onClick={signOut}>
