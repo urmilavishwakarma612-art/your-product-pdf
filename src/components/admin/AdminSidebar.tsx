@@ -5,7 +5,8 @@ import {
   Users, 
   Trophy,
   ArrowLeft,
-  Building2
+  Building2,
+  FolderTree
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, Link } from "react-router-dom";
@@ -23,6 +24,7 @@ import {
 
 const menuItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+  { title: "Topics", url: "/admin/topics", icon: FolderTree },
   { title: "Patterns", url: "/admin/patterns", icon: Layers },
   { title: "Questions", url: "/admin/questions", icon: FileQuestion },
   { title: "Companies", url: "/admin/companies", icon: Building2 },

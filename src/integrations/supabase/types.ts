@@ -106,6 +106,7 @@ export type Database = {
           name: string
           phase: number
           slug: string
+          topic_id: string | null
           total_questions: number
           updated_at: string
         }
@@ -120,6 +121,7 @@ export type Database = {
           name: string
           phase?: number
           slug: string
+          topic_id?: string | null
           total_questions?: number
           updated_at?: string
         }
@@ -134,10 +136,19 @@ export type Database = {
           name?: string
           phase?: number
           slug?: string
+          topic_id?: string | null
           total_questions?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "patterns_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -269,6 +280,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      topics: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          display_order: number
+          icon: string | null
+          id: string
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_badges: {
         Row: {

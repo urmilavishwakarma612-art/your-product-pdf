@@ -7,6 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -25,12 +32,18 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
+interface Topic {
+  id: string;
+  name: string;
+}
+
 interface Pattern {
   id: string;
   name: string;
   slug: string;
   description: string | null;
   phase: number;
+  topic_id: string | null;
   display_order: number;
   is_free: boolean;
   icon: string | null;
@@ -41,8 +54,22 @@ interface Pattern {
 const AdminPatterns = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [editingPattern, setEditingPattern] = useState<Pattern | null>(null);
+  const [selectedTopicId, setSelectedTopicId] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const { data: topics } = useQuery({
+    queryKey: ["admin-topics"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("topics")
+        .select("id, name")
+        .order("display_order", { ascending: true });
+      
+      if (error) throw error;
+      return data as Topic[];
+    },
+  });
 
   const { data: patterns, isLoading } = useQuery({
     queryKey: ["admin-patterns"],
@@ -125,6 +152,7 @@ const AdminPatterns = () => {
       slug: (formData.get("name") as string).toLowerCase().replace(/\s+/g, "-"),
       description: formData.get("description") as string || null,
       phase: parseInt(formData.get("phase") as string) || 1,
+      topic_id: selectedTopicId || null,
       display_order: parseInt(formData.get("display_order") as string) || 0,
       is_free: formData.get("is_free") === "on",
       icon: formData.get("icon") as string || null,
@@ -140,12 +168,20 @@ const AdminPatterns = () => {
 
   const openEdit = (pattern: Pattern) => {
     setEditingPattern(pattern);
+    setSelectedTopicId(pattern.topic_id || "");
     setIsOpen(true);
   };
 
   const closeDialog = () => {
     setIsOpen(false);
     setEditingPattern(null);
+    setSelectedTopicId("");
+  };
+
+  const getTopicName = (topicId: string | null) => {
+    if (!topicId) return "-";
+    const topic = topics?.find(t => t.id === topicId);
+    return topic?.name || "-";
   };
 
   return (
@@ -179,16 +215,19 @@ const AdminPatterns = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phase">Phase *</Label>
-                  <Input
-                    id="phase"
-                    name="phase"
-                    type="number"
-                    min={1}
-                    max={6}
-                    defaultValue={editingPattern?.phase || 1}
-                    required
-                  />
+                  <Label htmlFor="topic">Topic *</Label>
+                  <Select value={selectedTopicId} onValueChange={setSelectedTopicId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select topic" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {topics?.map((topic) => (
+                        <SelectItem key={topic.id} value={topic.id}>
+                          {topic.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               
@@ -205,6 +244,17 @@ const AdminPatterns = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
+                  <Label htmlFor="phase">Phase</Label>
+                  <Input
+                    id="phase"
+                    name="phase"
+                    type="number"
+                    min={1}
+                    max={6}
+                    defaultValue={editingPattern?.phase || 1}
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="display_order">Display Order</Label>
                   <Input
                     id="display_order"
@@ -213,6 +263,9 @@ const AdminPatterns = () => {
                     defaultValue={editingPattern?.display_order || 0}
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="icon">Icon (Lucide name)</Label>
                   <Input
@@ -222,9 +275,6 @@ const AdminPatterns = () => {
                     placeholder="target"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="color">Color (hex)</Label>
                   <Input
@@ -234,14 +284,15 @@ const AdminPatterns = () => {
                     placeholder="#00FFFF"
                   />
                 </div>
-                <div className="flex items-center gap-3 pt-6">
-                  <Switch
-                    id="is_free"
-                    name="is_free"
-                    defaultChecked={editingPattern?.is_free || false}
-                  />
-                  <Label htmlFor="is_free">Free Pattern</Label>
-                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Switch
+                  id="is_free"
+                  name="is_free"
+                  defaultChecked={editingPattern?.is_free || false}
+                />
+                <Label htmlFor="is_free">Free Pattern</Label>
               </div>
 
               <div className="flex justify-end gap-3 pt-4">
@@ -276,10 +327,10 @@ const AdminPatterns = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
+                <TableHead>Topic</TableHead>
                 <TableHead>Phase</TableHead>
                 <TableHead>Questions</TableHead>
                 <TableHead>Free</TableHead>
-                <TableHead>Order</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -287,6 +338,11 @@ const AdminPatterns = () => {
               {patterns?.map((pattern) => (
                 <TableRow key={pattern.id}>
                   <TableCell className="font-medium">{pattern.name}</TableCell>
+                  <TableCell>
+                    <span className="px-2 py-1 rounded-full bg-primary/20 text-primary text-xs">
+                      {getTopicName(pattern.topic_id)}
+                    </span>
+                  </TableCell>
                   <TableCell>
                     <span className="px-2 py-1 rounded-full bg-secondary/20 text-secondary text-xs">
                       Phase {pattern.phase}
@@ -300,7 +356,6 @@ const AdminPatterns = () => {
                       <span className="px-2 py-1 rounded-full bg-muted text-muted-foreground text-xs">No</span>
                     )}
                   </TableCell>
-                  <TableCell>{pattern.display_order}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button

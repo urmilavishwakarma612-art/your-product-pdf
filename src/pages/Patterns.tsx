@@ -42,10 +42,19 @@ interface Pattern {
   slug: string;
   description: string | null;
   phase: number;
+  topic_id: string | null;
   icon: string | null;
   color: string | null;
   is_free: boolean;
   total_questions: number;
+  display_order: number;
+}
+
+interface Topic {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
   display_order: number;
 }
 
@@ -71,50 +80,6 @@ interface Bookmark {
   question_id: string;
 }
 
-// Topic structure for grouping patterns
-const TOPICS = [
-  { 
-    id: "array", 
-    name: "Array", 
-    description: "Fundamental collection of elements stored at contiguous memory locations." 
-  },
-  { 
-    id: "strings", 
-    name: "Strings", 
-    description: "Sequence of characters and common string manipulation patterns." 
-  },
-  { 
-    id: "binary-search", 
-    name: "Binary Search", 
-    description: "Efficient search algorithm that divides the search interval in half." 
-  },
-  { 
-    id: "linked-list", 
-    name: "Linked List", 
-    description: "Linear data structure with elements connected via pointers." 
-  },
-  { 
-    id: "trees", 
-    name: "Trees", 
-    description: "Hierarchical data structures with root and child nodes." 
-  },
-  { 
-    id: "graphs", 
-    name: "Graphs", 
-    description: "Non-linear data structures with vertices and edges." 
-  },
-  { 
-    id: "dynamic-programming", 
-    name: "Dynamic Programming", 
-    description: "Optimization technique using memoization and tabulation." 
-  },
-  { 
-    id: "backtracking", 
-    name: "Backtracking", 
-    description: "Algorithmic technique for finding all solutions by exploring possibilities." 
-  },
-];
-
 const Patterns = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -126,13 +91,25 @@ const Patterns = () => {
   const [bookmarkFilter, setBookmarkFilter] = useState(false);
   const [selectedQuestionForMentor, setSelectedQuestionForMentor] = useState<Question | null>(null);
 
+  const { data: topics } = useQuery({
+    queryKey: ["topics"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("topics")
+        .select("*")
+        .order("display_order", { ascending: true });
+      
+      if (error) throw error;
+      return data as Topic[];
+    },
+  });
+
   const { data: patterns, isLoading: patternsLoading } = useQuery({
     queryKey: ["patterns"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("patterns")
         .select("*")
-        .order("phase", { ascending: true })
         .order("display_order", { ascending: true });
       
       if (error) throw error;
@@ -337,13 +314,13 @@ const Patterns = () => {
     },
   };
 
-  // Group patterns by phase (treating phase as topic for now)
+  // Group patterns by topic_id
   const groupedPatterns = patterns?.reduce((acc, pattern) => {
-    const phase = pattern.phase;
-    if (!acc[phase]) acc[phase] = [];
-    acc[phase].push(pattern);
+    const topicId = pattern.topic_id || "uncategorized";
+    if (!acc[topicId]) acc[topicId] = [];
+    acc[topicId].push(pattern);
     return acc;
-  }, {} as Record<number, Pattern[]>) || {};
+  }, {} as Record<string, Pattern[]>) || {};
 
   // Get all unique companies from questions
   const allCompanies = [...new Set(questions?.flatMap(q => q.companies || []) || [])].sort();
@@ -360,9 +337,7 @@ const Patterns = () => {
   // Filter patterns based on topic filter
   const filterPattern = (pattern: Pattern) => {
     if (topicFilter.size === 0) return true;
-    const topicIndex = pattern.phase - 1;
-    const topic = TOPICS[topicIndex];
-    return topic && topicFilter.has(topic.id);
+    return pattern.topic_id && topicFilter.has(pattern.topic_id);
   };
 
   const clearFilters = () => {
@@ -477,7 +452,7 @@ const Patterns = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              {TOPICS.map((topic) => (
+              {topics?.map((topic) => (
                 <DropdownMenuCheckboxItem
                   key={topic.id}
                   checked={topicFilter.has(topic.id)}
@@ -548,11 +523,10 @@ const Patterns = () => {
 
         {/* Topics */}
         <div className="space-y-12">
-          {Object.entries(groupedPatterns).map(([phase, phasePatterns]) => {
-            const topicIndex = Number(phase) - 1;
-            const topic = TOPICS[topicIndex] || { 
-              id: `phase-${phase}`,
-              name: `Phase ${phase}`, 
+          {Object.entries(groupedPatterns).map(([topicId, topicPatterns]) => {
+            const topic = topics?.find(t => t.id === topicId) || { 
+              id: topicId,
+              name: topicId === "uncategorized" ? "Uncategorized" : "Unknown Topic", 
               description: "Collection of patterns and techniques." 
             };
 
@@ -562,20 +536,20 @@ const Patterns = () => {
             }
 
             // Filter patterns that have matching questions
-            const filteredPhasePatterns = phasePatterns.filter(pattern => {
+            const filteredTopicPatterns = topicPatterns.filter(pattern => {
               const patternQuestions = getPatternQuestions(pattern.id);
               return patternQuestions.some(filterQuestion);
             });
 
             // Skip if no patterns match after filtering (only when filters are active)
-            if (hasActiveFilters && filteredPhasePatterns.length === 0) {
+            if (hasActiveFilters && filteredTopicPatterns.length === 0) {
               return null;
             }
 
-            const patternsToShow = hasActiveFilters ? filteredPhasePatterns : phasePatterns;
+            const patternsToShow = hasActiveFilters ? filteredTopicPatterns : topicPatterns;
 
             return (
-              <section key={phase}>
+              <section key={topicId}>
                 {/* Topic Header */}
                 <div className="mb-4">
                   <h2 className="text-xl font-bold text-foreground mb-1">{topic.name}</h2>

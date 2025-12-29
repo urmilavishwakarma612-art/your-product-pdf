@@ -12,6 +12,7 @@ import Question from "./pages/Question";
 import UserProfile from "./pages/UserProfile";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminTopics from "./pages/admin/AdminTopics";
 import AdminPatterns from "./pages/admin/AdminPatterns";
 import AdminQuestions from "./pages/admin/AdminQuestions";
 import AdminCompanies from "./pages/admin/AdminCompanies";
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/profile/:username" element={<UserProfile />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
+              <Route path="topics" element={<AdminTopics />} />
               <Route path="patterns" element={<AdminPatterns />} />
               <Route path="questions" element={<AdminQuestions />} />
               <Route path="companies" element={<AdminCompanies />} />
