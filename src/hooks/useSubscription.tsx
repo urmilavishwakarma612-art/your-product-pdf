@@ -16,6 +16,7 @@ interface SubscriptionContextType {
   isLoading: boolean;
   canAccessPattern: (pattern: Pattern | null) => boolean;
   canAccessPhase: (phase: number) => boolean;
+  refetch: () => void;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -23,7 +24,7 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
 
-  const { data: profile, isLoading } = useQuery({
+  const { data: profile, isLoading, refetch } = useQuery({
     queryKey: ["subscription-profile", user?.id],
     queryFn: async () => {
       if (!user) return null;
@@ -72,7 +73,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         isPremium, 
         isLoading,
         canAccessPattern,
-        canAccessPhase
+        canAccessPhase,
+        refetch,
       }}
     >
       {children}
