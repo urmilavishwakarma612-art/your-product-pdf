@@ -14,9 +14,10 @@ const footerLinks = {
     { label: "Tutorials", href: "#" },
   ],
   legal: [
-    { label: "Privacy", href: "#" },
-    { label: "Terms", href: "#" },
-    { label: "Refund Policy", href: "#" },
+    { label: "Privacy", href: "/privacy" },
+    { label: "Terms", href: "/terms" },
+    { label: "Refund Policy", href: "/refund" },
+    { label: "Shipping & Delivery", href: "/shipping" },
   ],
 };
 
@@ -149,12 +150,12 @@ export function Footer() {
             <ul className="space-y-2 sm:space-y-3">
               {footerLinks.legal.map((link) => (
                 <li key={link.label}>
-                  <a
-                    href={link.href}
+                  <Link
+                    to={link.href}
                     className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors inline-block hover:translate-x-1 duration-200"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
