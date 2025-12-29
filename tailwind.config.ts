@@ -135,9 +135,9 @@ export default {
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-primary": "linear-gradient(135deg, hsl(175 60% 40%) 0%, hsl(270 50% 45%) 100%)",
-        "gradient-accent": "linear-gradient(135deg, hsl(38 55% 45%) 0%, hsl(270 45% 40%) 100%)",
-        "gradient-premium": "linear-gradient(135deg, hsl(175 60% 40%) 0%, hsl(245 30% 35%) 50%, hsl(270 50% 45%) 100%)",
+        "gradient-primary": "linear-gradient(135deg, hsl(345 90% 50%) 0%, hsl(280 45% 45%) 100%)",
+        "gradient-accent": "linear-gradient(135deg, hsl(38 55% 45%) 0%, hsl(320 60% 55%) 100%)",
+        "gradient-premium": "linear-gradient(135deg, hsl(345 90% 50%) 0%, hsl(320 60% 55%) 50%, hsl(280 45% 45%) 100%)",
       },
     },
   },
