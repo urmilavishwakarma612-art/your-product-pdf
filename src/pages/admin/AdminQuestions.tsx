@@ -46,6 +46,7 @@ interface Question {
   optimal_solution: string | null;
   display_order: number;
   xp_reward: number;
+  companies: string[];
 }
 
 interface Pattern {
@@ -166,6 +167,9 @@ const AdminQuestions = () => {
     
     const hintsText = formData.get("hints") as string;
     const hints = hintsText ? hintsText.split("\n").filter(h => h.trim()) : [];
+    
+    const companiesText = formData.get("companies") as string;
+    const companies = companiesText ? companiesText.split(",").map(c => c.trim()).filter(c => c) : [];
 
     const question = {
       pattern_id: formPatternId,
@@ -181,6 +185,7 @@ const AdminQuestions = () => {
       optimal_solution: formData.get("optimal_solution") as string || null,
       display_order: parseInt(formData.get("display_order") as string) || 0,
       xp_reward: parseInt(formData.get("xp_reward") as string) || 10,
+      companies: companies,
     };
 
     if (editingQuestion) {
@@ -352,6 +357,16 @@ const AdminQuestions = () => {
                       placeholder="https://..."
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="companies">Companies (comma-separated)</Label>
+                  <Input
+                    id="companies"
+                    name="companies"
+                    defaultValue={Array.isArray(editingQuestion?.companies) ? editingQuestion.companies.join(", ") : ""}
+                    placeholder="Amazon, Google, Meta, Microsoft..."
+                  />
                 </div>
 
                 <div className="space-y-2">
