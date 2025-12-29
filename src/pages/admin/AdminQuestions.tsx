@@ -226,12 +226,12 @@ const AdminQuestions = () => {
         </div>
         
         <div className="flex items-center gap-4">
-          <Select value={selectedPattern} onValueChange={setSelectedPattern}>
+          <Select value={selectedPattern || "all"} onValueChange={(value) => setSelectedPattern(value === "all" ? "" : value)}>
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="All Patterns" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Patterns</SelectItem>
+              <SelectItem value="all">All Patterns</SelectItem>
               {patterns?.map((pattern) => (
                 <SelectItem key={pattern.id} value={pattern.id}>
                   Phase {pattern.phase}: {pattern.name}
