@@ -15,7 +15,8 @@ import {
   Filter,
   X,
   Bookmark,
-  BookmarkCheck
+  BookmarkCheck,
+  Bot
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
@@ -748,6 +749,13 @@ const Patterns = () => {
                                             <Code2 className="w-5 h-5 text-emerald-500" />
                                           </Link>
                                           <button
+                                            onClick={() => setSelectedQuestionForMentor(question)}
+                                            className="p-2 rounded-lg hover:bg-muted transition-colors"
+                                            title="AI Mentor"
+                                          >
+                                            <Bot className="w-5 h-5 text-primary" />
+                                          </button>
+                                          <button
                                             onClick={() => handleBookmarkToggle(question.id, !!isQuestionBookmarked(question.id))}
                                             className="p-2 rounded-lg hover:bg-muted transition-colors"
                                             title={isQuestionBookmarked(question.id) ? "Remove Bookmark" : "Bookmark"}
@@ -788,6 +796,8 @@ const Patterns = () => {
       <AIMentor 
         questionTitle={selectedQuestionForMentor?.title || "General DSA Question"}
         questionDescription={selectedQuestionForMentor?.title}
+        isOpen={!!selectedQuestionForMentor}
+        onClose={() => setSelectedQuestionForMentor(null)}
       />
     </div>
   );
