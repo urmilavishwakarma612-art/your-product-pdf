@@ -422,6 +422,69 @@
     @apply absolute inset-0 bg-background/90 backdrop-blur-sm flex items-center justify-center rounded-xl;
   }
 
+  /* Pattern locked state */
+  .pattern-locked {
+    @apply relative opacity-75;
+  }
+
+  .pattern-locked::after {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent rounded-lg pointer-events-none;
+  }
+
+  .pattern-locked:hover {
+    @apply opacity-90;
+  }
+
+  /* Question row locked */
+  .question-locked {
+    @apply opacity-50 pointer-events-none select-none;
+  }
+
+  .question-locked .question-actions {
+    @apply invisible;
+  }
+
+  /* Pro badge styling */
+  .pro-badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold;
+    background: linear-gradient(135deg, hsla(345, 90%, 50%, 0.15) 0%, hsla(280, 45%, 45%, 0.15) 100%);
+    color: hsl(345 90% 60%);
+    border: 1px solid hsla(345, 90%, 50%, 0.3);
+  }
+
+  .free-badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold;
+    background: hsla(155, 45%, 40%, 0.15);
+    color: hsl(155 50% 50%);
+    border: 1px solid hsla(155, 45%, 40%, 0.3);
+  }
+
+  /* Locked content blur */
+  .locked-blur {
+    @apply relative overflow-hidden;
+  }
+
+  .locked-blur::before {
+    content: '';
+    @apply absolute inset-0 backdrop-blur-md bg-background/60 z-10;
+  }
+
+  /* Upgrade CTA glow */
+  .upgrade-cta {
+    @apply relative;
+    animation: upgrade-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes upgrade-pulse {
+    0%, 100% {
+      box-shadow: 0 0 20px hsla(345, 90%, 50%, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 35px hsla(345, 90%, 50%, 0.5);
+    }
+  }
+
   /* Code Block */
   .code-block {
     @apply bg-muted/50 border border-border rounded-lg p-4 font-mono text-sm overflow-x-auto;
