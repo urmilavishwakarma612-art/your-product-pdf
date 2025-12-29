@@ -7,6 +7,12 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminPatterns from "./pages/admin/AdminPatterns";
+import AdminQuestions from "./pages/admin/AdminQuestions";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminBadges from "./pages/admin/AdminBadges";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +28,13 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="patterns" element={<AdminPatterns />} />
+              <Route path="questions" element={<AdminQuestions />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="badges" element={<AdminBadges />} />
+            </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
