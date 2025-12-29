@@ -6,7 +6,8 @@ import {
   Trophy,
   ArrowLeft,
   Building2,
-  FolderTree
+  FolderTree,
+  MessageSquareQuote
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, Link } from "react-router-dom";
@@ -30,6 +31,7 @@ const menuItems = [
   { title: "Companies", url: "/admin/companies", icon: Building2 },
   { title: "Users", url: "/admin/users", icon: Users },
   { title: "Badges", url: "/admin/badges", icon: Trophy },
+  { title: "Testimonials", url: "/admin/testimonials", icon: MessageSquareQuote },
 ];
 
 export function AdminSidebar() {

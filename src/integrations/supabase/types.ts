@@ -281,6 +281,51 @@ export type Database = {
           },
         ]
       }
+      testimonials: {
+        Row: {
+          avatar_url: string | null
+          company: string | null
+          company_logo_url: string | null
+          created_at: string
+          display_order: number
+          id: string
+          is_visible: boolean
+          linkedin_url: string | null
+          name: string
+          review: string
+          role: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          company?: string | null
+          company_logo_url?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_visible?: boolean
+          linkedin_url?: string | null
+          name: string
+          review: string
+          role?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          company?: string | null
+          company_logo_url?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_visible?: boolean
+          linkedin_url?: string | null
+          name?: string
+          review?: string
+          role?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       topics: {
         Row: {
           color: string | null
