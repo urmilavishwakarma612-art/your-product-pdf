@@ -139,6 +139,7 @@ export type Database = {
           approach: string | null
           article_link: string | null
           brute_force: string | null
+          companies: string[] | null
           created_at: string
           description: string | null
           difficulty: string
@@ -157,6 +158,7 @@ export type Database = {
           approach?: string | null
           article_link?: string | null
           brute_force?: string | null
+          companies?: string[] | null
           created_at?: string
           description?: string | null
           difficulty: string
@@ -175,6 +177,7 @@ export type Database = {
           approach?: string | null
           article_link?: string | null
           brute_force?: string | null
+          companies?: string[] | null
           created_at?: string
           description?: string | null
           difficulty?: string

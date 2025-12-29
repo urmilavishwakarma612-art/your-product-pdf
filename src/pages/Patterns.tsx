@@ -12,7 +12,8 @@ import {
   FileText,
   CheckCircle2,
   Search,
-  Filter
+  Filter,
+  X
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,6 +22,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 interface Pattern {
   id: string;
@@ -45,6 +53,7 @@ interface Question {
   xp_reward: number;
   display_order: number;
   pattern_id: string;
+  companies: string[] | null;
 }
 
 interface UserProgress {
@@ -101,6 +110,9 @@ const Patterns = () => {
   const queryClient = useQueryClient();
   const [expandedPatterns, setExpandedPatterns] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
+  const [difficultyFilter, setDifficultyFilter] = useState<Set<string>>(new Set());
+  const [topicFilter, setTopicFilter] = useState<Set<string>>(new Set());
+  const [companyFilter, setCompanyFilter] = useState<Set<string>>(new Set());
 
   const { data: patterns, isLoading: patternsLoading } = useQuery({
     queryKey: ["patterns"],
@@ -245,10 +257,33 @@ const Patterns = () => {
     return acc;
   }, {} as Record<number, Pattern[]>) || {};
 
-  // Filter questions based on search
-  const filteredQuestions = searchQuery 
-    ? questions?.filter(q => q.title.toLowerCase().includes(searchQuery.toLowerCase()))
-    : questions;
+  // Get all unique companies from questions
+  const allCompanies = [...new Set(questions?.flatMap(q => q.companies || []) || [])].sort();
+
+  // Filter questions based on search and filters
+  const filterQuestion = (question: Question) => {
+    const matchesSearch = !searchQuery || question.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesDifficulty = difficultyFilter.size === 0 || difficultyFilter.has(question.difficulty);
+    const matchesCompany = companyFilter.size === 0 || (question.companies || []).some(c => companyFilter.has(c));
+    return matchesSearch && matchesDifficulty && matchesCompany;
+  };
+
+  // Filter patterns based on topic filter
+  const filterPattern = (pattern: Pattern) => {
+    if (topicFilter.size === 0) return true;
+    const topicIndex = pattern.phase - 1;
+    const topic = TOPICS[topicIndex];
+    return topic && topicFilter.has(topic.id);
+  };
+
+  const clearFilters = () => {
+    setDifficultyFilter(new Set());
+    setTopicFilter(new Set());
+    setCompanyFilter(new Set());
+    setSearchQuery("");
+  };
+
+  const hasActiveFilters = difficultyFilter.size > 0 || topicFilter.size > 0 || companyFilter.size > 0 || searchQuery;
 
   if (patternsLoading) {
     return (
@@ -272,8 +307,8 @@ const Patterns = () => {
         </div>
 
         {/* Search & Filters */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="relative flex-1 max-w-md">
+        <div className="flex flex-wrap items-center gap-3 mb-8">
+          <div className="relative flex-1 min-w-[200px] max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search problems..."
@@ -282,19 +317,134 @@ const Patterns = () => {
               className="pl-10 bg-card border-border"
             />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted/50 transition-colors">
-            <Filter className="w-4 h-4" />
-            <span className="text-sm">Difficulty</span>
-          </button>
+          
+          {/* Difficulty Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                Difficulty
+                {difficultyFilter.size > 0 && (
+                  <Badge variant="secondary" className="ml-1 h-5 px-1.5">{difficultyFilter.size}</Badge>
+                )}
+                <ChevronDown className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {["easy", "medium", "hard"].map((diff) => (
+                <DropdownMenuCheckboxItem
+                  key={diff}
+                  checked={difficultyFilter.has(diff)}
+                  onCheckedChange={(checked) => {
+                    const newSet = new Set(difficultyFilter);
+                    if (checked) newSet.add(diff);
+                    else newSet.delete(diff);
+                    setDifficultyFilter(newSet);
+                  }}
+                >
+                  <span className="capitalize">{diff}</span>
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Topic Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                Topic
+                {topicFilter.size > 0 && (
+                  <Badge variant="secondary" className="ml-1 h-5 px-1.5">{topicFilter.size}</Badge>
+                )}
+                <ChevronDown className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {TOPICS.map((topic) => (
+                <DropdownMenuCheckboxItem
+                  key={topic.id}
+                  checked={topicFilter.has(topic.id)}
+                  onCheckedChange={(checked) => {
+                    const newSet = new Set(topicFilter);
+                    if (checked) newSet.add(topic.id);
+                    else newSet.delete(topic.id);
+                    setTopicFilter(newSet);
+                  }}
+                >
+                  {topic.name}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Company Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                Company
+                {companyFilter.size > 0 && (
+                  <Badge variant="secondary" className="ml-1 h-5 px-1.5">{companyFilter.size}</Badge>
+                )}
+                <ChevronDown className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="max-h-60 overflow-y-auto">
+              {allCompanies.length === 0 ? (
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">No companies yet</div>
+              ) : (
+                allCompanies.map((company) => (
+                  <DropdownMenuCheckboxItem
+                    key={company}
+                    checked={companyFilter.has(company)}
+                    onCheckedChange={(checked) => {
+                      const newSet = new Set(companyFilter);
+                      if (checked) newSet.add(company);
+                      else newSet.delete(company);
+                      setCompanyFilter(newSet);
+                    }}
+                  >
+                    {company}
+                  </DropdownMenuCheckboxItem>
+                ))
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Clear Filters */}
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground">
+              <X className="w-4 h-4" />
+              Clear
+            </Button>
+          )}
         </div>
 
         {/* Topics */}
         <div className="space-y-12">
           {Object.entries(groupedPatterns).map(([phase, phasePatterns]) => {
-            const topic = TOPICS[Number(phase) - 1] || { 
+            const topicIndex = Number(phase) - 1;
+            const topic = TOPICS[topicIndex] || { 
+              id: `phase-${phase}`,
               name: `Phase ${phase}`, 
               description: "Collection of patterns and techniques." 
             };
+
+            // Apply topic filter
+            if (topicFilter.size > 0 && !topicFilter.has(topic.id)) {
+              return null;
+            }
+
+            // Filter patterns that have matching questions
+            const filteredPhasePatterns = phasePatterns.filter(pattern => {
+              const patternQuestions = getPatternQuestions(pattern.id);
+              return patternQuestions.some(filterQuestion);
+            });
+
+            // Skip if no patterns match after filtering (only when filters are active)
+            if (hasActiveFilters && filteredPhasePatterns.length === 0) {
+              return null;
+            }
+
+            const patternsToShow = hasActiveFilters ? filteredPhasePatterns : phasePatterns;
 
             return (
               <section key={phase}>
@@ -306,8 +456,11 @@ const Patterns = () => {
 
                 {/* Patterns List */}
                 <div className="space-y-2">
-                  {phasePatterns.map((pattern) => {
-                    const patternQuestions = getPatternQuestions(pattern.id);
+                  {patternsToShow.map((pattern) => {
+                    const allPatternQuestions = getPatternQuestions(pattern.id);
+                    const patternQuestions = hasActiveFilters 
+                      ? allPatternQuestions.filter(filterQuestion)
+                      : allPatternQuestions;
                     const { solved, total } = getPatternProgress(pattern.id);
                     const isExpanded = expandedPatterns.has(pattern.id);
                     const progressPercent = total > 0 ? (solved / total) * 100 : 0;
@@ -329,6 +482,11 @@ const Patterns = () => {
                               }`}
                             />
                             <span className="font-medium text-foreground">{pattern.name}</span>
+                            {hasActiveFilters && (
+                              <Badge variant="secondary" className="text-xs">
+                                {patternQuestions.length} match
+                              </Badge>
+                            )}
                           </div>
                           <div className="flex items-center gap-3">
                             <span className="text-sm text-muted-foreground">{solved}/{total}</span>
@@ -354,7 +512,7 @@ const Patterns = () => {
                               <div className="border-t border-border">
                                 {patternQuestions.length === 0 ? (
                                   <div className="px-4 py-6 text-center text-muted-foreground text-sm">
-                                    No questions added yet.
+                                    {hasActiveFilters ? "No matching questions." : "No questions added yet."}
                                   </div>
                                 ) : (
                                   patternQuestions.map((question) => {
@@ -382,12 +540,33 @@ const Patterns = () => {
                                             >
                                               {question.title}
                                             </Link>
-                                            {/* Company Tags Placeholder */}
-                                            <div className="flex items-center gap-1.5 mt-1">
-                                              <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500">Amazon</span>
-                                              <span className="text-xs px-1.5 py-0.5 rounded bg-green-500/10 text-green-500">Google</span>
-                                              <span className="text-xs px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-500">Meta</span>
-                                            </div>
+                                            {/* Company Tags */}
+                                            {question.companies && question.companies.length > 0 && (
+                                              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                                {question.companies.slice(0, 3).map((company, idx) => {
+                                                  const colors = [
+                                                    "bg-blue-500/10 text-blue-500",
+                                                    "bg-green-500/10 text-green-500",
+                                                    "bg-purple-500/10 text-purple-500",
+                                                    "bg-orange-500/10 text-orange-500",
+                                                    "bg-pink-500/10 text-pink-500",
+                                                  ];
+                                                  return (
+                                                    <span 
+                                                      key={company} 
+                                                      className={`text-xs px-1.5 py-0.5 rounded ${colors[idx % colors.length]}`}
+                                                    >
+                                                      {company}
+                                                    </span>
+                                                  );
+                                                })}
+                                                {question.companies.length > 3 && (
+                                                  <span className="text-xs text-muted-foreground">
+                                                    +{question.companies.length - 3}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            )}
                                           </div>
                                         </div>
 
