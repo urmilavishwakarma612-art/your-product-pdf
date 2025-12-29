@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Linkedin, ChevronLeft, ChevronRight, Quote } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
+import Autoplay from "embla-carousel-autoplay";
 import { Button } from "@/components/ui/button";
 
 interface Testimonial {
@@ -97,11 +98,14 @@ const TestimonialCard = ({ testimonial }: { testimonial: Testimonial }) => {
 };
 
 export const TestimonialsSection = () => {
-  const [emblaRef, emblaApi] = useEmblaCarousel({
-    align: "start",
-    loop: true,
-    slidesToScroll: 1,
-  });
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    {
+      align: "start",
+      loop: true,
+      slidesToScroll: 1,
+    },
+    [Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })]
+  );
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(false);
 
