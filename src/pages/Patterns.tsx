@@ -423,20 +423,26 @@ const Patterns = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              {["easy", "medium", "hard"].map((diff) => (
-                <DropdownMenuCheckboxItem
-                  key={diff}
-                  checked={difficultyFilter.has(diff)}
-                  onCheckedChange={(checked) => {
-                    const newSet = new Set(difficultyFilter);
-                    if (checked) newSet.add(diff);
-                    else newSet.delete(diff);
-                    setDifficultyFilter(newSet);
-                  }}
-                >
-                  <span className="capitalize">{diff}</span>
-                </DropdownMenuCheckboxItem>
-              ))}
+              {["easy", "medium", "hard"].map((diff) => {
+                const count = questions?.filter(q => q.difficulty === diff).length || 0;
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={diff}
+                    checked={difficultyFilter.has(diff)}
+                    onCheckedChange={(checked) => {
+                      const newSet = new Set(difficultyFilter);
+                      if (checked) newSet.add(diff);
+                      else newSet.delete(diff);
+                      setDifficultyFilter(newSet);
+                    }}
+                  >
+                    <span className="flex items-center justify-between w-full">
+                      <span className="capitalize">{diff}</span>
+                      <span className="text-muted-foreground text-xs ml-2">({count})</span>
+                    </span>
+                  </DropdownMenuCheckboxItem>
+                );
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -452,20 +458,27 @@ const Patterns = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              {topics?.map((topic) => (
-                <DropdownMenuCheckboxItem
-                  key={topic.id}
-                  checked={topicFilter.has(topic.id)}
-                  onCheckedChange={(checked) => {
-                    const newSet = new Set(topicFilter);
-                    if (checked) newSet.add(topic.id);
-                    else newSet.delete(topic.id);
-                    setTopicFilter(newSet);
-                  }}
-                >
-                  {topic.name}
-                </DropdownMenuCheckboxItem>
-              ))}
+              {topics?.map((topic) => {
+                const topicPatternIds = patterns?.filter(p => p.topic_id === topic.id).map(p => p.id) || [];
+                const count = questions?.filter(q => topicPatternIds.includes(q.pattern_id)).length || 0;
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={topic.id}
+                    checked={topicFilter.has(topic.id)}
+                    onCheckedChange={(checked) => {
+                      const newSet = new Set(topicFilter);
+                      if (checked) newSet.add(topic.id);
+                      else newSet.delete(topic.id);
+                      setTopicFilter(newSet);
+                    }}
+                  >
+                    <span className="flex items-center justify-between w-full">
+                      <span>{topic.name}</span>
+                      <span className="text-muted-foreground text-xs ml-2">({count})</span>
+                    </span>
+                  </DropdownMenuCheckboxItem>
+                );
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -484,20 +497,26 @@ const Patterns = () => {
               {allCompanies.length === 0 ? (
                 <div className="px-2 py-1.5 text-sm text-muted-foreground">No companies yet</div>
               ) : (
-                allCompanies.map((company) => (
-                  <DropdownMenuCheckboxItem
-                    key={company}
-                    checked={companyFilter.has(company)}
-                    onCheckedChange={(checked) => {
-                      const newSet = new Set(companyFilter);
-                      if (checked) newSet.add(company);
-                      else newSet.delete(company);
-                      setCompanyFilter(newSet);
-                    }}
-                  >
-                    {company}
-                  </DropdownMenuCheckboxItem>
-                ))
+                allCompanies.map((company) => {
+                  const count = questions?.filter(q => (q.companies || []).includes(company)).length || 0;
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={company}
+                      checked={companyFilter.has(company)}
+                      onCheckedChange={(checked) => {
+                        const newSet = new Set(companyFilter);
+                        if (checked) newSet.add(company);
+                        else newSet.delete(company);
+                        setCompanyFilter(newSet);
+                      }}
+                    >
+                      <span className="flex items-center justify-between w-full">
+                        <span>{company}</span>
+                        <span className="text-muted-foreground text-xs ml-2">({count})</span>
+                      </span>
+                    </DropdownMenuCheckboxItem>
+                  );
+                })
               )}
             </DropdownMenuContent>
           </DropdownMenu>
