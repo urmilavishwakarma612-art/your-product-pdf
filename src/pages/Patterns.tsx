@@ -405,8 +405,9 @@ const Patterns = () => {
         </div>
 
         {/* Search & Filters */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6 sm:mb-8">
-          <div className="relative w-full sm:flex-1 sm:min-w-[200px] sm:max-w-md order-first">
+        <div className="flex flex-col gap-3 mb-6 sm:mb-8">
+          {/* Search Bar */}
+          <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search problems..."
@@ -415,176 +416,178 @@ const Patterns = () => {
               className="pl-10 bg-card border-border text-sm"
             />
           </div>
-          
-          {/* Difficulty Filter */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1 sm:gap-2 text-xs sm:text-sm h-9">
-                <span className="hidden xs:inline">Difficulty</span>
-                <span className="xs:hidden">Diff</span>
-                {difficultyFilter.size > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-4 sm:h-5 px-1 sm:px-1.5 text-[10px] sm:text-xs">{difficultyFilter.size}</Badge>
-                )}
-                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              {["easy", "medium", "hard"].map((diff) => {
-                const count = questions?.filter(q => q.difficulty === diff).length || 0;
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={diff}
-                    checked={difficultyFilter.has(diff)}
-                    onCheckedChange={(checked) => {
-                      const newSet = new Set(difficultyFilter);
-                      if (checked) newSet.add(diff);
-                      else newSet.delete(diff);
-                      setDifficultyFilter(newSet);
-                    }}
-                  >
-                    <span className="flex items-center justify-between w-full">
-                      <span className="capitalize">{diff}</span>
-                      <span className="text-muted-foreground text-xs ml-2">({count})</span>
-                    </span>
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
 
-          {/* Topic Filter */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1 sm:gap-2 text-xs sm:text-sm h-9">
-                Topic
-                {topicFilter.size > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-4 sm:h-5 px-1 sm:px-1.5 text-[10px] sm:text-xs">{topicFilter.size}</Badge>
-                )}
-                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              {topics?.map((topic) => {
-                const topicPatternIds = patterns?.filter(p => p.topic_id === topic.id).map(p => p.id) || [];
-                const count = questions?.filter(q => topicPatternIds.includes(q.pattern_id)).length || 0;
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={topic.id}
-                    checked={topicFilter.has(topic.id)}
-                    onCheckedChange={(checked) => {
-                      const newSet = new Set(topicFilter);
-                      if (checked) newSet.add(topic.id);
-                      else newSet.delete(topic.id);
-                      setTopicFilter(newSet);
-                    }}
-                  >
-                    <span className="flex items-center justify-between w-full">
-                      <span>{topic.name}</span>
-                      <span className="text-muted-foreground text-xs ml-2">({count})</span>
-                    </span>
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Company Filter */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1 sm:gap-2 text-xs sm:text-sm h-9">
-                <span className="hidden xs:inline">Company</span>
-                <span className="xs:hidden">Co.</span>
-                {companyFilter.size > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-4 sm:h-5 px-1 sm:px-1.5 text-[10px] sm:text-xs">{companyFilter.size}</Badge>
-                )}
-                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="max-h-60 overflow-y-auto">
-              {allCompanies.length === 0 ? (
-                <div className="px-2 py-1.5 text-sm text-muted-foreground">No companies yet</div>
-              ) : (
-                allCompanies.map((company) => {
-                  const count = questions?.filter(q => (q.companies || []).map(c => c.trim()).includes(company)).length || 0;
+          {/* Filter Row - Horizontal Scroll on Mobile */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {/* Difficulty Filter */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs sm:text-sm h-9 whitespace-nowrap shrink-0">
+                  <Filter className="w-3 h-3" />
+                  Difficulty
+                  {difficultyFilter.size > 0 && (
+                    <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{difficultyFilter.size}</Badge>
+                  )}
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="z-50 bg-popover">
+                {["easy", "medium", "hard"].map((diff) => {
+                  const count = questions?.filter(q => q.difficulty === diff).length || 0;
                   return (
                     <DropdownMenuCheckboxItem
-                      key={company}
-                      checked={companyFilter.has(company)}
+                      key={diff}
+                      checked={difficultyFilter.has(diff)}
                       onCheckedChange={(checked) => {
-                        const newSet = new Set(companyFilter);
-                        if (checked) newSet.add(company);
-                        else newSet.delete(company);
-                        setCompanyFilter(newSet);
+                        const newSet = new Set(difficultyFilter);
+                        if (checked) newSet.add(diff);
+                        else newSet.delete(diff);
+                        setDifficultyFilter(newSet);
                       }}
                     >
                       <span className="flex items-center justify-between w-full">
-                        <span>{company}</span>
+                        <span className="capitalize">{diff}</span>
                         <span className="text-muted-foreground text-xs ml-2">({count})</span>
                       </span>
                     </DropdownMenuCheckboxItem>
                   );
-                })
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-          {/* Status Filter */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1 sm:gap-2 text-xs sm:text-sm h-9">
-                Status
-                {statusFilter !== "all" && (
-                  <Badge variant="secondary" className="ml-1 h-4 sm:h-5 px-1 sm:px-1.5 text-[10px] sm:text-xs">1</Badge>
+            {/* Topic Filter */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs sm:text-sm h-9 whitespace-nowrap shrink-0">
+                  Topic
+                  {topicFilter.size > 0 && (
+                    <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{topicFilter.size}</Badge>
+                  )}
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="z-50 bg-popover">
+                {topics?.map((topic) => {
+                  const topicPatternIds = patterns?.filter(p => p.topic_id === topic.id).map(p => p.id) || [];
+                  const count = questions?.filter(q => topicPatternIds.includes(q.pattern_id)).length || 0;
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={topic.id}
+                      checked={topicFilter.has(topic.id)}
+                      onCheckedChange={(checked) => {
+                        const newSet = new Set(topicFilter);
+                        if (checked) newSet.add(topic.id);
+                        else newSet.delete(topic.id);
+                        setTopicFilter(newSet);
+                      }}
+                    >
+                      <span className="flex items-center justify-between w-full">
+                        <span>{topic.name}</span>
+                        <span className="text-muted-foreground text-xs ml-2">({count})</span>
+                      </span>
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Company Filter */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs sm:text-sm h-9 whitespace-nowrap shrink-0">
+                  Company
+                  {companyFilter.size > 0 && (
+                    <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{companyFilter.size}</Badge>
+                  )}
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="max-h-60 overflow-y-auto z-50 bg-popover">
+                {allCompanies.length === 0 ? (
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground">No companies yet</div>
+                ) : (
+                  allCompanies.map((company) => {
+                    const count = questions?.filter(q => (q.companies || []).map(c => c.trim()).includes(company)).length || 0;
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={company}
+                        checked={companyFilter.has(company)}
+                        onCheckedChange={(checked) => {
+                          const newSet = new Set(companyFilter);
+                          if (checked) newSet.add(company);
+                          else newSet.delete(company);
+                          setCompanyFilter(newSet);
+                        }}
+                      >
+                        <span className="flex items-center justify-between w-full">
+                          <span>{company}</span>
+                          <span className="text-muted-foreground text-xs ml-2">({count})</span>
+                        </span>
+                      </DropdownMenuCheckboxItem>
+                    );
+                  })
                 )}
-                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              {[
-                { value: "all", label: "All" },
-                { value: "solved", label: "Solved" },
-                { value: "unsolved", label: "Unsolved" }
-              ].map((status) => {
-                let count = 0;
-                if (status.value === "all") count = questions?.length || 0;
-                else if (status.value === "solved") count = totalSolved;
-                else count = totalQuestions - totalSolved;
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={status.value}
-                    checked={statusFilter === status.value}
-                    onCheckedChange={(checked) => {
-                      if (checked) setStatusFilter(status.value as "all" | "solved" | "unsolved");
-                    }}
-                  >
-                    <span className="flex items-center justify-between w-full">
-                      <span>{status.label}</span>
-                      <span className="text-muted-foreground text-xs ml-2">({count})</span>
-                    </span>
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-          {/* Bookmark Filter */}
-          <Button 
-            variant={bookmarkFilter ? "default" : "outline"} 
-            size="sm"
-            className="gap-1 sm:gap-2 text-xs sm:text-sm h-9"
-            onClick={() => setBookmarkFilter(!bookmarkFilter)}
-          >
-            <BookmarkCheck className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Bookmarked</span>
-          </Button>
+            {/* Status Filter */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs sm:text-sm h-9 whitespace-nowrap shrink-0">
+                  Status
+                  {statusFilter !== "all" && (
+                    <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">1</Badge>
+                  )}
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="z-50 bg-popover">
+                {[
+                  { value: "all", label: "All" },
+                  { value: "solved", label: "Solved" },
+                  { value: "unsolved", label: "Unsolved" }
+                ].map((status) => {
+                  let count = 0;
+                  if (status.value === "all") count = questions?.length || 0;
+                  else if (status.value === "solved") count = totalSolved;
+                  else count = totalQuestions - totalSolved;
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={status.value}
+                      checked={statusFilter === status.value}
+                      onCheckedChange={(checked) => {
+                        if (checked) setStatusFilter(status.value as "all" | "solved" | "unsolved");
+                      }}
+                    >
+                      <span className="flex items-center justify-between w-full">
+                        <span>{status.label}</span>
+                        <span className="text-muted-foreground text-xs ml-2">({count})</span>
+                      </span>
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-          {/* Clear Filters */}
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground h-9 text-xs sm:text-sm">
-              <X className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Clear</span>
+            {/* Bookmark Filter */}
+            <Button 
+              variant={bookmarkFilter ? "default" : "outline"} 
+              size="sm"
+              className="gap-1.5 text-xs sm:text-sm h-9 whitespace-nowrap shrink-0"
+              onClick={() => setBookmarkFilter(!bookmarkFilter)}
+            >
+              <BookmarkCheck className="w-3 h-3" />
+              Bookmarked
             </Button>
-          )}
+
+            {/* Clear Filters */}
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground h-9 text-xs whitespace-nowrap shrink-0">
+                <X className="w-3 h-3" />
+                Clear
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Topics */}
@@ -728,32 +731,32 @@ const Patterns = () => {
                                             
                                             {/* Company Tags - Circular pills */}
                                             {question.companies && question.companies.length > 0 && (
-                                              <div className="flex items-center gap-1 sm:gap-2 mt-1.5 flex-wrap">
+                                              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                                                 {question.companies.slice(0, 3).map((company) => {
                                                   const trimmedCompany = company.trim();
                                                   const logoUrl = companyLogoMap[trimmedCompany];
                                                   return (
                                                     <span 
                                                       key={trimmedCompany} 
-                                                      className="inline-flex items-center gap-1 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full border border-border bg-background text-muted-foreground"
+                                                      className="inline-flex items-center gap-1 text-[10px] sm:text-xs px-2 py-0.5 rounded-full border border-border bg-background text-muted-foreground"
                                                     >
                                                       {logoUrl ? (
                                                         <img 
                                                           src={logoUrl} 
                                                           alt="" 
-                                                          className="w-3 h-3 sm:w-4 sm:h-4 rounded-full object-contain" 
+                                                          className="w-3.5 h-3.5 rounded-full object-contain shrink-0" 
                                                         />
                                                       ) : (
-                                                        <span className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-muted flex items-center justify-center text-[8px] sm:text-[10px] font-medium">
+                                                        <span className="w-3.5 h-3.5 rounded-full bg-muted flex items-center justify-center text-[8px] font-medium shrink-0">
                                                           {trimmedCompany.charAt(0)}
                                                         </span>
                                                       )}
-                                                      <span className="hidden sm:inline">{trimmedCompany}</span>
+                                                      <span className="truncate max-w-[60px] sm:max-w-none">{trimmedCompany}</span>
                                                     </span>
                                                   );
                                                 })}
                                                 {question.companies.length > 3 && (
-                                                  <span className="text-[10px] sm:text-xs text-muted-foreground">
+                                                  <span className="text-[10px] sm:text-xs text-muted-foreground shrink-0">
                                                     +{question.companies.length - 3}
                                                   </span>
                                                 )}
