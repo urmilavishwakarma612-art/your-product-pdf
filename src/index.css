@@ -181,6 +181,102 @@
       0 8px 32px hsla(0, 0%, 0%, 0.6);
   }
 
+  /* Premium Colored Glass Cards */
+  .card-glass-emerald {
+    @apply rounded-xl border backdrop-blur-xl;
+    background: linear-gradient(135deg, hsla(160, 75%, 34%, 0.85) 0%, hsla(160, 75%, 28%, 0.75) 100%);
+    border-color: hsla(160, 75%, 50%, 0.3);
+    box-shadow: 
+      inset 0 1px 0 0 hsla(160, 80%, 70%, 0.15),
+      inset 0 -1px 0 0 hsla(160, 60%, 20%, 0.3),
+      0 8px 32px hsla(160, 75%, 20%, 0.4),
+      0 0 0 1px hsla(160, 75%, 40%, 0.1);
+  }
+
+  .card-glass-emerald:hover {
+    box-shadow: 
+      inset 0 1px 0 0 hsla(160, 80%, 70%, 0.2),
+      inset 0 -1px 0 0 hsla(160, 60%, 20%, 0.3),
+      0 16px 48px hsla(160, 75%, 20%, 0.5),
+      0 0 40px hsla(160, 75%, 40%, 0.15);
+  }
+
+  .card-glass-magenta {
+    @apply rounded-xl border backdrop-blur-xl;
+    background: linear-gradient(135deg, hsla(318, 80%, 34%, 0.85) 0%, hsla(318, 80%, 28%, 0.75) 100%);
+    border-color: hsla(318, 80%, 50%, 0.3);
+    box-shadow: 
+      inset 0 1px 0 0 hsla(318, 80%, 70%, 0.15),
+      inset 0 -1px 0 0 hsla(318, 60%, 20%, 0.3),
+      0 8px 32px hsla(318, 80%, 20%, 0.4),
+      0 0 0 1px hsla(318, 80%, 40%, 0.1);
+  }
+
+  .card-glass-magenta:hover {
+    box-shadow: 
+      inset 0 1px 0 0 hsla(318, 80%, 70%, 0.2),
+      inset 0 -1px 0 0 hsla(318, 60%, 20%, 0.3),
+      0 16px 48px hsla(318, 80%, 20%, 0.5),
+      0 0 40px hsla(318, 80%, 50%, 0.15);
+  }
+
+  .card-glass-crimson {
+    @apply rounded-xl border backdrop-blur-xl;
+    background: linear-gradient(135deg, hsla(355, 75%, 42%, 0.85) 0%, hsla(355, 75%, 35%, 0.75) 100%);
+    border-color: hsla(355, 75%, 50%, 0.3);
+    box-shadow: 
+      inset 0 1px 0 0 hsla(355, 80%, 70%, 0.15),
+      inset 0 -1px 0 0 hsla(355, 60%, 20%, 0.3),
+      0 8px 32px hsla(355, 75%, 20%, 0.4),
+      0 0 0 1px hsla(355, 75%, 40%, 0.1);
+  }
+
+  .card-glass-crimson:hover {
+    box-shadow: 
+      inset 0 1px 0 0 hsla(355, 80%, 70%, 0.2),
+      inset 0 -1px 0 0 hsla(355, 60%, 20%, 0.3),
+      0 16px 48px hsla(355, 75%, 20%, 0.5),
+      0 0 40px hsla(355, 75%, 50%, 0.15);
+  }
+
+  .card-glass-purple {
+    @apply rounded-xl border backdrop-blur-xl;
+    background: linear-gradient(135deg, hsla(290, 65%, 30%, 0.85) 0%, hsla(290, 65%, 24%, 0.75) 100%);
+    border-color: hsla(290, 65%, 45%, 0.3);
+    box-shadow: 
+      inset 0 1px 0 0 hsla(290, 70%, 65%, 0.15),
+      inset 0 -1px 0 0 hsla(290, 50%, 18%, 0.3),
+      0 8px 32px hsla(290, 65%, 18%, 0.4),
+      0 0 0 1px hsla(290, 65%, 35%, 0.1);
+  }
+
+  .card-glass-purple:hover {
+    box-shadow: 
+      inset 0 1px 0 0 hsla(290, 70%, 65%, 0.2),
+      inset 0 -1px 0 0 hsla(290, 50%, 18%, 0.3),
+      0 16px 48px hsla(290, 65%, 18%, 0.5),
+      0 0 40px hsla(290, 65%, 45%, 0.15);
+  }
+
+  .card-glass-teal {
+    @apply rounded-xl border backdrop-blur-xl;
+    background: linear-gradient(135deg, hsla(185, 75%, 32%, 0.85) 0%, hsla(185, 75%, 26%, 0.75) 100%);
+    border-color: hsla(185, 75%, 45%, 0.3);
+    box-shadow: 
+      inset 0 1px 0 0 hsla(185, 80%, 65%, 0.15),
+      inset 0 -1px 0 0 hsla(185, 60%, 18%, 0.3),
+      0 8px 32px hsla(185, 75%, 18%, 0.4),
+      0 0 0 1px hsla(185, 75%, 35%, 0.1);
+  }
+
+  .card-glass-teal:hover {
+    box-shadow: 
+      inset 0 1px 0 0 hsla(185, 80%, 65%, 0.2),
+      inset 0 -1px 0 0 hsla(185, 60%, 18%, 0.3),
+      0 16px 48px hsla(185, 75%, 18%, 0.5),
+      0 0 40px hsla(185, 75%, 45%, 0.15);
+  }
+
   /* Premium Button Styles */
   .btn-primary-glow {
     @apply relative overflow-hidden;
