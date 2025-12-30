@@ -38,7 +38,10 @@ export const UpgradeModal = ({ isOpen, onClose, triggerContext, initialPlan }: U
   }, [isOpen, initialPlan]);
 
   const handleUpgrade = async () => {
+    console.log('handleUpgrade called, user:', user?.id, 'selectedPlan:', selectedPlan);
+    
     if (!user) {
+      console.log('User not logged in, redirecting to auth');
       const next = `${window.location.pathname}${window.location.search}`;
       sessionStorage.setItem(
         'upgrade_pending',
@@ -49,11 +52,16 @@ export const UpgradeModal = ({ isOpen, onClose, triggerContext, initialPlan }: U
       return;
     }
 
+    console.log('User is logged in, initiating payment...');
     initiatePayment(
       selectedPlan,
       () => {
+        console.log('Payment successful, refetching subscription...');
         refetch();
         onClose();
+      },
+      (error) => {
+        console.error('Payment error:', error);
       }
     );
   };
