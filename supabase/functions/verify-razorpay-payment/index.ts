@@ -147,15 +147,33 @@ serve(async (req) => {
 
     console.log('Subscription activated for user:', user.id, 'Expires:', expiresAt.toISOString());
 
+    // Get user profile for email
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('username')
+      .eq('id', user.id)
+      .single();
+
     // Send confirmation email using the existing subscription-email function
     try {
-      await supabaseAdmin.functions.invoke('subscription-email', {
-        body: {
-          user_id: user.id,
-          email_type: 'subscription_granted'
-        }
+      const emailPayload = {
+        email: user.email,
+        username: profile?.username || user.email?.split('@')[0] || 'User',
+        type: 'granted' as const,
+        expiresAt: plan_type === 'lifetime' ? undefined : expiresAt.toISOString(),
+      };
+      
+      console.log('Sending confirmation email with payload:', emailPayload);
+      
+      const { data: emailResult, error: emailError } = await supabaseAdmin.functions.invoke('subscription-email', {
+        body: emailPayload
       });
-      console.log('Confirmation email sent to user:', user.id);
+      
+      if (emailError) {
+        console.error('Email function error:', emailError);
+      } else {
+        console.log('Confirmation email sent successfully:', emailResult);
+      }
     } catch (emailError) {
       console.error('Failed to send confirmation email:', emailError);
       // Don't fail the request if email fails
