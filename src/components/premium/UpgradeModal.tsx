@@ -26,7 +26,7 @@ const benefits = [
 
 export const UpgradeModal = ({ isOpen, onClose, triggerContext, initialPlan }: UpgradeModalProps) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { initiatePayment, isLoading } = useRazorpay();
   const { refetch } = useSubscription();
   const [selectedPlan, setSelectedPlan] = useState<PlanType>(initialPlan ?? 'lifetime');
@@ -38,7 +38,13 @@ export const UpgradeModal = ({ isOpen, onClose, triggerContext, initialPlan }: U
   }, [isOpen, initialPlan]);
 
   const handleUpgrade = async () => {
-    console.log('handleUpgrade called, user:', user?.id, 'selectedPlan:', selectedPlan);
+    console.log('handleUpgrade called, user:', user?.id, 'authLoading:', authLoading, 'selectedPlan:', selectedPlan);
+    
+    // Wait for auth to finish loading before making decisions
+    if (authLoading) {
+      console.log('Auth still loading, please wait...');
+      return;
+    }
     
     if (!user) {
       console.log('User not logged in, redirecting to auth');
@@ -208,12 +214,12 @@ export const UpgradeModal = ({ isOpen, onClose, triggerContext, initialPlan }: U
                     onClick={handleUpgrade}
                     className="w-full btn-primary-glow"
                     size="lg"
-                    disabled={isLoading}
+                    disabled={isLoading || authLoading}
                   >
-                    {isLoading ? (
+                    {isLoading || authLoading ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Processing...
+                        {authLoading ? 'Loading...' : 'Processing...'}
                       </>
                     ) : (
                       <>
@@ -226,7 +232,7 @@ export const UpgradeModal = ({ isOpen, onClose, triggerContext, initialPlan }: U
                     onClick={onClose}
                     variant="ghost"
                     className="w-full text-muted-foreground"
-                    disabled={isLoading}
+                    disabled={isLoading || authLoading}
                   >
                     Continue with Free Plan
                   </Button>
