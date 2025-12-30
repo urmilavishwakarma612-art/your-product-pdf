@@ -33,6 +33,7 @@ const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsConditions = lazy(() => import("./pages/TermsConditions"));
 const RefundPolicy = lazy(() => import("./pages/RefundPolicy"));
+const PaymentStatus = lazy(() => import("./pages/PaymentStatus"));
 
 const queryClient = new QueryClient();
 
@@ -68,6 +69,8 @@ const App = () => (
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsConditions />} />
               <Route path="/refund" element={<RefundPolicy />} />
+              <Route path="/payment-status" element={<PaymentStatus />} />
+              <Route path="*" element={<NotFound />} />
               <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
