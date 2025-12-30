@@ -25,6 +25,9 @@ interface RazorpayOptions {
   handler: (response: RazorpayResponse) => void;
   modal: {
     ondismiss: () => void;
+    escape: boolean;
+    backdropclose: boolean;
+    confirm_close: boolean;
   };
 }
 
@@ -167,6 +170,9 @@ export const useRazorpay = () => {
           ondismiss: () => {
             setIsLoading(false);
           },
+          escape: true,
+          backdropclose: false,
+          confirm_close: true,
         },
       };
 
