@@ -17,12 +17,22 @@ serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get('Authorization');
+    
+    if (!authHeader) {
+      console.error('No authorization header provided');
+      return new Response(
+        JSON.stringify({ error: 'No authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
+          headers: { Authorization: authHeader },
         },
       }
     );
@@ -33,10 +43,12 @@ serve(async (req) => {
     if (userError || !user) {
       console.error('Auth error:', userError);
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: 'Unauthorized - please login again' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('User authenticated:', user.id);
 
     const { plan_type }: OrderRequest = await req.json();
     
@@ -65,6 +77,14 @@ serve(async (req) => {
       );
     }
 
+    // Create a short receipt ID (max 40 chars)
+    // Use last 8 chars of user ID + timestamp in base36 for uniqueness
+    const shortUserId = user.id.replace(/-/g, '').slice(-8);
+    const timestamp = Date.now().toString(36);
+    const receipt = `rcpt_${shortUserId}_${timestamp}`;
+    
+    console.log('Creating Razorpay order with receipt:', receipt);
+
     // Create Razorpay order
     const orderResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
@@ -75,7 +95,7 @@ serve(async (req) => {
       body: JSON.stringify({
         amount: selectedPlan.amount,
         currency: 'INR',
-        receipt: `order_${user.id}_${Date.now()}`,
+        receipt: receipt,
         notes: {
           user_id: user.id,
           plan_type: plan_type,
@@ -88,7 +108,7 @@ serve(async (req) => {
       const errorData = await orderResponse.text();
       console.error('Razorpay order creation failed:', errorData);
       return new Response(
-        JSON.stringify({ error: 'Failed to create payment order' }),
+        JSON.stringify({ error: 'Failed to create payment order', details: errorData }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -102,7 +122,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    await supabaseAdmin
+    const { error: insertError } = await supabaseAdmin
       .from('payments')
       .insert({
         user_id: user.id,
@@ -113,7 +133,11 @@ serve(async (req) => {
         status: 'pending',
       });
 
-    console.log('Payment record created for order:', order.id);
+    if (insertError) {
+      console.error('Failed to insert payment record:', insertError);
+    } else {
+      console.log('Payment record created for order:', order.id);
+    }
 
     // Get user profile for prefill
     const { data: profile } = await supabaseClient
@@ -136,11 +160,11 @@ serve(async (req) => {
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } catch (error: unknown) {
-    console.error('Error in create-razorpay-order:', error);
+  } catch (error) {
+    console.error('Unexpected error:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: message }),
+      JSON.stringify({ error: 'Internal server error', message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
