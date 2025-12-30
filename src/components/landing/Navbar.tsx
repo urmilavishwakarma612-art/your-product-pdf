@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ProfileDropdown } from "./ProfileDropdown";
 import logoImage from "@/assets/logo.png";
@@ -11,6 +12,7 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { user } = useAuth();
+  const { isPremium } = useSubscription();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -64,7 +66,15 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-2">
             <ThemeToggle />
             {user ? (
-              <ProfileDropdown />
+              <div className="flex items-center gap-2">
+                {isPremium && (
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30">
+                    <Crown className="w-3.5 h-3.5 text-amber-500" />
+                    <span className="text-xs font-medium text-amber-500">PRO</span>
+                  </div>
+                )}
+                <ProfileDropdown />
+              </div>
             ) : (
               <>
                 <Link to="/auth">
@@ -138,9 +148,19 @@ export function Navbar() {
                   <ThemeToggle />
                 </div>
                 {user ? (
-                  <Link to="/dashboard" onClick={() => setIsOpen(false)}>
-                    <Button className="w-full rounded-full">Dashboard</Button>
-                  </Link>
+                  <div className="space-y-3">
+                    {isPremium && (
+                      <div className="flex items-center justify-center gap-2 py-2">
+                        <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30">
+                          <Crown className="w-4 h-4 text-amber-500" />
+                          <span className="text-sm font-medium text-amber-500">PRO Member</span>
+                        </div>
+                      </div>
+                    )}
+                    <Link to="/dashboard" onClick={() => setIsOpen(false)}>
+                      <Button className="w-full rounded-full">Dashboard</Button>
+                    </Link>
+                  </div>
                 ) : (
                   <div className="flex gap-2">
                     <Link to="/auth" onClick={() => setIsOpen(false)} className="flex-1">
