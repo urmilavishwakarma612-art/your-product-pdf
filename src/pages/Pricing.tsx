@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Check, Crown, Sparkles, Zap, Shield, Star, Brain, Trophy, Target, X, ArrowRight, Flame } from "lucide-react";
+import { Check, Crown, Sparkles, Zap, Shield, Star, Brain, Trophy, Target, X, ArrowRight, Flame, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/landing/Navbar";
@@ -13,6 +13,77 @@ import { Helmet } from "react-helmet-async";
 
 type PlanType = 'monthly' | 'yearly';
 type PaymentStatus = 'loading' | 'success' | 'error' | null;
+
+// Countdown Timer Component
+const CountdownTimer = () => {
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+
+  useEffect(() => {
+    // Set end date to 30 days from now (or use a fixed date)
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + 7); // 7 days from now
+
+    const timer = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = endDate.getTime() - now;
+
+      if (distance > 0) {
+        setTimeLeft({
+          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((distance % (1000 * 60)) / 1000),
+        });
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const TimeBox = ({ value, label }: { value: number; label: string }) => (
+    <div className="flex flex-col items-center">
+      <div className="relative">
+        <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 flex items-center justify-center backdrop-blur-sm">
+          <span className="text-xl sm:text-2xl md:text-3xl font-bold gradient-text">
+            {value.toString().padStart(2, '0')}
+          </span>
+        </div>
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-xl blur opacity-50" />
+      </div>
+      <span className="text-xs sm:text-sm text-muted-foreground mt-2 font-medium">{label}</span>
+    </div>
+  );
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.15 }}
+      className="mb-10"
+    >
+      <div className="glass-card p-4 sm:p-6 border-primary/30 bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5 max-w-lg mx-auto">
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-primary animate-pulse" />
+          <span className="text-sm sm:text-base font-semibold text-primary">Early-Bird Offer Ends In</span>
+        </div>
+        <div className="flex items-center justify-center gap-2 sm:gap-3 md:gap-4">
+          <TimeBox value={timeLeft.days} label="Days" />
+          <span className="text-xl sm:text-2xl font-bold text-primary/50 mt-[-20px]">:</span>
+          <TimeBox value={timeLeft.hours} label="Hours" />
+          <span className="text-xl sm:text-2xl font-bold text-primary/50 mt-[-20px]">:</span>
+          <TimeBox value={timeLeft.minutes} label="Mins" />
+          <span className="text-xl sm:text-2xl font-bold text-primary/50 mt-[-20px]">:</span>
+          <TimeBox value={timeLeft.seconds} label="Secs" />
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -66,7 +137,6 @@ export default function Pricing() {
   const { user } = useAuth();
   const { isPremium, refetch } = useSubscription();
   const { initiatePayment, isLoading } = useRazorpay();
-  const [selectedPlan, setSelectedPlan] = useState<PlanType>('yearly');
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(null);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -107,10 +177,10 @@ export default function Pricing() {
     );
   };
 
-  const handleRetry = () => {
+  const handleRetry = (plan: PlanType) => {
     setPaymentStatus(null);
     setErrorMessage('');
-    handleUpgrade(selectedPlan);
+    handleUpgrade(plan);
   };
 
   const handlePaymentClose = () => {
@@ -131,7 +201,7 @@ export default function Pricing() {
       <PaymentOverlay
         status={paymentStatus}
         errorMessage={errorMessage}
-        onRetry={handleRetry}
+        onRetry={() => handleRetry('yearly')}
         onClose={handlePaymentClose}
       />
 
@@ -179,6 +249,9 @@ export default function Pricing() {
               </p>
             </motion.div>
 
+            {/* Countdown Timer */}
+            <CountdownTimer />
+
             {/* Value Proposition Banner */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -204,68 +277,146 @@ export default function Pricing() {
               </div>
             </motion.div>
 
-            {/* Pricing Cards */}
-            <div className="grid md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto mb-16">
+            {/* Pricing Cards - 3 columns */}
+            <div className="grid md:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto mb-16">
               {/* Free Plan */}
               <motion.div
-                initial={{ opacity: 0, x: -40 }}
-                animate={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                 whileHover={{ y: -8 }}
-                className="interactive-card p-5 sm:p-8 md:p-10 relative"
+                className="interactive-card p-5 sm:p-6 lg:p-8 relative"
               >
-                <div className="mb-6 sm:mb-8">
+                <div className="mb-6">
                   <h3 className="text-xl sm:text-2xl font-bold mb-2">Free</h3>
-                  <p className="text-sm sm:text-base text-muted-foreground">Phase 1 - Perfect to get started</p>
+                  <p className="text-sm text-muted-foreground">Phase 1 - Perfect to start</p>
                 </div>
 
-                <div className="mb-6 sm:mb-8">
-                  <span className="text-4xl sm:text-5xl lg:text-6xl font-bold">₹0</span>
-                  <span className="text-muted-foreground ml-2 text-base sm:text-lg">forever</span>
-                  <p className="text-sm text-muted-foreground mt-2">No card required • Full beginner experience</p>
+                <div className="mb-6">
+                  <span className="text-4xl sm:text-5xl font-bold">₹0</span>
+                  <span className="text-muted-foreground ml-2 text-sm sm:text-base">forever</span>
+                  <p className="text-xs text-muted-foreground mt-2">No card required</p>
                 </div>
 
                 <motion.ul 
                   variants={containerVariants}
                   initial="hidden"
                   animate="visible"
-                  className="space-y-3 sm:space-y-4 mb-6 sm:mb-10"
+                  className="space-y-3 mb-8"
                 >
                   {freeFeatures.map((feature, i) => (
                     <motion.li 
                       key={i} 
                       variants={itemVariants}
-                      className="flex items-center gap-3 group"
+                      className="flex items-center gap-2.5 group"
                     >
-                      <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-success/15 flex items-center justify-center flex-shrink-0 group-hover:bg-success/25 transition-colors">
-                        <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-success" />
+                      <div className="w-4 h-4 rounded-full bg-success/15 flex items-center justify-center flex-shrink-0 group-hover:bg-success/25 transition-colors">
+                        <Check className="w-2.5 h-2.5 text-success" />
                       </div>
-                      <span className="text-sm sm:text-base text-muted-foreground group-hover:text-foreground transition-colors">{feature}</span>
+                      <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">{feature}</span>
                     </motion.li>
                   ))}
                 </motion.ul>
 
                 <Link to="/auth">
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Button variant="outline" className="w-full rounded-xl h-10 sm:h-12 text-sm sm:text-base" size="lg">
+                    <Button variant="outline" className="w-full rounded-xl h-10 sm:h-11 text-sm" size="lg">
                       Get Started Free
                     </Button>
                   </motion.div>
                 </Link>
               </motion.div>
 
-              {/* Pro Plan */}
+              {/* Monthly Pro Plan */}
               <motion.div
-                initial={{ opacity: 0, x: 40 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                whileHover={{ y: -8 }}
+                className="interactive-card p-5 sm:p-6 lg:p-8 relative border-secondary/30 hover:border-secondary/50"
+              >
+                <div className="mb-6">
+                  <h3 className="text-xl sm:text-2xl font-bold mb-2 flex items-center gap-2">
+                    Pro Monthly
+                    <Sparkles className="w-4 h-4 text-secondary" />
+                  </h3>
+                  <p className="text-sm text-muted-foreground">Flexible monthly billing</p>
+                </div>
+
+                <div className="mb-6">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-lg text-muted-foreground line-through">₹149</span>
+                    <span className="text-4xl sm:text-5xl font-bold gradient-text">₹99</span>
+                    <span className="text-muted-foreground text-sm sm:text-base">/month</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Cancel anytime
+                  </p>
+                  <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30">
+                    <Flame className="w-3 h-3 text-amber-500" />
+                    <span className="text-xs font-medium text-amber-500">Early-Bird Price</span>
+                  </div>
+                </div>
+
+                <motion.ul 
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-3 mb-8"
+                >
+                  {proFeatures.map((feature, i) => (
+                    <motion.li 
+                      key={i} 
+                      variants={itemVariants}
+                      className="flex items-center gap-2.5 group"
+                    >
+                      <div className="w-4 h-4 rounded-full bg-secondary/15 flex items-center justify-center flex-shrink-0 group-hover:bg-secondary/25 transition-colors">
+                        <Check className="w-2.5 h-2.5 text-secondary" />
+                      </div>
+                      <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">{feature}</span>
+                    </motion.li>
+                  ))}
+                </motion.ul>
+
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button 
+                    variant="outline"
+                    className="w-full rounded-xl h-10 sm:h-11 text-sm border-secondary/50 hover:bg-secondary/10 hover:border-secondary" 
+                    size="lg"
+                    onClick={() => handleUpgrade('monthly')}
+                    disabled={isLoading || isPremium}
+                  >
+                    {isPremium ? (
+                      <>
+                        <Check className="w-4 h-4 mr-2" />
+                        You're Pro
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Unlock Monthly Pro
+                      </>
+                    )}
+                  </Button>
+                </motion.div>
+                
+                <p className="text-xs text-center text-muted-foreground mt-3">
+                  Early supporters get the best price.
+                </p>
+              </motion.div>
+
+              {/* Yearly Pro Plan - Most Popular */}
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
                 whileHover={{ y: -8 }}
                 className="relative"
               >
                 {/* Glow effect */}
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-secondary to-accent rounded-2xl blur opacity-30 group-hover:opacity-40 transition-opacity" />
                 
-                <div className="interactive-card p-5 sm:p-8 md:p-10 relative border-primary/30 hover:border-primary/50">
+                <div className="interactive-card p-5 sm:p-6 lg:p-8 relative border-primary/30 hover:border-primary/50 h-full">
                   {/* Popular Badge */}
                   <motion.div 
                     initial={{ opacity: 0, y: -20 }}
@@ -275,114 +426,66 @@ export default function Pricing() {
                     <motion.div 
                       animate={{ y: [0, -3, 0] }}
                       transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                      className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-primary to-secondary text-primary-foreground text-xs sm:text-sm font-semibold shadow-lg shadow-primary/25"
+                      className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary to-secondary text-primary-foreground text-xs sm:text-sm font-semibold shadow-lg shadow-primary/25"
                     >
                       <Star className="w-3 h-3 sm:w-4 sm:h-4 fill-current" />
                       Most Popular
                     </motion.div>
                   </motion.div>
 
-                  <div className="mb-6 sm:mb-8 pt-4">
+                  <div className="mb-6 pt-4">
                     <h3 className="text-xl sm:text-2xl font-bold mb-2 flex items-center gap-2">
-                      Pro 
+                      Pro Yearly
                       <motion.div
                         animate={{ rotate: [0, 15, -15, 0] }}
                         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                       >
-                        <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                        <Crown className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                       </motion.div>
                     </h3>
-                    <p className="text-sm sm:text-base text-muted-foreground">Unlock all advanced patterns</p>
+                    <p className="text-sm text-muted-foreground">Best value for serious learners</p>
                   </div>
 
-                  {/* Plan Toggle */}
                   <div className="mb-6">
-                    <div className="flex gap-2 p-1 bg-muted/50 rounded-lg">
-                      <button
-                        onClick={() => setSelectedPlan('monthly')}
-                        className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
-                          selectedPlan === 'monthly'
-                            ? 'bg-background shadow-sm text-foreground'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                      >
-                        Monthly
-                      </button>
-                      <button
-                        onClick={() => setSelectedPlan('yearly')}
-                        className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all relative ${
-                          selectedPlan === 'yearly'
-                            ? 'bg-background shadow-sm text-foreground'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                      >
-                        Yearly
-                        <span className="absolute -top-2 -right-2 text-[10px] bg-success text-success-foreground px-1.5 py-0.5 rounded-full font-bold">
-                          SAVE 2 MONTHS
-                        </span>
-                      </button>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-lg text-muted-foreground line-through">₹1,499</span>
+                      <span className="text-4xl sm:text-5xl font-bold gradient-text">₹999</span>
+                      <span className="text-muted-foreground text-sm sm:text-base">/year</span>
                     </div>
-                  </div>
-
-                  <div className="mb-6 sm:mb-8">
-                    {selectedPlan === 'yearly' ? (
-                      <>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-lg text-muted-foreground line-through">₹1,499</span>
-                          <span className="text-4xl sm:text-5xl lg:text-6xl font-bold gradient-text">₹999</span>
-                          <span className="text-muted-foreground text-base sm:text-lg">/year</span>
-                        </div>
-                        <p className="text-sm text-success mt-2 font-medium">
-                          ≈ ₹83/month • Save 2 months compared to monthly
-                        </p>
-                        <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30">
-                          <Flame className="w-3 h-3 text-amber-500" />
-                          <span className="text-xs font-medium text-amber-500">Early-Bird Price</span>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-lg text-muted-foreground line-through">₹149</span>
-                          <span className="text-4xl sm:text-5xl lg:text-6xl font-bold gradient-text">₹99</span>
-                          <span className="text-muted-foreground text-base sm:text-lg">/month</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          Cancel anytime
-                        </p>
-                        <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30">
-                          <Flame className="w-3 h-3 text-amber-500" />
-                          <span className="text-xs font-medium text-amber-500">Early-Bird Price</span>
-                        </div>
-                      </>
-                    )}
+                    <p className="text-xs sm:text-sm text-success mt-2 font-medium">
+                      ≈ ₹83/month • Save 2 months!
+                    </p>
+                    <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30">
+                      <Flame className="w-3 h-3 text-amber-500" />
+                      <span className="text-xs font-medium text-amber-500">Early-Bird Price</span>
+                    </div>
                   </div>
 
                   <motion.ul 
                     variants={containerVariants}
                     initial="hidden"
                     animate="visible"
-                    className="space-y-3 sm:space-y-4 mb-6 sm:mb-10"
+                    className="space-y-3 mb-8"
                   >
                     {proFeatures.map((feature, i) => (
                       <motion.li 
                         key={i} 
                         variants={itemVariants}
-                        className="flex items-center gap-3 group"
+                        className="flex items-center gap-2.5 group"
                       >
-                        <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/25 transition-colors">
-                          <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary" />
+                        <div className="w-4 h-4 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/25 transition-colors">
+                          <Check className="w-2.5 h-2.5 text-primary" />
                         </div>
-                        <span className="text-sm sm:text-base group-hover:text-foreground transition-colors">{feature}</span>
+                        <span className="text-sm group-hover:text-foreground transition-colors">{feature}</span>
                       </motion.li>
                     ))}
                   </motion.ul>
 
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                     <Button 
-                      className="w-full btn-primary-glow rounded-xl h-10 sm:h-12 text-sm sm:text-base" 
+                      className="w-full btn-primary-glow rounded-xl h-10 sm:h-11 text-sm" 
                       size="lg"
-                      onClick={() => handleUpgrade(selectedPlan)}
+                      onClick={() => handleUpgrade('yearly')}
                       disabled={isLoading || isPremium}
                     >
                       {isPremium ? (
