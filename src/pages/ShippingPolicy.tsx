@@ -98,11 +98,11 @@ const ShippingPolicy = () => {
                     7985177849
                   </a>
                   <a 
-                    href="mailto:nexalgotrix@gmail.com" 
+                    href="mailto:hello.nexalgotrix@gmail.com" 
                     className="inline-flex items-center gap-2 text-primary hover:underline"
                   >
                     <Mail className="w-4 h-4" />
-                    nexalgotrix@gmail.com
+                    hello.nexalgotrix@gmail.com
                   </a>
                 </div>
               </section>

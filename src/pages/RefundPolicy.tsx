@@ -32,7 +32,7 @@ const RefundPolicy = () => {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-primary font-bold">➡</span>
-                <span><strong>Support Email:</strong> nexalgotrix@gmail.com</span>
+                <span><strong>Support Email:</strong> hello.nexalgotrix@gmail.com</span>
               </div>
             </div>
           </div>
@@ -53,7 +53,7 @@ const RefundPolicy = () => {
             <h2 className="text-xl font-semibold text-foreground">2. How to Request a Refund</h2>
             <p>To request a refund, please follow these steps:</p>
             <ol className="list-decimal pl-6 space-y-2">
-              <li>Send an email to <strong>nexalgotrix@gmail.com</strong> with the subject line "Refund Request"</li>
+              <li>Send an email to <strong>hello.nexalgotrix@gmail.com</strong> with the subject line "Refund Request"</li>
               <li>Include your registered email address and order/transaction ID</li>
               <li>Provide a brief reason for the refund request</li>
               <li>Our team will review your request and respond within 24-48 hours</li>
@@ -121,7 +121,7 @@ const RefundPolicy = () => {
               For any questions or concerns regarding refunds, please reach out to us:
             </p>
             <p>
-              <strong>Email:</strong> nexalgotrix@gmail.com<br />
+              <strong>Email:</strong> hello.nexalgotrix@gmail.com<br />
               <strong>Phone:</strong> 7985177849
             </p>
           </section>

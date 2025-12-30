@@ -130,7 +130,7 @@ const TermsConditions = () => {
               For questions about these Terms & Conditions, please contact us at:
             </p>
             <p>
-              <strong>Email:</strong> nexalgotrix@gmail.com<br />
+              <strong>Email:</strong> hello.nexalgotrix@gmail.com<br />
               <strong>Phone:</strong> 7985177849
             </p>
           </section>

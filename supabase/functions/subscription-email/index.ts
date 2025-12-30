@@ -60,11 +60,11 @@ const getDefaultTemplate = (type: string): EmailTemplate => {
     payment_failed: {
       subject: "⚠️ Payment Failed - Action Required",
       heading: "Payment Failed",
-      body_text: "We were unable to process your payment for Nexalgotrix Pro. Don't worry, you can try again. Please check your payment details and retry. If you continue to face issues, contact us at nexalgotrix@gmail.com.",
+      body_text: "We were unable to process your payment for Nexalgotrix Pro. Don't worry, you can try again. Please check your payment details and retry. If you continue to face issues, contact us at hello.nexalgotrix@gmail.com.",
       cta_text: "Retry Payment",
       cta_url: "https://nexalgotrix.com/patterns",
       primary_color: "#ef4444",
-      footer_text: "Need help? Contact nexalgotrix@gmail.com",
+      footer_text: "Need help? Contact hello.nexalgotrix@gmail.com",
     },
   };
   return defaults[type] || defaults.granted;
