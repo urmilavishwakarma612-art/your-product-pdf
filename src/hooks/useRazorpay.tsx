@@ -91,11 +91,14 @@ export const useRazorpay = () => {
 
       console.log('Creating Razorpay order for plan:', planType);
 
-      // Create order
+      // Create order (explicitly attach JWT to avoid missing-session issues)
       const { data: orderData, error: orderError } = await supabase.functions.invoke(
         'create-razorpay-order',
         {
           body: { plan_type: planType },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
         }
       );
 
@@ -130,7 +133,7 @@ export const useRazorpay = () => {
           try {
             console.log('Payment successful, verifying...', response);
             
-            // Verify payment
+            // Verify payment (explicitly attach JWT to avoid missing-session issues)
             const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
               'verify-razorpay-payment',
               {
@@ -139,6 +142,9 @@ export const useRazorpay = () => {
                   razorpay_payment_id: response.razorpay_payment_id,
                   razorpay_signature: response.razorpay_signature,
                   plan_type: planType,
+                },
+                headers: {
+                  Authorization: `Bearer ${session.access_token}`,
                 },
               }
             );
