@@ -52,10 +52,10 @@ serve(async (req) => {
 
     const { plan_type }: OrderRequest = await req.json();
     
-    // Define pricing
+    // Define pricing (amounts in paise)
     const pricing = {
-      monthly: { amount: 4900, description: 'Nexalgotrix Pro - Monthly' }, // 49 INR in paise
-      lifetime: { amount: 44900, description: 'Nexalgotrix Pro - Lifetime (Early Bird)' }, // 449 INR in paise
+      monthly: { amount: 9900, description: 'Nexalgotrix Pro - Monthly' }, // ₹99
+      lifetime: { amount: 99900, description: 'Nexalgotrix Pro - Yearly' }, // ₹999
     };
 
     const selectedPlan = pricing[plan_type];
