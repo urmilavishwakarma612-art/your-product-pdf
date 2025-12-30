@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { Zap, Trophy, Flame, Target, LogOut, BookOpen, ArrowRight, User, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { SubscriptionExpiryReminder } from "@/components/dashboard/SubscriptionExpiryReminder";
 
 const Dashboard = () => {
   const { user, loading, signOut, isAdmin } = useAuth();
@@ -126,6 +127,9 @@ const Dashboard = () => {
               </div>
             </div>
           </motion.div>
+
+          {/* Subscription Expiry Reminder */}
+          <SubscriptionExpiryReminder />
 
           {/* Level Progress */}
           <motion.div

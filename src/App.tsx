@@ -34,6 +34,7 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsConditions = lazy(() => import("./pages/TermsConditions"));
 const RefundPolicy = lazy(() => import("./pages/RefundPolicy"));
 const PaymentStatus = lazy(() => import("./pages/PaymentStatus"));
+const Pricing = lazy(() => import("./pages/Pricing"));
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ const App = () => (
               <Route path="/terms" element={<TermsConditions />} />
               <Route path="/refund" element={<RefundPolicy />} />
               <Route path="/payment-status" element={<PaymentStatus />} />
+              <Route path="/pricing" element={<Pricing />} />
               <Route path="*" element={<NotFound />} />
               <Route path="*" element={<NotFound />} />
               </Routes>

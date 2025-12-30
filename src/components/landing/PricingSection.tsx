@@ -170,16 +170,19 @@ export function PricingSection() {
                     <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                   </motion.div>
                 </h3>
-                <p className="text-sm sm:text-base text-muted-foreground">Full DSA mastery unlocked</p>
+                <p className="text-sm sm:text-base text-muted-foreground">Unlock all advanced patterns</p>
               </div>
 
               <div className="mb-6 sm:mb-10">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl sm:text-5xl lg:text-6xl font-bold gradient-text">₹49</span>
-                  <span className="text-muted-foreground text-base sm:text-lg">/month</span>
+                  <span className="text-4xl sm:text-5xl lg:text-6xl font-bold gradient-text">₹999</span>
+                  <span className="text-muted-foreground text-base sm:text-lg">/year</span>
                 </div>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-2 sm:mt-3">
-                  or ₹449 one-time (early bird)
+                <p className="text-sm text-success mt-2 sm:mt-3 font-medium">
+                  ≈ ₹83/month • Save 2 months vs monthly
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  or ₹99/month
                 </p>
               </div>
 
@@ -212,7 +215,7 @@ export function PricingSection() {
                 ))}
               </motion.ul>
 
-              <Link to="/auth">
+              <Link to="/pricing">
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button className="w-full btn-primary-glow rounded-xl h-10 sm:h-12 text-sm sm:text-base" size="lg">
                     Upgrade to Pro

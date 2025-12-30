@@ -285,7 +285,7 @@ export const UpgradeModal = ({ isOpen, onClose, triggerContext, initialPlan }: U
 
                       {/* Plan Selection */}
                       <div className="space-y-3 mb-6">
-                        {/* Lifetime Plan */}
+                        {/* Yearly Plan - Best Value */}
                         <button
                           onClick={() => setSelectedPlan('lifetime')}
                           disabled={isLoading}
@@ -298,16 +298,16 @@ export const UpgradeModal = ({ isOpen, onClose, triggerContext, initialPlan }: U
                           <div className="flex items-center justify-between">
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className="font-semibold">Lifetime Access</span>
-                                <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                                  Best Value
+                                <span className="font-semibold">Yearly Access</span>
+                                <span className="text-xs bg-success/20 text-success px-2 py-0.5 rounded-full font-bold">
+                                  SAVE 2 MONTHS
                                 </span>
                               </div>
-                              <p className="text-xs text-muted-foreground mt-1">One-time early bird offer</p>
+                              <p className="text-xs text-muted-foreground mt-1">≈ ₹83/month</p>
                             </div>
                             <div className="text-right">
-                              <span className="text-2xl font-bold gradient-text">₹449</span>
-                              <p className="text-xs text-muted-foreground">forever</p>
+                              <span className="text-2xl font-bold gradient-text">₹999</span>
+                              <p className="text-xs text-muted-foreground">/year</p>
                             </div>
                           </div>
                         </button>
@@ -328,7 +328,7 @@ export const UpgradeModal = ({ isOpen, onClose, triggerContext, initialPlan }: U
                               <p className="text-xs text-muted-foreground mt-1">Cancel anytime</p>
                             </div>
                             <div className="text-right">
-                              <span className="text-2xl font-bold">₹49</span>
+                              <span className="text-2xl font-bold">₹99</span>
                               <p className="text-xs text-muted-foreground">/month</p>
                             </div>
                           </div>
@@ -351,7 +351,7 @@ export const UpgradeModal = ({ isOpen, onClose, triggerContext, initialPlan }: U
                           ) : (
                             <>
                               <Sparkles className="w-4 h-4 mr-2" />
-                              {user ? `Pay ${selectedPlan === 'lifetime' ? '₹449' : '₹49'}` : "Sign Up & Upgrade"}
+                              {user ? `Pay ${selectedPlan === 'lifetime' ? '₹999' : '₹99'}` : "Sign Up & Upgrade"}
                             </>
                           )}
                         </Button>
