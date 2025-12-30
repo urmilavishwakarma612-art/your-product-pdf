@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Check, Crown, Sparkles, Zap, Shield, Star, Brain, Trophy, Target, X, ArrowRight } from "lucide-react";
+import { Check, Crown, Sparkles, Zap, Shield, Star, Brain, Trophy, Target, X, ArrowRight, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/landing/Navbar";
@@ -163,15 +163,18 @@ export default function Pricing() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 border border-primary/20 mb-4 sm:mb-6"
+                className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-amber-500/10 border border-amber-500/30 mb-4 sm:mb-6"
               >
-                <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
-                <span className="text-xs sm:text-sm font-medium text-primary">Pricing</span>
+                <Flame className="w-3 h-3 sm:w-4 sm:h-4 text-amber-500" />
+                <span className="text-xs sm:text-sm font-medium text-amber-500">🔥 Early Access — Limited Time</span>
               </motion.div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 tracking-tight">
-                Simple, <span className="gradient-text">Transparent</span> Pricing
+                Early-Bird Pricing — <span className="gradient-text">Limited Time Launch Offer</span>
               </h1>
               <p className="text-base sm:text-lg lg:text-xl text-muted-foreground leading-relaxed mb-4">
+                Lock the lowest price forever. Prices will increase as Nexalgotrix grows.
+              </p>
+              <p className="text-sm text-muted-foreground">
                 Start free with Phase 1. Upgrade when you're ready. No pressure, no traps.
               </p>
             </motion.div>
@@ -325,22 +328,32 @@ export default function Pricing() {
                     {selectedPlan === 'yearly' ? (
                       <>
                         <div className="flex items-baseline gap-2">
+                          <span className="text-lg text-muted-foreground line-through">₹1,499</span>
                           <span className="text-4xl sm:text-5xl lg:text-6xl font-bold gradient-text">₹999</span>
                           <span className="text-muted-foreground text-base sm:text-lg">/year</span>
                         </div>
                         <p className="text-sm text-success mt-2 font-medium">
                           ≈ ₹83/month • Save 2 months compared to monthly
                         </p>
+                        <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30">
+                          <Flame className="w-3 h-3 text-amber-500" />
+                          <span className="text-xs font-medium text-amber-500">Early-Bird Price</span>
+                        </div>
                       </>
                     ) : (
                       <>
                         <div className="flex items-baseline gap-2">
+                          <span className="text-lg text-muted-foreground line-through">₹149</span>
                           <span className="text-4xl sm:text-5xl lg:text-6xl font-bold gradient-text">₹99</span>
                           <span className="text-muted-foreground text-base sm:text-lg">/month</span>
                         </div>
                         <p className="text-sm text-muted-foreground mt-2">
                           Cancel anytime
                         </p>
+                        <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30">
+                          <Flame className="w-3 h-3 text-amber-500" />
+                          <span className="text-xs font-medium text-amber-500">Early-Bird Price</span>
+                        </div>
                       </>
                     )}
                   </div>
@@ -380,11 +393,16 @@ export default function Pricing() {
                       ) : (
                         <>
                           <Sparkles className="w-4 h-4 mr-2" />
-                          {user ? `Upgrade to Pro - ₹${selectedPlan === 'yearly' ? '999' : '99'}` : 'Sign Up & Upgrade'}
+                          Unlock Pro at Early-Bird Price
                         </>
                       )}
                     </Button>
                   </motion.div>
+                  
+                  {/* Trust note */}
+                  <p className="text-xs text-center text-muted-foreground mt-3">
+                    Early supporters always get the best price.
+                  </p>
                 </div>
               </motion.div>
             </div>
@@ -458,8 +476,14 @@ export default function Pricing() {
                         <td className="py-4 px-4 sm:px-6 font-semibold">Price</td>
                         <td className="text-center py-4 px-4 sm:px-6 font-bold">₹0</td>
                         <td className="text-center py-4 px-4 sm:px-6">
-                          <div className="font-bold text-primary">₹99/mo</div>
-                          <div className="text-xs text-muted-foreground">or ₹999/year</div>
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-sm text-muted-foreground line-through">₹149</span>
+                            <span className="font-bold text-primary">₹99/mo</span>
+                          </div>
+                          <div className="flex items-center justify-center gap-2 mt-1">
+                            <span className="text-xs text-muted-foreground line-through">₹1,499</span>
+                            <span className="text-xs text-primary font-medium">₹999/year</span>
+                          </div>
                         </td>
                       </tr>
                     </tbody>
