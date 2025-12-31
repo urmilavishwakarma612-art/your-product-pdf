@@ -29,6 +29,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { DiscussionSection } from "@/components/discussions/DiscussionSection";
 
 interface Question {
   id: string;
@@ -586,6 +587,15 @@ const Question = () => {
             </Button>
           </motion.div>
         )}
+
+        {/* Discussion Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <DiscussionSection questionId={id!} />
+        </motion.div>
       </div>
     </div>
   );
