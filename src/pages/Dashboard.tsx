@@ -1,14 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/landing/Navbar";
 import { motion } from "framer-motion";
-import { Zap, Trophy, Flame, Target, LogOut, BookOpen, ArrowRight, User, Sparkles } from "lucide-react";
+import { Zap, Trophy, Flame, Target, LogOut, BookOpen, ArrowRight, User, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { SubscriptionExpiryReminder } from "@/components/dashboard/SubscriptionExpiryReminder";
+import { WeaknessAnalytics } from "@/components/analytics/WeaknessAnalytics";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Dashboard = () => {
   const { user, loading, signOut, isAdmin } = useAuth();
@@ -189,52 +191,68 @@ const Dashboard = () => {
             />
           </motion.div>
 
-          {/* Recent Patterns */}
+          {/* Tabbed Content */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="mb-8"
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">Continue Learning</h2>
-              <Link to="/patterns" className="text-primary hover:underline text-sm flex items-center gap-1">
-                View all patterns <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {recentPatterns?.map((pattern) => (
-                <Link key={pattern.id} to="/patterns">
-                  <div className="glass-card p-4 hover:bg-white/10 transition-colors cursor-pointer group">
-                    <div 
-                      className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-3"
-                      style={{ background: pattern.color || 'hsl(var(--primary) / 0.2)' }}
-                    >
-                      {pattern.icon || "📚"}
-                    </div>
-                    <h3 className="font-semibold group-hover:text-primary transition-colors">{pattern.name}</h3>
-                    <p className="text-sm text-muted-foreground">{pattern.total_questions} questions</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </motion.div>
+            <Tabs defaultValue="overview" className="space-y-6">
+              <TabsList className="grid w-full max-w-md grid-cols-2">
+                <TabsTrigger value="overview">
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="analytics">
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Weakness Analytics
+                </TabsTrigger>
+              </TabsList>
 
-          {/* Quick Actions */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="glass-card p-8 text-center"
-          >
-            <BookOpen className="w-12 h-12 text-primary mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-4">Ready to Continue?</h2>
-            <p className="text-muted-foreground mb-6">
-              Explore patterns, solve problems, and track your progress.
-            </p>
-            <Button className="btn-primary-glow" onClick={() => navigate("/patterns")}>
-              Explore Patterns
-            </Button>
+              <TabsContent value="overview" className="space-y-8">
+                {/* Recent Patterns */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold">Continue Learning</h2>
+                    <Link to="/patterns" className="text-primary hover:underline text-sm flex items-center gap-1">
+                      View all patterns <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {recentPatterns?.map((pattern) => (
+                      <Link key={pattern.id} to="/patterns">
+                        <div className="glass-card p-4 hover:bg-white/10 transition-colors cursor-pointer group">
+                          <div 
+                            className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-3"
+                            style={{ background: pattern.color || 'hsl(var(--primary) / 0.2)' }}
+                          >
+                            {pattern.icon || "📚"}
+                          </div>
+                          <h3 className="font-semibold group-hover:text-primary transition-colors">{pattern.name}</h3>
+                          <p className="text-sm text-muted-foreground">{pattern.total_questions} questions</p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="glass-card p-8 text-center">
+                  <BookOpen className="w-12 h-12 text-primary mx-auto mb-4" />
+                  <h2 className="text-2xl font-bold mb-4">Ready to Continue?</h2>
+                  <p className="text-muted-foreground mb-6">
+                    Explore patterns, solve problems, and track your progress.
+                  </p>
+                  <Button className="btn-primary-glow" onClick={() => navigate("/patterns")}>
+                    Explore Patterns
+                  </Button>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="analytics">
+                <WeaknessAnalytics />
+              </TabsContent>
+            </Tabs>
           </motion.div>
         </div>
       </main>
