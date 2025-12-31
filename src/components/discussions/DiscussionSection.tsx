@@ -37,17 +37,25 @@ export function DiscussionSection({ questionId }: DiscussionSectionProps) {
   const [showForm, setShowForm] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
-  // Fetch discussions with profiles and votes
-  const { data: discussions, isLoading } = useQuery({
-    queryKey: ["discussions", questionId],
+  // Fetch discussions with (optional) profiles and votes
+  const { data: discussions, isLoading, error } = useQuery({
+    queryKey: ["discussions", questionId, !!user],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("discussions")
-        .select(`
+      // Profiles are only readable for authenticated users (RLS), so avoid embedding when logged out.
+      const selectQuery = user
+        ? `
           *,
           profiles:user_id(username, avatar_url),
           votes:discussion_votes(vote_type)
-        `)
+        `
+        : `
+          *,
+          votes:discussion_votes(vote_type)
+        `;
+
+      const { data, error } = await supabase
+        .from("discussions")
+        .select(selectQuery)
         .eq("question_id", questionId)
         .order("created_at", { ascending: true });
 
@@ -175,6 +183,13 @@ export function DiscussionSection({ questionId }: DiscussionSectionProps) {
             {[1, 2].map((i) => (
               <div key={i} className="h-24 bg-muted animate-pulse rounded-lg" />
             ))}
+          </div>
+        )}
+
+        {/* Error */}
+        {!isLoading && error && (
+          <div className="text-center py-6 text-destructive">
+            <p>Couldn’t load discussions. Please refresh.</p>
           </div>
         )}
 
