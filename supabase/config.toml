@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.razorpay-webhook]
 verify_jwt = false
+
+[functions.interview-feedback]
+verify_jwt = false
