@@ -219,6 +219,116 @@ export type Database = {
         }
         Relationships: []
       }
+      interview_results: {
+        Row: {
+          created_at: string
+          flagged: boolean | null
+          hints_used: number | null
+          id: string
+          is_solved: boolean | null
+          question_id: string
+          session_id: string
+          skipped: boolean | null
+          submitted_at: string | null
+          time_spent: number | null
+        }
+        Insert: {
+          created_at?: string
+          flagged?: boolean | null
+          hints_used?: number | null
+          id?: string
+          is_solved?: boolean | null
+          question_id: string
+          session_id: string
+          skipped?: boolean | null
+          submitted_at?: string | null
+          time_spent?: number | null
+        }
+        Update: {
+          created_at?: string
+          flagged?: boolean | null
+          hints_used?: number | null
+          id?: string
+          is_solved?: boolean | null
+          question_id?: string
+          session_id?: string
+          skipped?: boolean | null
+          submitted_at?: string | null
+          time_spent?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_results_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interview_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_sessions: {
+        Row: {
+          company_name: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          pattern_id: string | null
+          questions: Json
+          session_type: string
+          started_at: string
+          status: string
+          time_limit: number
+          total_score: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_name?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          pattern_id?: string | null
+          questions?: Json
+          session_type: string
+          started_at?: string
+          status?: string
+          time_limit: number
+          total_score?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          pattern_id?: string | null
+          questions?: Json
+          session_type?: string
+          started_at?: string
+          status?: string
+          time_limit?: number
+          total_score?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_sessions_pattern_id_fkey"
+            columns: ["pattern_id"]
+            isOneToOne: false
+            referencedRelation: "patterns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patterns: {
         Row: {
           color: string | null

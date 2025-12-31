@@ -195,6 +195,7 @@ function NavLinks({ mobile, onClick }: { mobile?: boolean; onClick?: () => void 
   const authLinks = [
     { href: "/", label: "Home", isRoute: true },
     { href: "/patterns", label: "Patterns", isRoute: true },
+    { href: "/interview", label: "Interview", isRoute: true },
     { href: "/pricing", label: "Pricing", isRoute: true },
     { href: "/dashboard", label: "Dashboard", isRoute: true },
   ];
