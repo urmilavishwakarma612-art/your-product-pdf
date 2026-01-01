@@ -221,39 +221,57 @@ export type Database = {
       }
       interview_results: {
         Row: {
+          attempt_count: number | null
+          code_snapshots: Json | null
           created_at: string
+          evaluation_result: Json | null
+          first_keystroke_at: string | null
           flagged: boolean | null
           hints_used: number | null
           id: string
           is_solved: boolean | null
           question_id: string
+          selected_language: string | null
           session_id: string
           skipped: boolean | null
           submitted_at: string | null
+          submitted_code: string | null
           time_spent: number | null
         }
         Insert: {
+          attempt_count?: number | null
+          code_snapshots?: Json | null
           created_at?: string
+          evaluation_result?: Json | null
+          first_keystroke_at?: string | null
           flagged?: boolean | null
           hints_used?: number | null
           id?: string
           is_solved?: boolean | null
           question_id: string
+          selected_language?: string | null
           session_id: string
           skipped?: boolean | null
           submitted_at?: string | null
+          submitted_code?: string | null
           time_spent?: number | null
         }
         Update: {
+          attempt_count?: number | null
+          code_snapshots?: Json | null
           created_at?: string
+          evaluation_result?: Json | null
+          first_keystroke_at?: string | null
           flagged?: boolean | null
           hints_used?: number | null
           id?: string
           is_solved?: boolean | null
           question_id?: string
+          selected_language?: string | null
           session_id?: string
           skipped?: boolean | null
           submitted_at?: string | null
+          submitted_code?: string | null
           time_spent?: number | null
         }
         Relationships: [

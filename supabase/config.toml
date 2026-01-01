@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.interview-feedback]
 verify_jwt = false
+
+[functions.evaluate-code]
+verify_jwt = false
