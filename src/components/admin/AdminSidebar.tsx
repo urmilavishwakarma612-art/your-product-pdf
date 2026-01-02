@@ -9,7 +9,8 @@ import {
   FolderTree,
   MessageSquareQuote,
   CreditCard,
-  Mail
+  Mail,
+  GraduationCap
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, Link } from "react-router-dom";
@@ -27,6 +28,7 @@ import {
 
 const menuItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+  { title: "Curriculum", url: "/admin/curriculum", icon: GraduationCap },
   { title: "Topics", url: "/admin/topics", icon: FolderTree },
   { title: "Patterns", url: "/admin/patterns", icon: Layers },
   { title: "Questions", url: "/admin/questions", icon: FileQuestion },

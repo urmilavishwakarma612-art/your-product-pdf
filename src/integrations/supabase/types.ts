@@ -94,6 +94,123 @@ export type Database = {
         }
         Relationships: []
       }
+      curriculum_levels: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          icon: string | null
+          id: string
+          is_free: boolean | null
+          level_number: number
+          name: string
+          updated_at: string | null
+          week_end: number | null
+          week_start: number | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_free?: boolean | null
+          level_number: number
+          name: string
+          updated_at?: string | null
+          week_end?: number | null
+          week_start?: number | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_free?: boolean | null
+          level_number?: number
+          name?: string
+          updated_at?: string | null
+          week_end?: number | null
+          week_start?: number | null
+        }
+        Relationships: []
+      }
+      curriculum_modules: {
+        Row: {
+          confusion_breakers: string | null
+          created_at: string | null
+          display_order: number | null
+          estimated_hours: number | null
+          exit_condition: string | null
+          id: string
+          level_id: string | null
+          mental_model: string | null
+          module_number: number
+          name: string
+          pattern_id: string | null
+          pattern_template: string | null
+          subtitle: string | null
+          updated_at: string | null
+          when_not_to_use: string | null
+          why_exists: string | null
+        }
+        Insert: {
+          confusion_breakers?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          estimated_hours?: number | null
+          exit_condition?: string | null
+          id?: string
+          level_id?: string | null
+          mental_model?: string | null
+          module_number: number
+          name: string
+          pattern_id?: string | null
+          pattern_template?: string | null
+          subtitle?: string | null
+          updated_at?: string | null
+          when_not_to_use?: string | null
+          why_exists?: string | null
+        }
+        Update: {
+          confusion_breakers?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          estimated_hours?: number | null
+          exit_condition?: string | null
+          id?: string
+          level_id?: string | null
+          mental_model?: string | null
+          module_number?: number
+          name?: string
+          pattern_id?: string | null
+          pattern_template?: string | null
+          subtitle?: string | null
+          updated_at?: string | null
+          when_not_to_use?: string | null
+          why_exists?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "curriculum_modules_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "curriculum_modules_pattern_id_fkey"
+            columns: ["pattern_id"]
+            isOneToOne: false
+            referencedRelation: "patterns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discussion_votes: {
         Row: {
           created_at: string
@@ -520,11 +637,18 @@ export type Database = {
           display_order: number
           hints: Json | null
           id: string
+          interview_followups: string[] | null
+          is_trap_problem: boolean | null
           leetcode_link: string | null
           optimal_solution: string | null
           pattern_id: string
+          practice_tier: string | null
+          signal: string | null
+          sub_pattern_id: string | null
           title: string
           updated_at: string
+          what_fails_if_wrong: string | null
+          why_this_approach: string | null
           xp_reward: number
           youtube_link: string | null
         }
@@ -539,11 +663,18 @@ export type Database = {
           display_order?: number
           hints?: Json | null
           id?: string
+          interview_followups?: string[] | null
+          is_trap_problem?: boolean | null
           leetcode_link?: string | null
           optimal_solution?: string | null
           pattern_id: string
+          practice_tier?: string | null
+          signal?: string | null
+          sub_pattern_id?: string | null
           title: string
           updated_at?: string
+          what_fails_if_wrong?: string | null
+          why_this_approach?: string | null
           xp_reward?: number
           youtube_link?: string | null
         }
@@ -558,11 +689,18 @@ export type Database = {
           display_order?: number
           hints?: Json | null
           id?: string
+          interview_followups?: string[] | null
+          is_trap_problem?: boolean | null
           leetcode_link?: string | null
           optimal_solution?: string | null
           pattern_id?: string
+          practice_tier?: string | null
+          signal?: string | null
+          sub_pattern_id?: string | null
           title?: string
           updated_at?: string
+          what_fails_if_wrong?: string | null
+          why_this_approach?: string | null
           xp_reward?: number
           youtube_link?: string | null
         }
@@ -572,6 +710,51 @@ export type Database = {
             columns: ["pattern_id"]
             isOneToOne: false
             referencedRelation: "patterns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questions_sub_pattern_id_fkey"
+            columns: ["sub_pattern_id"]
+            isOneToOne: false
+            referencedRelation: "sub_patterns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sub_patterns: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          module_id: string | null
+          name: string
+          template: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          module_id?: string | null
+          name: string
+          template?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          module_id?: string | null
+          name?: string
+          template?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_patterns_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_modules"
             referencedColumns: ["id"]
           },
         ]
@@ -682,6 +865,47 @@ export type Database = {
             columns: ["badge_id"]
             isOneToOne: false
             referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_curriculum_progress: {
+        Row: {
+          checkpoint_passed: boolean | null
+          checkpoint_passed_at: string | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          module_id: string | null
+          started_at: string | null
+          user_id: string
+        }
+        Insert: {
+          checkpoint_passed?: boolean | null
+          checkpoint_passed_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          module_id?: string | null
+          started_at?: string | null
+          user_id: string
+        }
+        Update: {
+          checkpoint_passed?: boolean | null
+          checkpoint_passed_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          module_id?: string | null
+          started_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_curriculum_progress_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_modules"
             referencedColumns: ["id"]
           },
         ]
