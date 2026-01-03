@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
 import { PageLoader } from "@/components/ui/LogoSpinner";
@@ -14,7 +14,6 @@ import Auth from "./pages/Auth";
 
 // Lazy load other pages for better performance
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Patterns = lazy(() => import("./pages/Patterns"));
 const Question = lazy(() => import("./pages/Question"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
@@ -56,7 +55,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/patterns" element={<Patterns />} />
+              <Route path="/patterns" element={<Navigate to="/curriculum" replace />} />
               <Route path="/question/:id" element={<Question />} />
               <Route path="/profile/:username" element={<UserProfile />} />
               <Route path="/admin" element={<AdminLayout />}>
