@@ -28,6 +28,8 @@ const AdminBadges = lazy(() => import("./pages/admin/AdminBadges"));
 const AdminTestimonials = lazy(() => import("./pages/admin/AdminTestimonials"));
 const AdminSubscriptions = lazy(() => import("./pages/admin/AdminSubscriptions"));
 const AdminEmailTemplates = lazy(() => import("./pages/admin/AdminEmailTemplates"));
+const AdminCurriculum = lazy(() => import("./pages/admin/AdminCurriculum"));
+const AdminModules = lazy(() => import("./pages/admin/AdminModules"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
@@ -68,6 +70,8 @@ const App = () => (
                 <Route path="testimonials" element={<AdminTestimonials />} />
                 <Route path="subscriptions" element={<AdminSubscriptions />} />
                 <Route path="email-templates" element={<AdminEmailTemplates />} />
+                <Route path="curriculum" element={<AdminCurriculum />} />
+                <Route path="modules" element={<AdminModules />} />
               </Route>
               <Route path="/shipping" element={<ShippingPolicy />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
