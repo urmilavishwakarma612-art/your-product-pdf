@@ -148,7 +148,7 @@ export function HeroSection() {
                 </Button>
               </motion.div>
             </Link>
-            <Link to="/patterns">
+            <Link to="/curriculum">
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -158,7 +158,7 @@ export function HeroSection() {
                   variant="outline" 
                   className="text-base px-7 py-5 rounded-full border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300"
                 >
-                  Explore Patterns
+                  Explore Curriculum
                 </Button>
               </motion.div>
             </Link>
@@ -172,9 +172,9 @@ export function HeroSection() {
             className="grid grid-cols-3 gap-8 mt-16 max-w-xl mx-auto"
           >
             {[
-              { value: "30+", label: "Core Patterns", gradient: "gradient-text" },
-              { value: "300+", label: "Curated Problems", gradient: "gradient-text-accent" },
-              { value: "4", label: "AI Mentor Modes", gradient: "text-success" },
+              { value: "11", label: "Levels", gradient: "gradient-text" },
+              { value: "18", label: "Weeks Roadmap", gradient: "gradient-text-accent" },
+              { value: "150+", label: "Problems", gradient: "text-success" },
             ].map((stat, index) => (
               <motion.div
                 key={stat.label}
