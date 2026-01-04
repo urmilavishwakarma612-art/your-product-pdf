@@ -1,9 +1,12 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Lock, Unlock, ChevronRight, Layers, Crown, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { UpgradeModal } from "@/components/premium/UpgradeModal";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/hooks/useAuth";
 
 interface CurriculumLevel {
   id: string;
@@ -19,6 +22,9 @@ interface CurriculumLevel {
 
 export function PhasesSection() {
   const sectionRef = useRef<HTMLElement>(null);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { isPremium } = useSubscription();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   
   const { scrollYProgress } = useScroll({
@@ -42,7 +48,14 @@ export function PhasesSection() {
   });
 
   const handleLevelClick = (level: CurriculumLevel) => {
-    if (!level.is_free) {
+    const isFree = level.is_free;
+    const canAccess = isFree || isPremium;
+    
+    if (canAccess) {
+      // Navigate to curriculum and scroll to the level
+      navigate(`/curriculum#level-${level.level_number}`);
+    } else {
+      // Show upgrade modal for non-premium users on pro levels
       setShowUpgradeModal(true);
     }
   };
@@ -99,7 +112,8 @@ export function PhasesSection() {
                   <LevelCard 
                     level={level} 
                     index={index} 
-                    onLockedClick={() => handleLevelClick(level)} 
+                    isPremium={isPremium}
+                    onClick={() => handleLevelClick(level)} 
                   />
                 </motion.div>
               ))}
@@ -132,11 +146,13 @@ export function PhasesSection() {
 interface LevelCardProps {
   level: CurriculumLevel;
   index: number;
-  onLockedClick: () => void;
+  isPremium: boolean;
+  onClick: () => void;
 }
 
-function LevelCard({ level, index, onLockedClick }: LevelCardProps) {
+function LevelCard({ level, index, isPremium, onClick }: LevelCardProps) {
   const isFree = level.is_free;
+  const canAccess = isFree || isPremium;
   const weekRange = level.week_start && level.week_end 
     ? level.week_start === level.week_end 
       ? `Week ${level.week_start}`
@@ -147,30 +163,30 @@ function LevelCard({ level, index, onLockedClick }: LevelCardProps) {
 
   return (
     <motion.div
-      whileHover={{ x: isFree ? 8 : 0, scale: isFree ? 1.01 : 1 }}
-      onClick={() => !isFree && onLockedClick()}
-      className={`relative overflow-hidden rounded-xl border backdrop-blur-sm p-4 md:p-6 flex items-center gap-4 md:gap-6 group transition-all duration-300 ${
-        isFree 
-          ? "bg-card/50 border-success/30 hover:border-success/50 cursor-pointer" 
-          : "bg-muted/30 border-border/30 hover:border-primary/30 cursor-pointer"
+      whileHover={{ x: canAccess ? 8 : 4, scale: canAccess ? 1.01 : 1.005 }}
+      onClick={onClick}
+      className={`relative overflow-hidden rounded-xl border backdrop-blur-sm p-4 md:p-6 flex items-center gap-4 md:gap-6 group transition-all duration-300 cursor-pointer ${
+        canAccess 
+          ? "bg-card/50 border-success/30 hover:border-success/50" 
+          : "bg-muted/30 border-border/30 hover:border-primary/30"
       }`}
     >
       {/* Locked overlay for Pro levels */}
-      {!isFree && (
+      {!canAccess && (
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-primary/5 pointer-events-none" />
       )}
 
       {/* Level Number */}
       <motion.div
-        whileHover={{ scale: isFree ? 1.1 : 1, rotate: isFree ? 5 : 0 }}
+        whileHover={{ scale: canAccess ? 1.1 : 1, rotate: canAccess ? 5 : 0 }}
         className={`w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center font-bold text-lg md:text-xl relative flex-shrink-0 ${
-          isFree
+          canAccess
             ? "bg-success/15 text-success border border-success/30"
             : "bg-muted text-muted-foreground border border-border/50"
         }`}
       >
         {level.level_number}
-        {isFree && (
+        {canAccess && (
           <motion.div
             className="absolute -top-1 -right-1 w-3 h-3 bg-success rounded-full"
             animate={{ scale: [1, 1.2, 1] }}
@@ -183,7 +199,7 @@ function LevelCard({ level, index, onLockedClick }: LevelCardProps) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 md:gap-3 mb-1.5 md:mb-2 flex-wrap">
           <h3 className={`text-base md:text-lg font-semibold transition-colors truncate ${
-            isFree ? "group-hover:text-success" : "text-muted-foreground"
+            canAccess ? "group-hover:text-success" : "text-muted-foreground"
           }`}>
             {level.name}
           </h3>
@@ -194,6 +210,14 @@ function LevelCard({ level, index, onLockedClick }: LevelCardProps) {
             >
               <Unlock className="w-3 h-3" />
               <span className="hidden sm:inline">Free</span>
+            </motion.span>
+          ) : isPremium ? (
+            <motion.span 
+              whileHover={{ scale: 1.05 }}
+              className="inline-flex items-center gap-1 px-2 md:px-3 py-0.5 md:py-1 rounded-full bg-success/15 text-success text-xs font-medium border border-success/30"
+            >
+              <Unlock className="w-3 h-3" />
+              <span className="hidden sm:inline">Unlocked</span>
             </motion.span>
           ) : (
             <span className="inline-flex items-center gap-1 px-2 md:px-3 py-0.5 md:py-1 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/30">
@@ -227,11 +251,11 @@ function LevelCard({ level, index, onLockedClick }: LevelCardProps) {
 
       {/* Arrow / Lock Icon */}
       <motion.div
-        animate={isFree ? { x: [0, 4, 0] } : {}}
+        animate={canAccess ? { x: [0, 4, 0] } : {}}
         transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
         className="flex-shrink-0"
       >
-        {isFree ? (
+        {canAccess ? (
           <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-success transition-colors" />
         ) : (
           <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
@@ -241,7 +265,7 @@ function LevelCard({ level, index, onLockedClick }: LevelCardProps) {
       </motion.div>
 
       {/* Hover glow effect for locked cards */}
-      {!isFree && (
+      {!canAccess && (
         <motion.div
           initial={{ opacity: 0 }}
           whileHover={{ opacity: 1 }}

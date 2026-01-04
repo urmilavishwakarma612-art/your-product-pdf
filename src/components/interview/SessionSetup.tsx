@@ -8,11 +8,15 @@ import {
   Layers,
   Play,
   Trophy,
-  Timer
+  Timer,
+  Shield,
+  BookOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -76,6 +80,7 @@ export function SessionSetup({ patterns, companies, onStart, isLoading }: Sessio
   const [selectedType, setSelectedType] = useState<SessionType | null>(null);
   const [selectedPattern, setSelectedPattern] = useState<string>("");
   const [selectedCompany, setSelectedCompany] = useState<string>("");
+  const [isInterviewMode, setIsInterviewMode] = useState(true);
 
   const selectedConfig = SESSION_TYPES.find(s => s.type === selectedType);
 
@@ -95,6 +100,7 @@ export function SessionSetup({ patterns, companies, onStart, isLoading }: Sessio
       questionCount: selectedConfig.questionCount,
       patternId: selectedType === "pattern" ? selectedPattern : undefined,
       companyName: selectedType === "company" ? selectedCompany : undefined,
+      mode: isInterviewMode ? "interview" : "practice",
     });
   };
 
@@ -114,6 +120,57 @@ export function SessionSetup({ patterns, companies, onStart, isLoading }: Sessio
           Practice under real interview conditions with timed sessions and get AI-powered feedback
         </p>
       </div>
+
+      {/* Mode Toggle */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="glass-card p-6"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${isInterviewMode ? "bg-primary/20" : "bg-muted"}`}>
+              {isInterviewMode ? (
+                <Shield className="w-5 h-5 text-primary" />
+              ) : (
+                <BookOpen className="w-5 h-5 text-muted-foreground" />
+              )}
+            </div>
+            <div>
+              <Label className="text-base font-medium">
+                {isInterviewMode ? "Interview Mode" : "Practice Mode"}
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {isInterviewMode 
+                  ? "Paste disabled, strict scoring, real interview conditions" 
+                  : "Paste allowed, relaxed scoring, learning-focused"}
+              </p>
+            </div>
+          </div>
+          <Switch
+            checked={isInterviewMode}
+            onCheckedChange={setIsInterviewMode}
+          />
+        </div>
+        {isInterviewMode && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            className="mt-4 flex flex-wrap gap-2"
+          >
+            <Badge variant="outline" className="text-amber-500 border-amber-500/30">
+              <Shield className="w-3 h-3 mr-1" /> Paste Disabled
+            </Badge>
+            <Badge variant="outline" className="text-primary border-primary/30">
+              <Target className="w-3 h-3 mr-1" /> Must Run Before Submit
+            </Badge>
+            <Badge variant="outline" className="text-violet-500 border-violet-500/30">
+              <Zap className="w-3 h-3 mr-1" /> Two-Level Scoring
+            </Badge>
+          </motion.div>
+        )}
+      </motion.div>
 
       {/* Session Type Selection */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -222,7 +279,7 @@ export function SessionSetup({ patterns, companies, onStart, isLoading }: Sessio
           ) : (
             <>
               <Play className="w-5 h-5 mr-2" />
-              Start Interview
+              Start {isInterviewMode ? "Interview" : "Practice"}
             </>
           )}
         </Button>

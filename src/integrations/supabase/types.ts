@@ -339,6 +339,7 @@ export type Database = {
       interview_results: {
         Row: {
           attempt_count: number | null
+          code_quality_score: number | null
           code_snapshots: Json | null
           created_at: string
           evaluation_result: Json | null
@@ -346,17 +347,23 @@ export type Database = {
           flagged: boolean | null
           hints_used: number | null
           id: string
+          interview_performance_score: number | null
           is_solved: boolean | null
+          paste_detected: boolean | null
           question_id: string
+          run_before_submit: boolean | null
+          run_count: number | null
           selected_language: string | null
           session_id: string
           skipped: boolean | null
+          submission_count: number | null
           submitted_at: string | null
           submitted_code: string | null
           time_spent: number | null
         }
         Insert: {
           attempt_count?: number | null
+          code_quality_score?: number | null
           code_snapshots?: Json | null
           created_at?: string
           evaluation_result?: Json | null
@@ -364,17 +371,23 @@ export type Database = {
           flagged?: boolean | null
           hints_used?: number | null
           id?: string
+          interview_performance_score?: number | null
           is_solved?: boolean | null
+          paste_detected?: boolean | null
           question_id: string
+          run_before_submit?: boolean | null
+          run_count?: number | null
           selected_language?: string | null
           session_id: string
           skipped?: boolean | null
+          submission_count?: number | null
           submitted_at?: string | null
           submitted_code?: string | null
           time_spent?: number | null
         }
         Update: {
           attempt_count?: number | null
+          code_quality_score?: number | null
           code_snapshots?: Json | null
           created_at?: string
           evaluation_result?: Json | null
@@ -382,11 +395,16 @@ export type Database = {
           flagged?: boolean | null
           hints_used?: number | null
           id?: string
+          interview_performance_score?: number | null
           is_solved?: boolean | null
+          paste_detected?: boolean | null
           question_id?: string
+          run_before_submit?: boolean | null
+          run_count?: number | null
           selected_language?: string | null
           session_id?: string
           skipped?: boolean | null
+          submission_count?: number | null
           submitted_at?: string | null
           submitted_code?: string | null
           time_spent?: number | null
@@ -414,6 +432,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           id: string
+          mode: string | null
           pattern_id: string | null
           questions: Json
           session_type: string
@@ -429,6 +448,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           id?: string
+          mode?: string | null
           pattern_id?: string | null
           questions?: Json
           session_type: string
@@ -444,6 +464,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           id?: string
+          mode?: string | null
           pattern_id?: string | null
           questions?: Json
           session_type?: string
