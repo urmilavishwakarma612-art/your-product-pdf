@@ -18,6 +18,7 @@ export interface SessionConfig {
   questionCount: number;
   patternId?: string;
   companyName?: string;
+  mode?: "practice" | "interview";
 }
 
 export interface InterviewQuestion {

@@ -17,8 +17,12 @@ serve(async (req) => {
       questionTitle, 
       difficulty, 
       patternName,
-      thinkingTime,
-      codingTime 
+      thinkingTime = 0,
+      codingTime = 0,
+      runCount = 0,
+      pasteDetected = false,
+      hintsUsed = 0,
+      expectedTime = 600,
     } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -36,8 +40,11 @@ serve(async (req) => {
           complexity_analysis: { time: "N/A", space: "N/A" },
           thinking_time: thinkingTime || 0,
           coding_time: codingTime || 0,
+          code_quality_score: 0,
+          interview_performance_score: 0,
           quality_score: 0,
           feedback: "No code submitted or code too short to evaluate.",
+          interview_insight: "Write a complete solution before submitting.",
           suggestions: ["Write a complete solution before submitting."]
         }
       }), {
@@ -45,9 +52,14 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Evaluating code for: ${questionTitle} (${difficulty})`);
+    // Calculate interview performance factors
+    const runBeforeSubmit = runCount > 0;
+    const totalTime = thinkingTime + codingTime;
+    const thinkingRatio = totalTime > 0 ? (thinkingTime / totalTime) * 100 : 0;
 
-    const prompt = `You are an expert DSA code reviewer. Analyze this code submission and provide a structured evaluation.
+    console.log(`Evaluating code for: ${questionTitle} (${difficulty}) - Run count: ${runCount}, Paste: ${pasteDetected}`);
+
+    const prompt = `You are an expert DSA code reviewer AND interview coach. Analyze this code submission and provide a comprehensive two-level evaluation.
 
 Question: ${questionTitle}
 Difficulty: ${difficulty}
@@ -55,6 +67,11 @@ Pattern: ${patternName || "Not specified"}
 Language: ${language}
 Thinking Time: ${thinkingTime} seconds
 Coding Time: ${codingTime} seconds
+Total Time: ${totalTime} seconds
+Expected Time: ${expectedTime} seconds
+Run Before Submit: ${runBeforeSubmit}
+Paste Detected: ${pasteDetected}
+Hints Used: ${hintsUsed}
 
 Submitted Code:
 \`\`\`${language}
@@ -73,17 +90,32 @@ Evaluate the code and respond with ONLY a valid JSON object (no markdown, no exp
     "optimal_time": <string - what the optimal time complexity should be>,
     "optimal_space": <string - what the optimal space complexity should be>
   },
-  "quality_score": <number 0-100 based on correctness, efficiency, code quality>,
-  "feedback": <string - 2-3 sentences of constructive feedback>,
+  "code_quality_score": <number 0-100>,
+  "code_breakdown": {
+    "correctness": <number 0-40 - does the logic solve the problem?>,
+    "optimality": <number 0-25 - is it optimal approach?>,
+    "clean_code": <number 0-20 - readability, naming, structure>,
+    "edge_cases": <number 0-15 - handles edge cases?>
+  },
+  "interview_performance_score": <number 0-100>,
+  "interview_breakdown": {
+    "time_efficiency": <number 0-30 - based on time vs expected>,
+    "run_discipline": <number 0-20 - ${runBeforeSubmit ? '20' : '5'} (tested before submitting?)>,
+    "no_paste": <number 0-20 - ${pasteDetected ? '0' : '20'} (wrote code themselves?)>,
+    "thinking_ratio": <number 0-15 - ideal is 15-30% thinking before coding>,
+    "hint_penalty": <number 0-15 - ${15 - Math.min(15, hintsUsed * 5)} (deduct 5 per hint)>
+  },
+  "feedback": <string - 2-3 sentences of constructive feedback on CODE>,
+  "interview_insight": <string - 1 sentence about interview behavior, e.g. "Your code is correct, but testing before submission would demonstrate better interview discipline.">,
   "suggestions": [<array of 2-3 specific improvement suggestions>]
 }
 
-Be fair but constructive. Consider:
-- Code correctness and logic
-- Time/space complexity vs optimal
-- Code readability and style
-- Edge case handling
-- DSA pattern recognition`;
+IMPORTANT SCORING GUIDELINES:
+- code_quality_score = sum of code_breakdown values
+- interview_performance_score = sum of interview_breakdown values
+- If paste was detected in interview mode, this is a red flag
+- If no runs before submit, deduct from run_discipline
+- Be constructive but honest about interview readiness`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -139,17 +171,31 @@ Be fair but constructive. Consider:
         approach_used: "unknown",
         pattern_detected: patternName || null,
         complexity_analysis: { time: "N/A", space: "N/A" },
-        thinking_time: thinkingTime || 0,
-        coding_time: codingTime || 0,
-        quality_score: 30,
+        code_quality_score: 30,
+        code_breakdown: { correctness: 10, optimality: 5, clean_code: 10, edge_cases: 5 },
+        interview_performance_score: 50,
+        interview_breakdown: { 
+          time_efficiency: 15, 
+          run_discipline: runBeforeSubmit ? 20 : 5, 
+          no_paste: pasteDetected ? 0 : 20, 
+          thinking_ratio: 10, 
+          hint_penalty: Math.max(0, 15 - hintsUsed * 5) 
+        },
         feedback: "Code submitted. AI analysis encountered an issue, but your submission has been recorded.",
+        interview_insight: "Testing before submission demonstrates better interview discipline.",
         suggestions: ["Try to optimize your solution", "Consider edge cases"]
       };
     }
 
-    // Add timing data to evaluation
+    // Add timing and metadata to evaluation
     evaluation.thinking_time = thinkingTime || 0;
     evaluation.coding_time = codingTime || 0;
+    evaluation.run_count = runCount;
+    evaluation.paste_detected = pasteDetected;
+    evaluation.run_before_submit = runBeforeSubmit;
+    
+    // Ensure backward compatibility with quality_score
+    evaluation.quality_score = evaluation.code_quality_score || evaluation.quality_score || 50;
 
     return new Response(JSON.stringify({ evaluation }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -165,8 +211,11 @@ Be fair but constructive. Consider:
         complexity_analysis: { time: "N/A", space: "N/A" },
         thinking_time: 0,
         coding_time: 0,
+        code_quality_score: 0,
+        interview_performance_score: 0,
         quality_score: 0,
         feedback: "An error occurred during evaluation.",
+        interview_insight: "",
         suggestions: []
       }
     }), {

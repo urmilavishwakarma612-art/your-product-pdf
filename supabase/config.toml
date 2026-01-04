@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.evaluate-code]
 verify_jwt = false
+
+[functions.run-test-cases]
+verify_jwt = false

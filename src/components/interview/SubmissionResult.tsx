@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
-import { CheckCircle2, XCircle, AlertTriangle, Clock, Brain, Zap, Code } from "lucide-react";
+import { CheckCircle2, XCircle, AlertTriangle, Clock, Brain, Zap, Code, Target, Clipboard } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { InterviewScoreCard } from "./InterviewScoreCard";
 
 export interface EvaluationResult {
   is_correct: boolean;
@@ -17,8 +18,27 @@ export interface EvaluationResult {
   thinking_time: number;
   coding_time: number;
   quality_score: number;
+  code_quality_score?: number;
+  interview_performance_score?: number;
+  code_breakdown?: {
+    correctness: number;
+    optimality: number;
+    clean_code: number;
+    edge_cases: number;
+  };
+  interview_breakdown?: {
+    time_efficiency: number;
+    run_discipline: number;
+    no_paste: number;
+    thinking_ratio: number;
+    hint_penalty: number;
+  };
   feedback: string;
+  interview_insight?: string;
   suggestions: string[];
+  run_count?: number;
+  paste_detected?: boolean;
+  run_before_submit?: boolean;
 }
 
 interface SubmissionResultProps {
@@ -36,6 +56,23 @@ export function SubmissionResult({ result, questionTitle }: SubmissionResultProp
 
   const approach = approachConfig[result.approach_used] || approachConfig.unknown;
   const ApproachIcon = approach.icon;
+
+  const codeQualityScore = result.code_quality_score || result.quality_score || 0;
+  const interviewScore = result.interview_performance_score || 50;
+  const interviewPassed = interviewScore >= 70;
+
+  // Determine verdict message
+  const getVerdictMessage = () => {
+    if (result.is_correct && interviewPassed) {
+      return { title: "Great Job! Interview Ready ✅", subtitle: "Both code and interview performance are strong" };
+    }
+    if (result.is_correct && !interviewPassed) {
+      return { title: "Code Correct ✅", subtitle: "Interview Signals: ⚠ Review Needed" };
+    }
+    return { title: "Needs Improvement", subtitle: "Review the feedback below" };
+  };
+
+  const verdict = getVerdictMessage();
 
   return (
     <motion.div
@@ -57,27 +94,13 @@ export function SubmissionResult({ result, questionTitle }: SubmissionResultProp
               </div>
             )}
             <div>
-              <h3 className="text-xl font-bold">
-                {result.is_correct ? "Solution Accepted!" : "Needs Improvement"}
-              </h3>
-              <p className="text-muted-foreground">{questionTitle}</p>
+              <h3 className="text-xl font-bold">{verdict.title}</h3>
+              <p className="text-muted-foreground text-sm">{verdict.subtitle}</p>
             </div>
-          </div>
-
-          {/* Quality Score */}
-          <div className="mb-4">
-            <div className="flex justify-between text-sm mb-1">
-              <span>Quality Score</span>
-              <span className="font-medium">{result.quality_score}/100</span>
-            </div>
-            <Progress 
-              value={result.quality_score} 
-              className={`h-2 ${result.quality_score >= 70 ? "" : result.quality_score >= 40 ? "" : ""}`}
-            />
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
             <div className="p-3 rounded-lg bg-muted/50 text-center">
               <ApproachIcon className={`w-5 h-5 mx-auto mb-1 ${approach.color.split(' ')[0]}`} />
               <Badge variant="outline" className={approach.color}>
@@ -100,8 +123,43 @@ export function SubmissionResult({ result, questionTitle }: SubmissionResultProp
               <div className="text-xs text-muted-foreground">Complexity</div>
             </div>
           </div>
+
+          {/* Run/Paste Status Badges */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {result.run_before_submit ? (
+              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/30">
+                <Target className="w-3 h-3 mr-1" /> Tested Before Submit
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/30">
+                <AlertTriangle className="w-3 h-3 mr-1" /> No Test Before Submit
+              </Badge>
+            )}
+            {result.paste_detected && (
+              <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">
+                <Clipboard className="w-3 h-3 mr-1" /> Paste Detected
+              </Badge>
+            )}
+            {result.run_count !== undefined && result.run_count > 0 && (
+              <Badge variant="secondary">
+                Runs: {result.run_count}
+              </Badge>
+            )}
+          </div>
         </CardContent>
       </Card>
+
+      {/* Two-Level Score Card */}
+      {(result.code_quality_score !== undefined || result.interview_performance_score !== undefined) && (
+        <InterviewScoreCard
+          codeQualityScore={codeQualityScore}
+          interviewPerformanceScore={interviewScore}
+          codeBreakdown={result.code_breakdown}
+          interviewBreakdown={result.interview_breakdown}
+          isCodeCorrect={result.is_correct}
+          interviewInsight={result.interview_insight}
+        />
+      )}
 
       {/* Feedback */}
       <Card>

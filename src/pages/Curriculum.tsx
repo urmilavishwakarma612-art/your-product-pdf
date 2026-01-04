@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { Navbar } from "@/components/landing/Navbar";
@@ -57,6 +58,7 @@ const Curriculum = () => {
   const { user } = useAuth();
   const { isPremium } = useSubscription();
   const queryClient = useQueryClient();
+  const location = useLocation();
 
   // Filters state
   const [searchQuery, setSearchQuery] = useState("");
@@ -65,6 +67,21 @@ const Curriculum = () => {
   const [bookmarkFilter, setBookmarkFilter] = useState(false);
   const [selectedQuestionForMentor, setSelectedQuestionForMentor] = useState<Question | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  // Handle scroll to level from hash
+  useEffect(() => {
+    const hash = location.hash;
+    if (hash && hash.startsWith("#level-")) {
+      const levelNumber = hash.replace("#level-", "");
+      // Wait for content to load, then scroll
+      setTimeout(() => {
+        const element = document.getElementById(`level-${levelNumber}`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 500);
+    }
+  }, [location.hash]);
 
   // Fetch curriculum levels
   const { data: levels = [], isLoading: levelsLoading } = useQuery({

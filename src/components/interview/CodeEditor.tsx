@@ -9,7 +9,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Shield } from "lucide-react";
+import { toast } from "sonner";
 
 interface CodeEditorProps {
   questionId: string;
@@ -20,6 +21,8 @@ interface CodeEditorProps {
   onFirstKeystroke: () => void;
   hasStartedTyping: boolean;
   disabled?: boolean;
+  isInterviewMode?: boolean;
+  onPasteAttempt?: () => void;
 }
 
 const LANGUAGE_CONFIG: Record<string, { monacoLang: string; template: string }> = {
@@ -80,6 +83,8 @@ export function CodeEditor({
   onFirstKeystroke,
   hasStartedTyping,
   disabled = false,
+  isInterviewMode = true,
+  onPasteAttempt,
 }: CodeEditorProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -100,8 +105,36 @@ export function CodeEditor({
     return () => clearInterval(interval);
   }, [code, language]);
 
-  const handleEditorDidMount = (editor: any) => {
+  const handleEditorDidMount = (editor: any, monaco: any) => {
     editorRef.current = editor;
+    
+    // Intercept paste in interview mode
+    if (isInterviewMode) {
+      editor.onKeyDown((e: any) => {
+        // Check for Ctrl+V or Cmd+V
+        const isPaste = (e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyV;
+        if (isPaste) {
+          e.preventDefault();
+          e.stopPropagation();
+          toast.warning("Paste disabled in Interview Mode", {
+            description: "Write your code from scratch to simulate real interview conditions.",
+            icon: <Shield className="w-4 h-4" />,
+          });
+          onPasteAttempt?.();
+        }
+      });
+
+      // Also intercept context menu paste
+      editor.addAction({
+        id: 'prevent-paste',
+        label: 'Paste (Disabled)',
+        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV],
+        run: () => {
+          toast.warning("Paste disabled in Interview Mode");
+          onPasteAttempt?.();
+        }
+      });
+    }
   };
 
   const handleEditorChange = useCallback(
@@ -145,6 +178,13 @@ export function CodeEditor({
           {hasStartedTyping && (
             <Badge variant="secondary" className="text-xs">
               Coding...
+            </Badge>
+          )}
+
+          {isInterviewMode && (
+            <Badge variant="outline" className="text-xs text-amber-500 border-amber-500/30">
+              <Shield className="w-3 h-3 mr-1" />
+              Interview Mode
             </Badge>
           )}
         </div>
