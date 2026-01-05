@@ -15,9 +15,9 @@ import {
   Code,
   Play,
   Shield,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -35,12 +35,13 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { CodeEditor, LANGUAGE_CONFIG } from "./CodeEditor";
 import { ProblemPanel } from "./ProblemPanel";
 import { SubmissionResult, EvaluationResult } from "./SubmissionResult";
 import { TestCaseResults, TestCaseResult } from "./TestCaseResults";
-import type { SessionConfig, InterviewQuestion, QuestionResult } from "@/pages/InterviewSimulator";
+import type { SessionConfig, InterviewQuestion, QuestionResult } from "@/types/interview";
 
 interface InterviewSessionProps {
   sessionId: string;
@@ -94,17 +95,25 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [showSkipDialog, setShowSkipDialog] = useState(false);
   const [showHintDialog, setShowHintDialog] = useState(false);
-  const [currentHintIndex, setCurrentHintIndex] = useState(0);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
-  const [showSubmissionResult, setShowSubmissionResult] = useState(false);
-  const [showTestResults, setShowTestResults] = useState(false);
+  const [activeTab, setActiveTab] = useState<"code" | "results">("code");
+  const [mobileView, setMobileView] = useState<"problem" | "editor">("problem");
   const snapshotIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const isInterviewMode = config.mode !== "practice";
   const currentQuestion = questions[currentIndex];
   const currentState = questionStates[currentQuestion?.id];
+
+  // Check for mobile
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Timer
   useEffect(() => {
@@ -125,10 +134,8 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
   // Track time spent on current question
   useEffect(() => {
     setQuestionStartTime(Date.now());
-    setShowSubmissionResult(false);
-    setShowTestResults(false);
+    setActiveTab("code");
     
-    // Update question load time for new question
     setQuestionStates(prev => ({
       ...prev,
       [currentQuestion.id]: {
@@ -171,7 +178,7 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
           },
         }));
       }
-    }, 120000); // 2 minutes
+    }, 120000);
 
     return () => {
       if (snapshotIntervalRef.current) {
@@ -273,7 +280,6 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
     }));
   };
 
-  // Run code for testing
   const handleRunCode = async () => {
     if (!currentState.code || currentState.code.trim().length < 20) {
       toast.error("Please write more code before running tests");
@@ -299,8 +305,7 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
         test_results: data.results,
       });
 
-      setShowTestResults(true);
-      setShowSubmissionResult(false);
+      setActiveTab("results");
 
       const passed = data.passed || 0;
       const total = data.total || 0;
@@ -308,7 +313,7 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
       if (passed === total && total > 0) {
         toast.success(`All ${total} test cases passed! Ready to submit.`);
       } else {
-        toast.info(`${passed}/${total} test cases passed. Review the results.`);
+        toast.info(`${passed}/${total} test cases passed.`);
       }
     } catch (err) {
       console.error("Run error:", err);
@@ -318,14 +323,12 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
     }
   };
 
-  // Submit code for evaluation
   const handleSubmitCode = async () => {
     if (!currentState.code || currentState.code.trim().length < 20) {
       toast.error("Please write more code before submitting");
       return;
     }
 
-    // Check if ran at least once in interview mode
     if (isInterviewMode && currentState.run_count === 0) {
       toast.warning("Run your code at least once before submitting!", {
         description: "Interviewers expect you to test your code.",
@@ -336,11 +339,9 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
     saveCurrentQuestionTime();
 
     try {
-      // Calculate thinking time: from question load to first keystroke
       const thinkingTime = currentState.first_keystroke_at 
         ? Math.round((currentState.first_keystroke_at.getTime() - currentState.question_load_time) / 1000)
         : 0;
-      // Coding time: from first keystroke to now
       const codingTime = currentState.first_keystroke_at
         ? Math.round((Date.now() - currentState.first_keystroke_at.getTime()) / 1000)
         : currentState.time_spent;
@@ -370,15 +371,14 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
         evaluation_result: evaluation,
       });
 
-      setShowSubmissionResult(true);
-      setShowTestResults(false);
+      setActiveTab("results");
       
       if (evaluation.is_correct && (evaluation.interview_performance_score || 0) >= 70) {
         toast.success("Great Job! Interview Ready!");
       } else if (evaluation.is_correct) {
-        toast.success("Code Correct! But review interview signals.");
+        toast.success("Code Correct! Review interview signals.");
       } else {
-        toast.info("Submission recorded. Review the feedback.");
+        toast.info("Submission recorded. Review feedback.");
       }
     } catch (err) {
       console.error("Submission error:", err);
@@ -388,9 +388,7 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
     }
   };
 
-  const handleSkip = () => {
-    setShowSkipDialog(true);
-  };
+  const handleSkip = () => setShowSkipDialog(true);
 
   const confirmSkip = () => {
     updateState({ skipped: true });
@@ -402,14 +400,9 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
     toast.warning("Question skipped");
   };
 
-  const handleFlag = () => {
-    updateState({ flagged: !currentState.flagged });
-  };
+  const handleFlag = () => updateState({ flagged: !currentState.flagged });
 
-  const handleUseHint = () => {
-    setShowHintDialog(true);
-    setCurrentHintIndex(currentState.hints_used);
-  };
+  const handleUseHint = () => setShowHintDialog(true);
 
   const confirmHint = () => {
     updateState({ hints_used: currentState.hints_used + 1 });
@@ -417,10 +410,8 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
     toast.info(`Hint ${currentState.hints_used + 1} used (-5 XP penalty)`);
   };
 
-  const handleCodeChange = (code: string) => {
-    updateState({ code });
-  };
-
+  const handleCodeChange = (code: string) => updateState({ code });
+  
   const handleLanguageChange = (language: string) => {
     updateState({ language, code: LANGUAGE_CONFIG[language]?.template || "" });
   };
@@ -450,92 +441,306 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
 
   const urgencyColor = timeRemaining < 60 ? "text-destructive" : timeRemaining < 300 ? "text-amber-500" : "text-foreground";
   const timePercent = (timeRemaining / config.timeLimit) * 100;
-
   const solvedCount = Object.values(questionStates).filter(s => s.is_solved).length;
 
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="space-y-4 h-[calc(100vh-120px)]"
-    >
-      {/* Timer Bar */}
-      <Card className={`border-2 ${timeRemaining < 60 ? "border-destructive animate-pulse" : timeRemaining < 300 ? "border-amber-500" : "border-border"}`}>
-        <CardContent className="py-3">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <Clock className={`w-5 h-5 ${urgencyColor}`} />
-              <span className={`text-2xl font-mono font-bold ${urgencyColor}`}>
+  // Mobile layout
+  if (isMobile) {
+    return (
+      <div className="h-full flex flex-col bg-background">
+        {/* Compact Header */}
+        <div className={`p-2 border-b ${timeRemaining < 60 ? "border-destructive" : "border-border"}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className={`w-4 h-4 ${urgencyColor}`} />
+              <span className={`font-mono font-bold ${urgencyColor}`}>
                 {formatTime(timeRemaining)}
               </span>
-              {timeRemaining < 60 && (
-                <AlertTriangle className="w-5 h-5 text-destructive animate-bounce" />
-              )}
-              {timeRemaining < 300 && timeRemaining >= 60 && (
-                <Badge variant="outline" className="text-amber-500 border-amber-500">
-                  5 min warning!
-                </Badge>
-              )}
               {isInterviewMode && (
-                <Badge variant="outline" className="text-primary border-primary/30">
-                  <Shield className="w-3 h-3 mr-1" />
+                <Badge variant="outline" className="text-xs py-0 px-1">
+                  <Shield className="w-3 h-3 mr-0.5" />
                   Interview
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-4">
-              <div className="text-sm text-muted-foreground">
-                {solvedCount}/{questions.length} solved
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Runs: {currentState.run_count} | Q{currentIndex + 1}
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">
+                {solvedCount}/{questions.length}
+              </span>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleEndSession}>
+                <X className="w-4 h-4" />
+              </Button>
             </div>
           </div>
-          <Progress value={timePercent} className={timeRemaining < 60 ? "bg-destructive/20" : ""} />
-        </CardContent>
-      </Card>
+          <Progress value={timePercent} className="h-1 mt-2" />
+        </div>
 
-      {/* Question Navigator */}
-      <div className="flex flex-wrap gap-2 justify-center">
-        {questions.map((q, idx) => {
-          const state = questionStates[q.id];
-          return (
-            <Button
-              key={q.id}
-              variant={idx === currentIndex ? "default" : "outline"}
-              size="sm"
-              className={`w-10 h-10 p-0 relative transition-all ${
-                state.is_solved ? "bg-emerald-500 hover:bg-emerald-600 border-emerald-500 text-white" :
-                state.skipped ? "bg-muted text-muted-foreground" : ""
-              }`}
-              onClick={() => navigateTo(idx)}
-            >
-              {idx + 1}
-              {state.flagged && (
-                <Flag className="w-3 h-3 absolute -top-1 -right-1 text-amber-500 fill-amber-500" />
+        {/* Question Navigator */}
+        <div className="flex gap-1 p-2 overflow-x-auto border-b">
+          {questions.map((q, idx) => {
+            const state = questionStates[q.id];
+            return (
+              <Button
+                key={q.id}
+                variant={idx === currentIndex ? "default" : "outline"}
+                size="sm"
+                className={`h-8 w-8 p-0 shrink-0 ${
+                  state.is_solved ? "bg-emerald-500 border-emerald-500 text-white" :
+                  state.skipped ? "bg-muted" : ""
+                }`}
+                onClick={() => navigateTo(idx)}
+              >
+                {idx + 1}
+              </Button>
+            );
+          })}
+        </div>
+
+        {/* Mobile Tab Toggle */}
+        <div className="flex border-b">
+          <button
+            className={`flex-1 py-2 text-sm font-medium transition-colors ${
+              mobileView === "problem" ? "text-primary border-b-2 border-primary" : "text-muted-foreground"
+            }`}
+            onClick={() => setMobileView("problem")}
+          >
+            Problem
+          </button>
+          <button
+            className={`flex-1 py-2 text-sm font-medium transition-colors ${
+              mobileView === "editor" ? "text-primary border-b-2 border-primary" : "text-muted-foreground"
+            }`}
+            onClick={() => setMobileView("editor")}
+          >
+            Editor
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-hidden">
+          {mobileView === "problem" ? (
+            <div className="h-full overflow-auto">
+              <ProblemPanel 
+                question={currentQuestion}
+                questionNumber={currentIndex + 1}
+                totalQuestions={questions.length}
+              />
+            </div>
+          ) : (
+            <div className="h-full flex flex-col">
+              {activeTab === "results" && currentState.evaluation_result ? (
+                <div className="flex-1 overflow-auto p-3">
+                  <SubmissionResult 
+                    result={currentState.evaluation_result}
+                    questionTitle={currentQuestion.title}
+                  />
+                  <Button 
+                    variant="outline" 
+                    className="w-full mt-3"
+                    onClick={() => setActiveTab("code")}
+                  >
+                    <Code className="w-4 h-4 mr-2" />
+                    Edit Code
+                  </Button>
+                </div>
+              ) : activeTab === "results" && currentState.test_results ? (
+                <div className="flex-1 overflow-auto p-3">
+                  <TestCaseResults
+                    results={currentState.test_results}
+                    passed={currentState.test_results.filter(r => r.passed).length}
+                    total={currentState.test_results.length}
+                  />
+                  <Button 
+                    variant="outline" 
+                    className="w-full mt-3"
+                    onClick={() => setActiveTab("code")}
+                  >
+                    <Code className="w-4 h-4 mr-2" />
+                    Back to Code
+                  </Button>
+                </div>
+              ) : (
+                <CodeEditor
+                  questionId={currentQuestion.id}
+                  language={currentState.language}
+                  onLanguageChange={handleLanguageChange}
+                  code={currentState.code}
+                  onCodeChange={handleCodeChange}
+                  onFirstKeystroke={handleFirstKeystroke}
+                  hasStartedTyping={!!currentState.first_keystroke_at}
+                  disabled={isSubmitting || isRunning}
+                  isInterviewMode={isInterviewMode}
+                  onPasteAttempt={handlePasteAttempt}
+                />
               )}
-              {state.paste_detected && (
-                <div className="w-2 h-2 absolute -bottom-1 -right-1 bg-destructive rounded-full" />
-              )}
+            </div>
+          )}
+        </div>
+
+        {/* Mobile Action Bar */}
+        <div className="p-2 border-t bg-background space-y-2">
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="flex-1" onClick={handleFlag}>
+              <Flag className={`w-4 h-4 ${currentState.flagged ? "fill-amber-500 text-amber-500" : ""}`} />
             </Button>
-          );
-        })}
+            <Button variant="outline" size="sm" className="flex-1" onClick={handleUseHint}>
+              <Lightbulb className="w-4 h-4" />
+            </Button>
+            <Button variant="outline" size="sm" className="flex-1" onClick={handleSkip}>
+              <SkipForward className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={handleRunCode}
+              disabled={isRunning || isSubmitting}
+            >
+              {isRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+              <span className="ml-1">Run</span>
+            </Button>
+            <Button
+              size="sm"
+              className="flex-1 btn-primary-glow"
+              onClick={handleSubmitCode}
+              disabled={isSubmitting || currentState.is_solved}
+            >
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              <span className="ml-1">Submit</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Dialogs */}
+        <AlertDialog open={showEndDialog} onOpenChange={setShowEndDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>End Interview?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You've solved {solvedCount}/{questions.length} questions.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Continue</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmEnd}>End & View Results</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={showSkipDialog} onOpenChange={setShowSkipDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Skip Question?</AlertDialogTitle>
+              <AlertDialogDescription>This affects your score.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Keep Trying</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmSkip}>Skip</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={showHintDialog} onOpenChange={setShowHintDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Use Hint?</AlertDialogTitle>
+              <AlertDialogDescription>Costs 5 XP. Used: {currentState?.hints_used || 0}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmHint}>Use Hint</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
+  }
+
+  // Desktop layout - full screen immersive
+  return (
+    <div className="h-full flex flex-col">
+      {/* Timer Bar */}
+      <div className={`px-4 py-2 border-b ${timeRemaining < 60 ? "border-destructive bg-destructive/5" : "border-border"}`}>
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Clock className={`w-5 h-5 ${urgencyColor}`} />
+              <span className={`text-2xl font-mono font-bold ${urgencyColor}`}>
+                {formatTime(timeRemaining)}
+              </span>
+            </div>
+            {timeRemaining < 60 && (
+              <AlertTriangle className="w-5 h-5 text-destructive animate-bounce" />
+            )}
+            {isInterviewMode && (
+              <Badge variant="outline" className="text-primary border-primary/30">
+                <Shield className="w-3 h-3 mr-1" />
+                Interview Mode
+              </Badge>
+            )}
+            {currentState.paste_detected && (
+              <Badge variant="outline" className="text-destructive border-destructive/30">
+                ⚠ Paste Detected
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="text-sm text-muted-foreground">
+              <span className="text-foreground font-medium">{solvedCount}</span>/{questions.length} solved
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Runs: <span className="text-foreground font-medium">{currentState.run_count}</span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleEndSession}>
+              <X className="w-4 h-4 mr-1" />
+              Exit
+            </Button>
+          </div>
+        </div>
+        <Progress value={timePercent} className={`h-1.5 ${timeRemaining < 60 ? "[&>div]:bg-destructive" : ""}`} />
       </div>
 
-      {/* Main Content: Split Pane */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentQuestion.id}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="flex-1 h-[calc(100%-180px)]"
-        >
-          <Card className="h-full overflow-hidden">
+      {/* Question Navigator */}
+      <div className="flex items-center gap-2 px-4 py-2 border-b bg-muted/30">
+        <span className="text-sm text-muted-foreground">Questions:</span>
+        <div className="flex gap-1.5">
+          {questions.map((q, idx) => {
+            const state = questionStates[q.id];
+            return (
+              <Button
+                key={q.id}
+                variant={idx === currentIndex ? "default" : "outline"}
+                size="sm"
+                className={`w-9 h-9 p-0 relative transition-all ${
+                  state.is_solved ? "bg-emerald-500 hover:bg-emerald-600 border-emerald-500 text-white" :
+                  state.skipped ? "bg-muted text-muted-foreground" : ""
+                }`}
+                onClick={() => navigateTo(idx)}
+              >
+                {idx + 1}
+                {state.flagged && (
+                  <Flag className="w-3 h-3 absolute -top-1 -right-1 text-amber-500 fill-amber-500" />
+                )}
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentQuestion.id}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="h-full"
+          >
             <ResizablePanelGroup direction="horizontal" className="h-full">
               {/* Problem Panel */}
-              <ResizablePanel defaultSize={40} minSize={30}>
+              <ResizablePanel defaultSize={45} minSize={30}>
                 <ProblemPanel 
                   question={currentQuestion}
                   questionNumber={currentIndex + 1}
@@ -546,144 +751,123 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
               <ResizableHandle withHandle />
 
               {/* Code Editor Panel */}
-              <ResizablePanel defaultSize={60} minSize={40}>
+              <ResizablePanel defaultSize={55} minSize={35}>
                 <div className="flex flex-col h-full">
-                  {showSubmissionResult && currentState.evaluation_result ? (
-                    <div className="flex-1 overflow-auto p-4">
-                      <SubmissionResult 
-                        result={currentState.evaluation_result}
-                        questionTitle={currentQuestion.title}
-                      />
-                      <div className="mt-4 flex justify-center gap-3">
-                        <Button variant="outline" onClick={() => setShowSubmissionResult(false)}>
-                          <Code className="w-4 h-4 mr-2" />
-                          Edit Code
-                        </Button>
-                        {currentIndex < questions.length - 1 && (
-                          <Button onClick={() => navigateTo(currentIndex + 1)}>
-                            Next Question
-                            <ChevronRight className="w-4 h-4 ml-2" />
-                          </Button>
+                  <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "code" | "results")} className="flex-1 flex flex-col">
+                    <TabsList className="mx-3 mt-2 w-fit">
+                      <TabsTrigger value="code" className="gap-1.5">
+                        <Code className="w-4 h-4" />
+                        Code
+                      </TabsTrigger>
+                      <TabsTrigger value="results" className="gap-1.5">
+                        Results
+                        {currentState.evaluation_result && (
+                          <Badge variant="secondary" className="ml-1 py-0 px-1.5 text-xs">
+                            {currentState.evaluation_result.is_correct ? "✓" : "✗"}
+                          </Badge>
                         )}
-                      </div>
-                    </div>
-                  ) : showTestResults && currentState.test_results ? (
-                    <div className="flex-1 overflow-auto p-4">
-                      <TestCaseResults
-                        results={currentState.test_results}
-                        passed={currentState.test_results.filter(r => r.passed).length}
-                        total={currentState.test_results.length}
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="code" className="flex-1 m-0 overflow-hidden">
+                      <CodeEditor
+                        questionId={currentQuestion.id}
+                        language={currentState.language}
+                        onLanguageChange={handleLanguageChange}
+                        code={currentState.code}
+                        onCodeChange={handleCodeChange}
+                        onFirstKeystroke={handleFirstKeystroke}
+                        hasStartedTyping={!!currentState.first_keystroke_at}
+                        disabled={isSubmitting || isRunning}
+                        isInterviewMode={isInterviewMode}
+                        onPasteAttempt={handlePasteAttempt}
                       />
-                      <div className="mt-4 flex justify-center gap-3">
-                        <Button variant="outline" onClick={() => setShowTestResults(false)}>
-                          <Code className="w-4 h-4 mr-2" />
-                          Back to Code
-                        </Button>
-                        <Button 
-                          onClick={handleSubmitCode}
-                          disabled={isSubmitting}
-                          className="btn-primary-glow"
-                        >
-                          {isSubmitting ? (
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          ) : (
-                            <Send className="w-4 h-4 mr-2" />
-                          )}
-                          Submit
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <CodeEditor
-                      questionId={currentQuestion.id}
-                      language={currentState.language}
-                      onLanguageChange={handleLanguageChange}
-                      code={currentState.code}
-                      onCodeChange={handleCodeChange}
-                      onFirstKeystroke={handleFirstKeystroke}
-                      hasStartedTyping={!!currentState.first_keystroke_at}
-                      disabled={isSubmitting || isRunning}
-                      isInterviewMode={isInterviewMode}
-                      onPasteAttempt={handlePasteAttempt}
-                    />
-                  )}
+                    </TabsContent>
+
+                    <TabsContent value="results" className="flex-1 m-0 overflow-auto p-4">
+                      {currentState.evaluation_result ? (
+                        <SubmissionResult 
+                          result={currentState.evaluation_result}
+                          questionTitle={currentQuestion.title}
+                        />
+                      ) : currentState.test_results ? (
+                        <TestCaseResults
+                          results={currentState.test_results}
+                          passed={currentState.test_results.filter(r => r.passed).length}
+                          total={currentState.test_results.length}
+                        />
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-muted-foreground">
+                          Run or submit your code to see results
+                        </div>
+                      )}
+                    </TabsContent>
+                  </Tabs>
 
                   {/* Action Bar */}
-                  {!showSubmissionResult && !showTestResults && (
-                    <div className="flex items-center justify-between p-3 border-t bg-muted/30">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant={currentState.flagged ? "default" : "outline"}
-                          size="sm"
-                          onClick={handleFlag}
-                          className={currentState.flagged ? "bg-amber-500 hover:bg-amber-600" : ""}
-                        >
-                          <Flag className="w-4 h-4 mr-1" />
-                          Flag
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={handleUseHint}>
-                          <Lightbulb className="w-4 h-4 mr-1" />
-                          Hint ({currentState.hints_used})
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={handleSkip}>
-                          <SkipForward className="w-4 h-4 mr-1" />
-                          Skip
-                        </Button>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        {/* Run Button */}
-                        <Button
-                          variant="outline"
-                          onClick={handleRunCode}
-                          disabled={isRunning || isSubmitting}
-                          className="border-emerald-500/50 text-emerald-500 hover:bg-emerald-500/10"
-                        >
-                          {isRunning ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Running...
-                            </>
-                          ) : (
-                            <>
-                              <Play className="w-4 h-4 mr-2" />
-                              Run Code
-                            </>
-                          )}
-                        </Button>
-
-                        {/* Submit Button */}
-                        <Button
-                          onClick={handleSubmitCode}
-                          disabled={isSubmitting || currentState.is_solved}
-                          className={currentState.is_solved ? "bg-emerald-500" : "btn-primary-glow"}
-                        >
-                          {isSubmitting ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Evaluating...
-                            </>
-                          ) : currentState.is_solved ? (
-                            "✓ Solved"
-                          ) : (
-                            <>
-                              <Send className="w-4 h-4 mr-2" />
-                              Submit
-                            </>
-                          )}
-                        </Button>
-                      </div>
+                  <div className="flex items-center justify-between p-3 border-t bg-muted/30">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant={currentState.flagged ? "default" : "outline"}
+                        size="sm"
+                        onClick={handleFlag}
+                        className={currentState.flagged ? "bg-amber-500 hover:bg-amber-600" : ""}
+                      >
+                        <Flag className="w-4 h-4 mr-1" />
+                        Flag
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={handleUseHint}>
+                        <Lightbulb className="w-4 h-4 mr-1" />
+                        Hint ({currentState.hints_used})
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={handleSkip}>
+                        <SkipForward className="w-4 h-4 mr-1" />
+                        Skip
+                      </Button>
                     </div>
-                  )}
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={handleRunCode}
+                        disabled={isRunning || isSubmitting}
+                        className="border-emerald-500/50 text-emerald-500 hover:bg-emerald-500/10"
+                      >
+                        {isRunning ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Play className="w-4 h-4 mr-2" />
+                        )}
+                        Run Code
+                      </Button>
+
+                      <Button
+                        onClick={handleSubmitCode}
+                        disabled={isSubmitting || currentState.is_solved}
+                        className={currentState.is_solved ? "bg-emerald-500" : "btn-primary-glow"}
+                      >
+                        {isSubmitting ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : currentState.is_solved ? (
+                          "✓ Solved"
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4 mr-2" />
+                            Submit
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </ResizablePanel>
             </ResizablePanelGroup>
-          </Card>
-        </motion.div>
-      </AnimatePresence>
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
       {/* Navigation */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center px-4 py-3 border-t bg-background">
         <Button
           variant="outline"
           onClick={() => navigateTo(currentIndex - 1)}
@@ -693,15 +877,8 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
           Previous
         </Button>
         
-        <Button variant="destructive" onClick={handleEndSession}>
-          End Interview
-        </Button>
-
         {currentIndex === questions.length - 1 ? (
-          <Button 
-            className="btn-primary-glow" 
-            onClick={handleEndSession}
-          >
+          <Button className="btn-primary-glow" onClick={handleEndSession}>
             Finish Interview
           </Button>
         ) : (
@@ -712,13 +889,13 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
         )}
       </div>
 
-      {/* End Confirmation Dialog */}
+      {/* Dialogs */}
       <AlertDialog open={showEndDialog} onOpenChange={setShowEndDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>End Interview?</AlertDialogTitle>
             <AlertDialogDescription>
-              You've solved {solvedCount} out of {questions.length} questions. 
+              You've solved {solvedCount} out of {questions.length} questions.
               {questions.length - solvedCount - Object.values(questionStates).filter(s => s.skipped).length > 0 && (
                 <span className="block mt-2 text-amber-500">
                   Warning: {questions.length - solvedCount - Object.values(questionStates).filter(s => s.skipped).length} question(s) not attempted!
@@ -728,20 +905,17 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Continue Interview</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmEnd}>
-              End & View Results
-            </AlertDialogAction>
+            <AlertDialogAction onClick={confirmEnd}>End & View Results</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Skip Confirmation Dialog */}
       <AlertDialog open={showSkipDialog} onOpenChange={setShowSkipDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Skip Question?</AlertDialogTitle>
             <AlertDialogDescription>
-              Skipping this question will mark it as incomplete. You can return to it later, but this affects your score.
+              Skipping affects your score. You can return later.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -753,16 +927,12 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Hint Dialog */}
       <AlertDialog open={showHintDialog} onOpenChange={setShowHintDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Use Hint?</AlertDialogTitle>
             <AlertDialogDescription>
-              Using a hint will cost 5 XP. You've used {currentState?.hints_used || 0} hint(s) on this question.
-              <span className="block mt-2 text-muted-foreground text-sm">
-                Hints will be shown after you confirm.
-              </span>
+              Using a hint costs 5 XP. You've used {currentState?.hints_used || 0} hint(s) on this question.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -774,6 +944,6 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </motion.div>
+    </div>
   );
 }

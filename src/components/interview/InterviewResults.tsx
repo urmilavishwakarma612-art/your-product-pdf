@@ -20,7 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Link } from "react-router-dom";
-import type { SessionConfig, QuestionResult } from "@/pages/InterviewSimulator";
+import type { SessionConfig, QuestionResult } from "@/types/interview";
 
 interface InterviewResultsProps {
   sessionId: string;
@@ -241,9 +241,9 @@ export function InterviewResults({ sessionId, config, results, onNewSession }: I
           <RotateCcw className="w-4 h-4 mr-2" />
           Start New Session
         </Button>
-        <Link to="/patterns">
+        <Link to="/curriculum">
           <Button size="lg" variant="outline">
-            Back to Patterns
+            Back to Curriculum
           </Button>
         </Link>
       </div>
