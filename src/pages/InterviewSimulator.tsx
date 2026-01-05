@@ -10,34 +10,8 @@ import { InterviewResults } from "@/components/interview/InterviewResults";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-export type SessionType = "quick" | "full" | "pattern" | "company";
-
-export interface SessionConfig {
-  type: SessionType;
-  timeLimit: number;
-  questionCount: number;
-  patternId?: string;
-  companyName?: string;
-  mode?: "practice" | "interview";
-}
-
-export interface InterviewQuestion {
-  id: string;
-  title: string;
-  difficulty: "easy" | "medium" | "hard";
-  pattern_name?: string;
-}
-
-export interface QuestionResult {
-  question_id: string;
-  question_title: string;
-  difficulty: string;
-  time_spent: number;
-  is_solved: boolean;
-  hints_used: number;
-  skipped: boolean;
-  flagged: boolean;
-}
+export type { SessionType, SessionConfig, InterviewQuestion, QuestionResult } from "@/types/interview";
+import type { SessionConfig, InterviewQuestion, QuestionResult } from "@/types/interview";
 
 type ViewState = "setup" | "interview" | "results";
 
@@ -116,7 +90,7 @@ const InterviewSimulator = () => {
 
       const questionIds = shuffled.map(q => q.id);
 
-      // Create session
+      // Create session with mode
       const { data: session, error: sError } = await supabase
         .from("interview_sessions")
         .insert({
@@ -126,6 +100,7 @@ const InterviewSimulator = () => {
           pattern_id: config.patternId || null,
           company_name: config.companyName || null,
           questions: questionIds,
+          mode: config.mode || "interview",
         })
         .select()
         .single();
@@ -191,25 +166,31 @@ const InterviewSimulator = () => {
     );
   }
 
+  // Full-screen interview mode - no navbar, no container constraints
+  if (view === "interview" && sessionId && sessionConfig) {
+    return (
+      <div className="h-screen w-screen bg-background overflow-hidden">
+        <InterviewSession
+          sessionId={sessionId}
+          config={sessionConfig}
+          questions={questions}
+          onEnd={handleEndSession}
+        />
+      </div>
+    );
+  }
+
+  // Setup and Results views with navbar
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto px-4 pt-24 pb-12 max-w-5xl">
+      <main className="container mx-auto px-4 pt-24 pb-12">
         {view === "setup" && (
           <SessionSetup
             patterns={patterns || []}
             companies={companies || []}
             onStart={handleStartSession}
             isLoading={startSessionMutation.isPending}
-          />
-        )}
-
-        {view === "interview" && sessionId && sessionConfig && (
-          <InterviewSession
-            sessionId={sessionId}
-            config={sessionConfig}
-            questions={questions}
-            onEnd={handleEndSession}
           />
         )}
 

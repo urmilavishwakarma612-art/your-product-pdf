@@ -211,6 +211,54 @@ export type Database = {
           },
         ]
       }
+      daily_challenges: {
+        Row: {
+          challenge_date: string
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          module_id: string | null
+          question_id: string | null
+          user_id: string
+        }
+        Insert: {
+          challenge_date: string
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          module_id?: string | null
+          question_id?: string | null
+          user_id: string
+        }
+        Update: {
+          challenge_date?: string
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          module_id?: string | null
+          question_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_challenges_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_challenges_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discussion_votes: {
         Row: {
           created_at: string
@@ -338,9 +386,12 @@ export type Database = {
       }
       interview_results: {
         Row: {
+          approach_explained: boolean | null
           attempt_count: number | null
+          brute_approach_explained: boolean | null
           code_quality_score: number | null
           code_snapshots: Json | null
+          communication_score: number | null
           created_at: string
           evaluation_result: Json | null
           first_keystroke_at: string | null
@@ -362,9 +413,12 @@ export type Database = {
           time_spent: number | null
         }
         Insert: {
+          approach_explained?: boolean | null
           attempt_count?: number | null
+          brute_approach_explained?: boolean | null
           code_quality_score?: number | null
           code_snapshots?: Json | null
+          communication_score?: number | null
           created_at?: string
           evaluation_result?: Json | null
           first_keystroke_at?: string | null
@@ -386,9 +440,12 @@ export type Database = {
           time_spent?: number | null
         }
         Update: {
+          approach_explained?: boolean | null
           attempt_count?: number | null
+          brute_approach_explained?: boolean | null
           code_quality_score?: number | null
           code_snapshots?: Json | null
+          communication_score?: number | null
           created_at?: string
           evaluation_result?: Json | null
           first_keystroke_at?: string | null
@@ -590,13 +647,16 @@ export type Database = {
           created_at: string
           current_level: number
           current_streak: number
+          curriculum_level: number | null
           github_url: string | null
           id: string
           instagram_url: string | null
+          last_freeze_used_at: string | null
           last_solved_at: string | null
           leetcode_url: string | null
           linkedin_url: string | null
           longest_streak: number
+          streak_freeze_available: number | null
           subscription_expires_at: string | null
           subscription_status: string
           total_xp: number
@@ -610,13 +670,16 @@ export type Database = {
           created_at?: string
           current_level?: number
           current_streak?: number
+          curriculum_level?: number | null
           github_url?: string | null
           id: string
           instagram_url?: string | null
+          last_freeze_used_at?: string | null
           last_solved_at?: string | null
           leetcode_url?: string | null
           linkedin_url?: string | null
           longest_streak?: number
+          streak_freeze_available?: number | null
           subscription_expires_at?: string | null
           subscription_status?: string
           total_xp?: number
@@ -630,13 +693,16 @@ export type Database = {
           created_at?: string
           current_level?: number
           current_streak?: number
+          curriculum_level?: number | null
           github_url?: string | null
           id?: string
           instagram_url?: string | null
+          last_freeze_used_at?: string | null
           last_solved_at?: string | null
           leetcode_url?: string | null
           linkedin_url?: string | null
           longest_streak?: number
+          streak_freeze_available?: number | null
           subscription_expires_at?: string | null
           subscription_status?: string
           total_xp?: number
