@@ -10,7 +10,6 @@ import { InterviewResults } from "@/components/interview/InterviewResults";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-export type { SessionType, SessionConfig, InterviewQuestion, QuestionResult } from "@/types/interview";
 import type { SessionConfig, InterviewQuestion, QuestionResult } from "@/types/interview";
 
 type ViewState = "setup" | "interview" | "results";
