@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { SessionConfig, SessionType } from "@/pages/InterviewSimulator";
+import type { SessionConfig, SessionType } from "@/types/interview";
 
 interface SessionSetupProps {
   patterns: { id: string; name: string }[];

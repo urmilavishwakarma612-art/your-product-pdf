@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Tag } from "lucide-react";
-import type { InterviewQuestion } from "@/pages/InterviewSimulator";
+import type { InterviewQuestion } from "@/types/interview";
 
 interface ProblemPanelProps {
   question: InterviewQuestion;
