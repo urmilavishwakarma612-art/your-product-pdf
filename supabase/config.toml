@@ -3,6 +3,9 @@ project_id = "mqnoszjhlotxqdjgubqt"
 [functions.ai-mentor]
 verify_jwt = false
 
+[functions.ai-tutor]
+verify_jwt = false
+
 [functions.subscription-email]
 verify_jwt = false
 

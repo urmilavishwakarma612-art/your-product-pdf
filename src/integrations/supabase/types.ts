@@ -542,6 +542,59 @@ export type Database = {
           },
         ]
       }
+      learning_insights: {
+        Row: {
+          avg_time_with_tutor: number | null
+          avg_time_without_tutor: number | null
+          created_at: string | null
+          hint_effectiveness_score: number | null
+          id: string
+          improved_areas: Json | null
+          pattern_id: string | null
+          problems_attempted: number | null
+          problems_solved: number | null
+          struggling_areas: Json | null
+          user_id: string
+          week_start: string | null
+        }
+        Insert: {
+          avg_time_with_tutor?: number | null
+          avg_time_without_tutor?: number | null
+          created_at?: string | null
+          hint_effectiveness_score?: number | null
+          id?: string
+          improved_areas?: Json | null
+          pattern_id?: string | null
+          problems_attempted?: number | null
+          problems_solved?: number | null
+          struggling_areas?: Json | null
+          user_id: string
+          week_start?: string | null
+        }
+        Update: {
+          avg_time_with_tutor?: number | null
+          avg_time_without_tutor?: number | null
+          created_at?: string | null
+          hint_effectiveness_score?: number | null
+          id?: string
+          improved_areas?: Json | null
+          pattern_id?: string | null
+          problems_attempted?: number | null
+          problems_solved?: number | null
+          struggling_areas?: Json | null
+          user_id?: string
+          week_start?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_insights_pattern_id_fkey"
+            columns: ["pattern_id"]
+            isOneToOne: false
+            referencedRelation: "patterns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patterns: {
         Row: {
           color: string | null
@@ -656,10 +709,12 @@ export type Database = {
           leetcode_url: string | null
           linkedin_url: string | null
           longest_streak: number
+          skill_level: string | null
           streak_freeze_available: number | null
           subscription_expires_at: string | null
           subscription_status: string
           total_xp: number
+          tutor_preferences: Json | null
           twitter_url: string | null
           updated_at: string
           username: string | null
@@ -679,10 +734,12 @@ export type Database = {
           leetcode_url?: string | null
           linkedin_url?: string | null
           longest_streak?: number
+          skill_level?: string | null
           streak_freeze_available?: number | null
           subscription_expires_at?: string | null
           subscription_status?: string
           total_xp?: number
+          tutor_preferences?: Json | null
           twitter_url?: string | null
           updated_at?: string
           username?: string | null
@@ -702,10 +759,12 @@ export type Database = {
           leetcode_url?: string | null
           linkedin_url?: string | null
           longest_streak?: number
+          skill_level?: string | null
           streak_freeze_available?: number | null
           subscription_expires_at?: string | null
           subscription_status?: string
           total_xp?: number
+          tutor_preferences?: Json | null
           twitter_url?: string | null
           updated_at?: string
           username?: string | null
@@ -927,6 +986,104 @@ export type Database = {
         }
         Relationships: []
       }
+      tutor_messages: {
+        Row: {
+          code_context: Json | null
+          content: string
+          created_at: string | null
+          id: string
+          message_type: string | null
+          role: string | null
+          session_id: string
+        }
+        Insert: {
+          code_context?: Json | null
+          content: string
+          created_at?: string | null
+          id?: string
+          message_type?: string | null
+          role?: string | null
+          session_id: string
+        }
+        Update: {
+          code_context?: Json | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          message_type?: string | null
+          role?: string | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tutor_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "tutor_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tutor_sessions: {
+        Row: {
+          created_at: string | null
+          ended_at: string | null
+          hints_given: number | null
+          id: string
+          pattern_id: string | null
+          problem_solved: boolean | null
+          question_id: string | null
+          session_type: string | null
+          started_at: string | null
+          total_messages: number | null
+          user_id: string
+          user_skill_level: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          ended_at?: string | null
+          hints_given?: number | null
+          id?: string
+          pattern_id?: string | null
+          problem_solved?: boolean | null
+          question_id?: string | null
+          session_type?: string | null
+          started_at?: string | null
+          total_messages?: number | null
+          user_id: string
+          user_skill_level?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          ended_at?: string | null
+          hints_given?: number | null
+          id?: string
+          pattern_id?: string | null
+          problem_solved?: boolean | null
+          question_id?: string | null
+          session_type?: string | null
+          started_at?: string | null
+          total_messages?: number | null
+          user_id?: string
+          user_skill_level?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tutor_sessions_pattern_id_fkey"
+            columns: ["pattern_id"]
+            isOneToOne: false
+            referencedRelation: "patterns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tutor_sessions_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_badges: {
         Row: {
           badge_id: string
@@ -993,6 +1150,63 @@ export type Database = {
             columns: ["module_id"]
             isOneToOne: false
             referencedRelation: "curriculum_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_mistakes: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          last_occurred_at: string | null
+          mistake_type: string | null
+          occurrence_count: number | null
+          pattern_id: string | null
+          question_id: string | null
+          resolved: boolean | null
+          tutor_guidance_given: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          last_occurred_at?: string | null
+          mistake_type?: string | null
+          occurrence_count?: number | null
+          pattern_id?: string | null
+          question_id?: string | null
+          resolved?: boolean | null
+          tutor_guidance_given?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          last_occurred_at?: string | null
+          mistake_type?: string | null
+          occurrence_count?: number | null
+          pattern_id?: string | null
+          question_id?: string | null
+          resolved?: boolean | null
+          tutor_guidance_given?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_mistakes_pattern_id_fkey"
+            columns: ["pattern_id"]
+            isOneToOne: false
+            referencedRelation: "patterns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_mistakes_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
             referencedColumns: ["id"]
           },
         ]
