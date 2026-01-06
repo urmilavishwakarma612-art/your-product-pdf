@@ -94,18 +94,22 @@ const Auth = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    // Keep the same post-auth destination for the upgrade flow.
-    const next = nextPath;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}${next}`,
-      },
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `https://nexalgotrix.vercel.app/`,
+    },
+  });
+
+  if (error) {
+    toast({
+      title: "Google sign in failed",
+      description: error.message,
+      variant: "destructive",
     });
-    if (error) {
-      toast({ title: "Google sign in failed", description: error.message, variant: "destructive" });
-    }
-  };
+  }
+};
+
 
   const getTitle = () => {
     if (mode === "login") return "Welcome back";
