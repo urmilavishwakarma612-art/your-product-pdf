@@ -68,17 +68,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, username?: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
+    const preferredOrigin = (() => {
+      const origin = window.location.origin;
+      const host = window.location.hostname;
+      const isLocal = host === "localhost" || host === "127.0.0.1";
+      const PROD_ORIGIN = "https://nexalgotrix.vercel.app";
+      return !isLocal && origin !== PROD_ORIGIN ? PROD_ORIGIN : origin;
+    })();
+
+    const redirectUrl = `${preferredOrigin}/`;
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
-        data: { username }
-      }
+        data: { username },
+      },
     });
-    
+
     return { error: error as Error | null };
   };
 
