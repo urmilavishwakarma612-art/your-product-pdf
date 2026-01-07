@@ -57,36 +57,6 @@ const Auth = () => {
     }
   }, [user, navigate, nextPath]);
 
-  useEffect(() => {
-  const hasOAuthCallback =
-    searchParams.has("code") ||
-    searchParams.has("error") ||
-    window.location.hash.includes("access_token");
-
-  if (!hasOAuthCallback) return;
-
-  const completeOAuth = async () => {
-    const { error } = await supabase.auth.getSession();
-
-    if (error) {
-      toast({
-        title: "Authentication failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      navigate("/auth", { replace: true });
-      return;
-    }
-
-    navigate(nextPath, { replace: true });
-  };
-
-  completeOAuth();
-}, [searchParams, navigate, toast, nextPath]);
-
-
-  
-
   const persistUpgradeIntentIfNeeded = () => {
     if (!isUpgradeFlow) return;
 
@@ -138,27 +108,24 @@ const Auth = () => {
   };
 
   const handleGoogleSignIn = async () => {
-  if (isBlockedPreviewAuth) {
-    const target = `${PROD_ORIGIN}/auth?next=${encodeURIComponent(nextPath)}`;
-    window.location.href = target;
-    return;
-  }
+    if (isBlockedPreviewAuth) {
+      const target = `${PROD_ORIGIN}/auth?next=${encodeURIComponent(nextPath)}`;
+      window.location.href = target;
+      return;
+    }
 
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: `${PROD_ORIGIN}/auth`,
-    },
-  });
+ await supabase.auth.signInWithOAuth({
+  provider: 'google',
+  options: {
+    redirectTo: `${PROD_ORIGIN}/auth?next=${encodeURIComponent(nextPath)}`,
+  },
+});
 
-  if (error) {
-    toast({
-      title: "Google sign in failed",
-      description: error.message,
-      variant: "destructive",
-    });
-  }
-};
+
+    if (error) {
+      toast({ title: "Google sign in failed", description: error.message, variant: "destructive" });
+    }
+  };
 
 
   const getTitle = () => {
