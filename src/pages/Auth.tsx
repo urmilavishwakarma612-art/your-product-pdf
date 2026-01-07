@@ -94,12 +94,13 @@ const Auth = () => {
   };    
 
   const handleGoogleSignIn = async () => {
-    // Keep the same post-auth destination for the upgrade flow.
+    // Always redirect to vercel production URL after Google OAuth
+    const productionUrl = 'https://nexalgotrix.vercel.app';
     const next = nextPath;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}${next}`,
+        redirectTo: `${productionUrl}${next}`,
       },
     });
     if (error) {
