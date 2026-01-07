@@ -114,13 +114,12 @@ const Auth = () => {
       return;
     }
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        // Redirect back to /auth on production so session parsing is consistent.
-        redirectTo: `${PROD_ORIGIN}/auth?next=${encodeURIComponent(nextPath)}`,
-      },
-    });
+    await supabase.auth.signInWithOAuth({
+  provider: 'google',
+  options: {
+    redirectTo: `${PROD_ORIGIN}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+  },
+});
 
     if (error) {
       toast({ title: "Google sign in failed", description: error.message, variant: "destructive" });
