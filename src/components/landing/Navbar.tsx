@@ -197,6 +197,7 @@ function NavLinks({ mobile, onClick }: { mobile?: boolean; onClick?: () => void 
     { href: "/curriculum", label: "Curriculum", isRoute: true },
     { href: "/interview", label: "Interview", isRoute: true },
     { href: "/dashboard", label: "Dashboard", isRoute: true },
+    { href: "/dashboard?tab=analytics", label: "Analytics", isRoute: true },
   ];
 
   const links = user ? authLinks : publicLinks;
