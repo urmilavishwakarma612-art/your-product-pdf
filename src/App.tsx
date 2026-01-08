@@ -39,6 +39,11 @@ const Pricing = lazy(() => import("./pages/Pricing"));
 const InterviewSimulator = lazy(() => import("./pages/InterviewSimulator"));
 const Curriculum = lazy(() => import("./pages/Curriculum"));
 const CurriculumModule = lazy(() => import("./pages/CurriculumModule"));
+const AITutor = lazy(() => import("./pages/AITutor"));
+const Events = lazy(() => import("./pages/Events"));
+const Gamification = lazy(() => import("./pages/Gamification"));
+const Referral = lazy(() => import("./pages/Referral"));
+const ProfileManagement = lazy(() => import("./pages/ProfileManagement"));
 
 const queryClient = new QueryClient();
 
@@ -81,6 +86,11 @@ const App = () => (
               <Route path="/interview" element={<InterviewSimulator />} />
               <Route path="/curriculum" element={<Curriculum />} />
               <Route path="/curriculum/module/:id" element={<CurriculumModule />} />
+              <Route path="/tutor" element={<AITutor />} />
+              <Route path="/events" element={<Events />} />
+              <Route path="/gamification" element={<Gamification />} />
+              <Route path="/referral" element={<Referral />} />
+              <Route path="/profile-settings" element={<ProfileManagement />} />
               <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
