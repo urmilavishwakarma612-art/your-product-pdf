@@ -192,13 +192,11 @@ function NavLinks({ mobile, onClick }: { mobile?: boolean; onClick?: () => void 
     { href: "/pricing", label: "Pricing", isRoute: true },
   ];
 
+  // Primary nav only - secondary items go in ProfileDropdown
   const authLinks = [
     { href: "/", label: "Home", isRoute: true },
     { href: "/curriculum", label: "Curriculum", isRoute: true },
-    { href: "/tutor", label: "AI Tutor", isRoute: true },
     { href: "/interview", label: "Interview", isRoute: true },
-    { href: "/events", label: "Events", isRoute: true },
-    { href: "/gamification", label: "Rewards", isRoute: true },
     { href: "/dashboard", label: "Dashboard", isRoute: true },
   ];
 

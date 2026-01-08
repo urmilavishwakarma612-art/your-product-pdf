@@ -11,9 +11,21 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { ProfileSettings } from "@/components/profile/ProfileSettings";
-import { User, Settings, LogOut, Crown } from "lucide-react";
+import { 
+  User, 
+  Settings, 
+  LogOut, 
+  Crown, 
+  Bot, 
+  Trophy, 
+  Flame, 
+  Gift, 
+  Calendar,
+  BarChart3
+} from "lucide-react";
 
 export function ProfileDropdown() {
   const { user, signOut } = useAuth();
@@ -40,6 +52,14 @@ export function ProfileDropdown() {
 
   if (!user) return null;
 
+  const secondaryNavItems = [
+    { href: "/tutor", label: "AI Tutor", icon: Bot },
+    { href: "/gamification", label: "Rewards", icon: Trophy },
+    { href: "/events", label: "Events", icon: Calendar },
+    { href: "/referral", label: "Referrals", icon: Gift },
+    { href: "/dashboard?tab=analytics", label: "Analytics", icon: BarChart3 },
+  ];
+
   return (
     <>
       <DropdownMenu>
@@ -51,7 +71,7 @@ export function ProfileDropdown() {
             </AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuContent align="end" className="w-56 bg-popover border border-border shadow-lg">
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
               <p className="text-sm font-medium leading-none flex items-center gap-2">
@@ -71,6 +91,22 @@ export function ProfileDropdown() {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          
+          {/* Secondary Navigation Items */}
+          <DropdownMenuGroup>
+            {secondaryNavItems.map((item) => (
+              <DropdownMenuItem key={item.href} asChild>
+                <Link to={item.href} className="cursor-pointer flex items-center">
+                  <item.icon className="mr-2 h-4 w-4 text-muted-foreground" />
+                  {item.label}
+                </Link>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
+          
+          <DropdownMenuSeparator />
+          
+          {/* Profile & Settings */}
           <DropdownMenuItem asChild>
             <Link
               to={`/profile/${encodeURIComponent((profile?.username || "").trim())}`}
@@ -84,7 +120,9 @@ export function ProfileDropdown() {
             <Settings className="mr-2 h-4 w-4" />
             Edit Profile
           </DropdownMenuItem>
+          
           <DropdownMenuSeparator />
+          
           <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive">
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out
