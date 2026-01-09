@@ -50,11 +50,11 @@ interface AITutorProps {
 }
 
 const modeConfig: Record<TutorMode, { label: string; icon: typeof Lightbulb; color: string; xpPenalty: number }> = {
-  hint: { label: "Subtle Hint", icon: Lightbulb, color: "text-amber-500", xpPenalty: 5 },
+  hint: { label: "Hint", icon: Lightbulb, color: "text-amber-500", xpPenalty: 5 },
   approach: { label: "Approach", icon: Target, color: "text-blue-500", xpPenalty: 10 },
-  debug: { label: "Debug Help", icon: AlertTriangle, color: "text-red-500", xpPenalty: 5 },
-  coaching: { label: "Think Together", icon: Brain, color: "text-purple-500", xpPenalty: 0 },
-  custom: { label: "Ask Anything", icon: MessageCircle, color: "text-primary", xpPenalty: 0 },
+  debug: { label: "Debug", icon: AlertTriangle, color: "text-red-500", xpPenalty: 5 },
+  coaching: { label: "Think Aloud", icon: Brain, color: "text-purple-500", xpPenalty: 0 },
+  custom: { label: "Ask", icon: MessageCircle, color: "text-primary", xpPenalty: 0 },
 };
 
 export const AITutor = ({
@@ -402,12 +402,14 @@ export const AITutor = ({
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary via-purple-600 to-pink-500 flex items-center justify-center">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h2 className="font-bold flex items-center gap-2">
-                    AI Tutor
+                    <span className="bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
+                      NEXMENTOR
+                    </span>
                     <Badge variant="outline" className={skillColors[skillLevel]}>
                       {skillLevel}
                     </Badge>
@@ -456,8 +458,8 @@ export const AITutor = ({
                       <div className="flex justify-start">
                         <div className="bg-muted rounded-xl px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            <span className="text-sm">Thinking...</span>
+                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                            <span className="text-sm text-muted-foreground">NEXMENTOR is thinking...</span>
                           </div>
                         </div>
                       </div>
@@ -471,7 +473,7 @@ export const AITutor = ({
               {messages.length === 0 && !isLoading && (
                 <div className="flex-1 p-4 overflow-auto">
                   <p className="text-sm text-muted-foreground mb-4">
-                    How can I help you with this problem?
+                    Let's think through this together. What mode works for you?
                   </p>
 
                   <div className="grid grid-cols-2 gap-3 mb-6">
