@@ -1,101 +1,407 @@
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   Brain, Lightbulb, Bug, MessageSquare, Zap, 
   ArrowRight, Sparkles, BookOpen, Target, Shield,
-  Users, Timer, Code2, GraduationCap
+  Users, Timer, Code2, GraduationCap, Send, Loader2,
+  FileText, Code, Mic, Bookmark, X, Clock, Circle,
+  ChevronLeft, Bot
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/landing/Navbar";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
 
-const tutorModes = [
-  {
-    id: "hint",
-    icon: Lightbulb,
-    title: "Directional Hints",
-    description: "Get a subtle nudge without spoiling the solution. I'll point you in the right direction with a single question.",
-    color: "from-amber-500 to-orange-500",
-    bgColor: "bg-amber-500/10",
-    borderColor: "border-amber-500/20",
-    tag: "Low Guidance",
-  },
-  {
-    id: "approach",
-    icon: Target,
-    title: "Approach Discovery",
-    description: "I'll ask questions to help you discover the optimal approach yourself. No spoon-feeding — just guided thinking.",
-    color: "from-blue-500 to-cyan-500",
-    bgColor: "bg-blue-500/10",
-    borderColor: "border-blue-500/20",
-    tag: "Interview-Style",
-  },
-  {
-    id: "debug",
-    icon: Bug,
-    title: "Debug Together",
-    description: "Walk me through your code. I'll ask questions about specific lines to help you find the bug yourself.",
-    color: "from-red-500 to-pink-500",
-    bgColor: "bg-red-500/10",
-    borderColor: "border-red-500/20",
-    tag: "Code Review",
-  },
-  {
-    id: "coaching",
-    icon: MessageSquare,
-    title: "Think-Aloud Mode",
-    description: "Practice explaining your thought process out loud. I'll challenge your reasoning like a real interviewer.",
-    color: "from-purple-500 to-violet-500",
-    bgColor: "bg-purple-500/10",
-    borderColor: "border-purple-500/20",
-    tag: "Interview Prep",
-  },
-];
+interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: Date;
+}
 
-const mentorTraits = [
-  {
-    icon: GraduationCap,
-    title: "Senior Engineer Mindset",
-    description: "I've been through the big tech interview grind. I know what interviewers look for.",
-  },
-  {
-    icon: Brain,
-    title: "Socratic Method",
-    description: "I ask questions instead of giving answers. You'll remember what you discover yourself.",
-  },
-  {
-    icon: Timer,
-    title: "Short & Sharp",
-    description: "2-4 lines max. No essays. Just focused guidance that respects your time.",
-  },
-  {
-    icon: Shield,
-    title: "Anti-Spoiler System",
-    description: "I never give solutions. If you ask directly, I'll redirect you to the thinking process.",
-  },
-];
-
-const howItWorks = [
-  { step: "1", title: "You Explain", description: "Tell me your current approach or where you're stuck" },
-  { step: "2", title: "I Question", description: "I ask clarifying or challenging follow-up questions" },
-  { step: "3", title: "You Think", description: "Answer my questions to refine your understanding" },
-  { step: "4", title: "Insight Emerges", description: "The solution becomes clear through your own reasoning" },
+const demoQuestions = [
+  { id: "demo-1", title: "Two Sum", pattern: "Two Pointers", difficulty: "easy" },
+  { id: "demo-2", title: "Container With Most Water", pattern: "Two Pointers", difficulty: "medium" },
+  { id: "demo-3", title: "3Sum", pattern: "Two Pointers", difficulty: "medium" },
+  { id: "demo-4", title: "Valid Parentheses", pattern: "Stack", difficulty: "easy" },
+  { id: "demo-5", title: "Binary Search", pattern: "Binary Search", difficulty: "easy" },
 ];
 
 export default function AITutor() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const questionId = searchParams.get("q");
+  
+  const [isSessionActive, setIsSessionActive] = useState(false);
+  const [selectedQuestion, setSelectedQuestion] = useState<typeof demoQuestions[0] | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputMessage, setInputMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [sessionTime, setSessionTime] = useState(0);
+  const [activeTab, setActiveTab] = useState("chat");
+  const [sessionNotes, setSessionNotes] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleStartPractice = () => {
-    if (user) {
-      navigate("/curriculum");
-    } else {
-      navigate("/auth?next=/curriculum");
+  // Fetch real questions if user is logged in
+  const { data: questions } = useQuery({
+    queryKey: ["tutor-questions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("questions")
+        .select("id, title, difficulty, patterns(name)")
+        .limit(10);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Session timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isSessionActive) {
+      interval = setInterval(() => {
+        setSessionTime(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isSessionActive]);
+
+  // Auto scroll messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const startSession = (question: typeof demoQuestions[0]) => {
+    setSelectedQuestion(question);
+    setIsSessionActive(true);
+    setSessionTime(0);
+    setMessages([{
+      id: "welcome",
+      role: "assistant",
+      content: `Welcome! I'm NEXMENTOR, your senior engineering mentor. Let's work on "${question.title}" together.\n\nBefore we dive in — what's your initial read on this problem? What pattern or approach comes to mind first?`,
+      timestamp: new Date(),
+    }]);
+  };
+
+  const endSession = () => {
+    setIsSessionActive(false);
+    setSelectedQuestion(null);
+    setMessages([]);
+    setSessionTime(0);
+    setSessionNotes("");
+  };
+
+  const sendMessage = async () => {
+    if (!inputMessage.trim() || isLoading) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: inputMessage,
+      timestamp: new Date(),
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage("");
+    setIsLoading(true);
+
+    try {
+      // Build context for AI
+      const context = {
+        skillLevel: "intermediate" as const,
+        patternStrengths: [],
+        patternWeaknesses: [],
+        pastMistakes: [],
+        conversationHistory: messages.slice(-6).map(m => ({
+          role: m.role === "assistant" ? "tutor" : "user",
+          content: m.content,
+        })),
+        tutorPreferences: {},
+      };
+
+      const { data, error } = await supabase.functions.invoke("ai-tutor", {
+        body: {
+          mode: "custom",
+          question: inputMessage,
+          questionTitle: selectedQuestion?.title || "General DSA",
+          questionDescription: "",
+          patternName: selectedQuestion?.pattern || "",
+          userCode: "",
+          context,
+          sessionId: "demo-session",
+        },
+      });
+
+      if (error) throw error;
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: data.response,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Failed to get response. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  // If session is active, show the interactive session interface
+  if (isSessionActive && selectedQuestion) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        {/* Session Header */}
+        <header className="bg-card border-b border-border px-4 py-3">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" onClick={endSession}>
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
+                  <Code2 className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="font-semibold">{selectedQuestion.title}</h1>
+                    <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">
+                      <Bot className="w-3 h-3 mr-1" />
+                      NEXMENTOR
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-primary/50" />
+                    {selectedQuestion.pattern}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-full">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                <span className="font-mono text-sm">{formatTime(sessionTime)}</span>
+                <span className="text-xs text-muted-foreground">remaining</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Circle className="w-2 h-2 fill-green-500 text-green-500" />
+                <span className="text-sm text-green-500">Active</span>
+              </div>
+              <Button 
+                variant="outline" 
+                className="border-red-500/50 text-red-500 hover:bg-red-500/10"
+                onClick={endSession}
+              >
+                <X className="w-4 h-4 mr-2" />
+                End Session
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        {/* Tip Banner */}
+        <div className="bg-muted/30 border-b border-border py-2 px-4">
+          <p className="text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+            <Lightbulb className="w-4 h-4 text-primary" />
+            Ask NEXMENTOR for help when stuck on algorithms
+            <span className="flex gap-1 ml-2">
+              {[...Array(8)].map((_, i) => (
+                <span key={i} className="w-1.5 h-1.5 rounded-full bg-primary/40" />
+              ))}
+            </span>
+          </p>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Left Panel - Chat & Tabs */}
+          <div className="flex-1 flex flex-col">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+              <div className="border-b border-border px-4">
+                <TabsList className="bg-transparent h-12">
+                  <TabsTrigger value="notes" className="data-[state=active]:bg-muted">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Session Notes
+                  </TabsTrigger>
+                  <TabsTrigger value="code" className="data-[state=active]:bg-muted">
+                    <Code className="w-4 h-4 mr-2" />
+                    Code Editor
+                  </TabsTrigger>
+                  <TabsTrigger value="chat" className="data-[state=active]:bg-muted">
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    AI Chat
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+
+              <TabsContent value="notes" className="flex-1 p-4 mt-0">
+                <Textarea 
+                  placeholder="Take notes during your session..."
+                  className="h-full min-h-[400px] resize-none"
+                  value={sessionNotes}
+                  onChange={(e) => setSessionNotes(e.target.value)}
+                />
+              </TabsContent>
+
+              <TabsContent value="code" className="flex-1 p-4 mt-0">
+                <div className="h-full bg-muted/50 rounded-lg flex items-center justify-center">
+                  <p className="text-muted-foreground">Code editor coming soon...</p>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="chat" className="flex-1 flex flex-col mt-0 overflow-hidden">
+                {/* Messages */}
+                <ScrollArea className="flex-1 p-4">
+                  <div className="space-y-4 max-w-3xl mx-auto">
+                    {messages.map((msg) => (
+                      <motion.div
+                        key={msg.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                      >
+                        {msg.role === "assistant" && (
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm">🧠</span>
+                          </div>
+                        )}
+                        <div
+                          className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                            msg.role === "user"
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted"
+                          }`}
+                        >
+                          {msg.role === "assistant" && (
+                            <p className="text-xs text-primary font-medium mb-1">NEXMENTOR:</p>
+                          )}
+                          <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                        </div>
+                      </motion.div>
+                    ))}
+                    {isLoading && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex gap-3"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0">
+                          <span className="text-sm">🧠</span>
+                        </div>
+                        <div className="bg-muted rounded-2xl px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                            <span className="text-sm text-muted-foreground">NEXMENTOR is thinking...</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
+
+                {/* Input Area */}
+                <div className="p-4 border-t border-border">
+                  <div className="max-w-3xl mx-auto">
+                    <div className="relative">
+                      <Textarea
+                        placeholder="Explain your thinking or ask a question..."
+                        className="min-h-[60px] pr-12 resize-none"
+                        value={inputMessage}
+                        onChange={(e) => setInputMessage(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        disabled={isLoading}
+                      />
+                      <Button
+                        size="icon"
+                        className="absolute right-2 bottom-2"
+                        onClick={sendMessage}
+                        disabled={!inputMessage.trim() || isLoading}
+                      >
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-center gap-4 pb-6">
+                  <Button size="lg" variant="outline" className="rounded-full w-14 h-14 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20">
+                    <Mic className="w-5 h-5 text-emerald-500" />
+                  </Button>
+                  <Button size="lg" variant="outline" className="rounded-full w-14 h-14 bg-muted">
+                    <Bookmark className="w-5 h-5" />
+                  </Button>
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="rounded-full w-14 h-14 bg-red-500/10 border-red-500/30 hover:bg-red-500/20"
+                    onClick={endSession}
+                  >
+                    <X className="w-5 h-5 text-red-500" />
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+
+          {/* Right Panel - Mentor Info (optional, can be removed on mobile) */}
+          <div className="hidden lg:block w-80 border-l border-border p-6">
+            <div className="text-center">
+              <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center mb-4 ring-2 ring-primary/30 ring-offset-4 ring-offset-background">
+                <Bot className="w-16 h-16 text-primary" />
+              </div>
+              <h3 className="font-bold text-lg">NEXMENTOR</h3>
+              <p className="text-sm text-muted-foreground mb-4">Senior Engineering Mentor</p>
+              
+              <div className="space-y-2 text-left">
+                <div className="flex items-center gap-2 text-sm">
+                  <Brain className="w-4 h-4 text-primary" />
+                  <span>Socratic Method</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Shield className="w-4 h-4 text-primary" />
+                  <span>Anti-Spoiler Protection</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Target className="w-4 h-4 text-primary" />
+                  <span>Interview-Style Guidance</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Landing Page / Question Selection
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -107,7 +413,7 @@ export default function AITutor() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-16"
+            className="text-center mb-12"
           >
             <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
               <Sparkles className="w-3 h-3 mr-1" />
@@ -125,222 +431,135 @@ export default function AITutor() {
             <p className="text-lg text-muted-foreground/80 max-w-xl mx-auto mb-8">
               I don't solve problems for you. I train you to think like an interviewer expects.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
-                className="btn-primary-glow"
-                onClick={handleStartPractice}
-              >
-                Start Practicing
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-              <Button size="lg" variant="outline">
-                <Users className="w-4 h-4 mr-2" />
-                Watch Demo
-              </Button>
-            </div>
           </motion.div>
 
-          {/* Quote Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.6 }}
-            className="mb-20"
-          >
-            <Card className="bg-gradient-to-r from-primary/5 via-purple-500/5 to-pink-500/5 border-primary/10">
-              <CardContent className="py-8 text-center">
-                <blockquote className="text-xl md:text-2xl font-medium italic text-foreground/90 mb-4">
-                  "You are not here to solve. You are here to train thinkers."
-                </blockquote>
-                <p className="text-muted-foreground">— NEXMENTOR Philosophy</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Mentor Traits */}
+          {/* Quick Start - Select Problem */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.6 }}
-            className="mb-20"
+            className="mb-16"
           >
-            <h2 className="text-2xl font-bold text-center mb-2">What Makes NEXMENTOR Different</h2>
-            <p className="text-muted-foreground text-center mb-8 max-w-lg mx-auto">
-              Not a chatbot. A senior engineer who's been through the interview grind.
-            </p>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {mentorTraits.map((trait, index) => (
-                <motion.div
-                  key={trait.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * index, duration: 0.5 }}
-                  className="text-center"
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4">
-                    <trait.icon className="w-7 h-7 text-primary" />
-                  </div>
-                  <h3 className="font-semibold mb-2">{trait.title}</h3>
-                  <p className="text-sm text-muted-foreground">{trait.description}</p>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Tutor Modes */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-            className="mb-20"
-          >
-            <h2 className="text-2xl font-bold text-center mb-2">Choose Your Mentoring Style</h2>
-            <p className="text-muted-foreground text-center mb-8">
-              Different modes for different needs. All designed to make you think.
-            </p>
-            <div className="grid md:grid-cols-2 gap-6">
-              {tutorModes.map((mode, index) => (
-                <motion.div
-                  key={mode.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * index, duration: 0.5 }}
-                  whileHover={{ scale: 1.02 }}
-                >
-                  <Card className={`h-full ${mode.bgColor} ${mode.borderColor} border hover:shadow-lg transition-all cursor-pointer`}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${mode.color} flex items-center justify-center`}>
-                            <mode.icon className="w-6 h-6 text-white" />
-                          </div>
-                          <div>
-                            <CardTitle className="text-lg">{mode.title}</CardTitle>
-                          </div>
+            <Card className="bg-gradient-to-br from-primary/5 to-purple-500/5 border-primary/20">
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl">Start a Session</CardTitle>
+                <CardDescription>
+                  Select a problem to practice with NEXMENTOR
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {(questions || demoQuestions).slice(0, 6).map((q: any) => (
+                    <Card 
+                      key={q.id} 
+                      className="cursor-pointer hover:border-primary/50 transition-all hover:shadow-lg"
+                      onClick={() => startSession({
+                        id: q.id,
+                        title: q.title,
+                        pattern: q.patterns?.name || q.pattern || "General",
+                        difficulty: q.difficulty,
+                      })}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <Badge variant={
+                            q.difficulty === "easy" ? "default" : 
+                            q.difficulty === "medium" ? "secondary" : "destructive"
+                          } className="text-xs">
+                            {q.difficulty}
+                          </Badge>
+                          <Bot className="w-4 h-4 text-primary" />
                         </div>
-                        <Badge variant="secondary" className="text-xs">
-                          {mode.tag}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <CardDescription className="text-base">
-                        {mode.description}
-                      </CardDescription>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
+                        <h3 className="font-medium mb-1">{q.title}</h3>
+                        <p className="text-xs text-muted-foreground">
+                          {q.patterns?.name || q.pattern}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                
+                <div className="mt-6 text-center">
+                  <Button 
+                    variant="outline"
+                    onClick={() => navigate("/curriculum")}
+                  >
+                    View Full Curriculum
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
 
           {/* How It Works */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="mb-20"
+            transition={{ delay: 0.3, duration: 0.6 }}
+            className="mb-16"
           >
-            <h2 className="text-2xl font-bold text-center mb-2">The NEXMENTOR Flow</h2>
-            <p className="text-muted-foreground text-center mb-8">
-              70% you talk, 30% I guide. That's how real learning happens.
-            </p>
-            <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
-              {howItWorks.map((item, index) => (
-                <motion.div
-                  key={item.step}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.1 * index, duration: 0.5 }}
-                  className="flex flex-col items-center text-center max-w-[200px]"
-                >
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3 text-primary font-bold text-lg">
-                    {item.step}
+            <h2 className="text-2xl font-bold text-center mb-8">How NEXMENTOR Works</h2>
+            <div className="grid md:grid-cols-4 gap-6">
+              {[
+                { step: "1", title: "You Explain", desc: "Share your initial approach", icon: MessageSquare },
+                { step: "2", title: "I Question", desc: "Challenge your reasoning", icon: Brain },
+                { step: "3", title: "You Think", desc: "Refine your understanding", icon: Lightbulb },
+                { step: "4", title: "Insight Emerges", desc: "Discover the solution yourself", icon: Sparkles },
+              ].map((item, i) => (
+                <div key={i} className="text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    <item.icon className="w-7 h-7 text-primary" />
                   </div>
+                  <div className="text-xs text-primary font-medium mb-1">Step {item.step}</div>
                   <h3 className="font-semibold mb-1">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
-                  {index < howItWorks.length - 1 && (
-                    <ArrowRight className="w-5 h-5 text-muted-foreground mt-4 hidden md:block rotate-0 md:rotate-0" />
-                  )}
-                </motion.div>
+                  <p className="text-sm text-muted-foreground">{item.desc}</p>
+                </div>
               ))}
             </div>
           </motion.div>
 
-          {/* Example Conversation */}
+          {/* Features */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-            className="mb-20"
+            transition={{ delay: 0.4, duration: 0.6 }}
           >
-            <h2 className="text-2xl font-bold text-center mb-8">See NEXMENTOR in Action</h2>
-            <Card className="max-w-2xl mx-auto bg-card/50 border-border/50">
-              <CardContent className="py-6 space-y-4">
-                {/* User message */}
-                <div className="flex justify-end">
-                  <div className="bg-primary text-primary-foreground rounded-xl px-4 py-2 max-w-[80%]">
-                    <p className="text-sm">"I think two pointers will work here."</p>
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card className="bg-amber-500/5 border-amber-500/20">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                      <Shield className="w-5 h-5 text-amber-500" />
+                    </div>
+                    <CardTitle>Anti-Spoiler Protection</CardTitle>
                   </div>
-                </div>
-                {/* Mentor response */}
-                <div className="flex justify-start">
-                  <div className="bg-muted rounded-xl px-4 py-2 max-w-[80%]">
-                    <p className="text-sm text-muted-foreground mb-1 font-medium">NEXMENTOR</p>
-                    <p className="text-sm">"Good instinct. But tell me — what are your two pointers tracking? And why would they move?"</p>
-                  </div>
-                </div>
-                {/* User message */}
-                <div className="flex justify-end">
-                  <div className="bg-primary text-primary-foreground rounded-xl px-4 py-2 max-w-[80%]">
-                    <p className="text-sm">"One from start, one from end. If sum is greater, move right."</p>
-                  </div>
-                </div>
-                {/* Mentor response */}
-                <div className="flex justify-start">
-                  <div className="bg-muted rounded-xl px-4 py-2 max-w-[80%]">
-                    <p className="text-sm text-muted-foreground mb-1 font-medium">NEXMENTOR</p>
-                    <p className="text-sm">"Why does moving the right pointer reduce the sum? Walk me through the intuition."</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    NEXMENTOR never gives direct solutions. If you ask for the answer, 
+                    I'll redirect you to the thinking process instead.
+                  </p>
+                </CardContent>
+              </Card>
 
-          {/* CTA Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.6 }}
-            className="text-center"
-          >
-            <Card className="bg-gradient-to-br from-primary/10 via-purple-500/10 to-pink-500/10 border-primary/20">
-              <CardContent className="py-12">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="w-8 h-8 text-white" />
-                </div>
-                <h2 className="text-2xl font-bold mb-2">Ready to Think Like an Interviewer?</h2>
-                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  NEXMENTOR is available on every problem in our curriculum. Click the mentor icon while solving.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button 
-                    size="lg" 
-                    className="btn-primary-glow"
-                    onClick={handleStartPractice}
-                  >
-                    Start with NEXMENTOR
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                  <Link to="/pricing">
-                    <Button size="lg" variant="outline">
-                      View Pricing
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
+              <Card className="bg-purple-500/5 border-purple-500/20">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                      <Brain className="w-5 h-5 text-purple-500" />
+                    </div>
+                    <CardTitle>Socratic Method</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    I ask questions instead of giving answers. What you discover 
+                    yourself, you'll remember forever.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
           </motion.div>
         </div>
       </main>
