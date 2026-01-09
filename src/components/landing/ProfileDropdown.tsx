@@ -53,7 +53,7 @@ export function ProfileDropdown() {
   if (!user) return null;
 
   const secondaryNavItems = [
-    { href: "/tutor", label: "AI Tutor", icon: Bot },
+    { href: "/tutor", label: "NexMentor", icon: Bot },
     { href: "/gamification", label: "Rewards", icon: Trophy },
     { href: "/events", label: "Events", icon: Calendar },
     { href: "/referral", label: "Referrals", icon: Gift },
