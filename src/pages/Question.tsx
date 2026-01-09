@@ -15,7 +15,8 @@ import {
   Loader2,
   Sparkles,
   Lock,
-  Crown
+  Crown,
+  Bot
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { DiscussionSection } from "@/components/discussions/DiscussionSection";
+import { AITutor } from "@/components/tutor/AITutor";
 
 interface Question {
   id: string;
@@ -74,6 +76,7 @@ const Question = () => {
   const queryClient = useQueryClient();
   const [notes, setNotes] = useState("");
   const [hintsRevealed, setHintsRevealed] = useState(0);
+  const [isNexMentorOpen, setIsNexMentorOpen] = useState(false);
 
   const { data: question, isLoading } = useQuery({
     queryKey: ["question", id],
@@ -376,6 +379,16 @@ const Question = () => {
             </div>
             
             <div className="flex flex-wrap gap-2">
+              {/* NexMentor Button */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs sm:text-sm bg-gradient-to-r from-primary/10 to-purple-500/10 border-primary/30 hover:border-primary/50"
+                onClick={() => setIsNexMentorOpen(true)}
+              >
+                <Bot className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-primary" /> 
+                <span className="bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent font-medium">NexMentor</span>
+              </Button>
               {question.youtube_link && (
                 <a href={question.youtube_link} target="_blank" rel="noopener noreferrer">
                   <Button variant="outline" size="sm" className="text-xs sm:text-sm">
@@ -597,6 +610,17 @@ const Question = () => {
           <DiscussionSection questionId={id!} />
         </motion.div>
       </div>
+
+      {/* NexMentor Panel */}
+      <AITutor
+        questionId={id!}
+        questionTitle={question.title}
+        questionDescription={question.description || ""}
+        patternId={question.pattern_id}
+        patternName={pattern?.name}
+        isOpen={isNexMentorOpen}
+        onClose={() => setIsNexMentorOpen(false)}
+      />
     </div>
   );
 };
