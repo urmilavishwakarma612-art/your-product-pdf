@@ -195,7 +195,7 @@ function NavLinks({ mobile, onClick }: { mobile?: boolean; onClick?: () => void 
   // Primary nav only - secondary items go in ProfileDropdown
   const authLinks = [
     { href: "/", label: "Home", isRoute: true },
-    { href: "/practice", label: "Practice", isRoute: true },
+    { href: "/tutor", label: "NexMentor", isRoute: true },
     { href: "/curriculum", label: "Curriculum", isRoute: true },
     { href: "/interview", label: "Interview", isRoute: true },
     { href: "/dashboard", label: "Dashboard", isRoute: true },
