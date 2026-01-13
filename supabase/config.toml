@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.run-test-cases]
 verify_jwt = false
+
+[functions.nexmentor-realtime]
+verify_jwt = false

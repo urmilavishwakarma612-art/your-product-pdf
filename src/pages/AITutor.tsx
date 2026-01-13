@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
+import { useNexMentorRealtime } from "@/hooks/useNexMentorRealtime";
 import {
   Clock,
   Circle,
@@ -26,11 +26,16 @@ import {
   RotateCcw,
   Play,
   ArrowLeft,
-  Settings,
+  Search,
+  Filter,
+  BookOpen,
+  Zap,
+  Phone,
+  PhoneOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import logoImage from "@/assets/logo.png";
@@ -52,73 +57,44 @@ import {
 import Editor from "@monaco-editor/react";
 import { cn } from "@/lib/utils";
 
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: Date;
-}
-
-interface Example {
-  input: string;
-  output: string;
-  explanation?: string;
-}
-
-interface Question {
-  id: string;
-  title: string;
-  pattern: string;
-  difficulty: "easy" | "medium" | "hard";
-  description: string;
-  examples: Example[];
-  constraints: string[];
-  hints: string[];
-  companies: string[];
-  leetcodeLink?: string;
-}
-
 const LANGUAGE_CONFIG: Record<string, { monacoLang: string; template: string }> = {
   python: {
     monacoLang: "python",
-    template: `class Solution:
-    def twoSum(self, numbers: List[int], target: int) -> List[int]:
-        # Your approach here
-        # Think: What does the sorted nature of the array tell us?
-        
-        return []`,
+    template: `# Write your solution here
+# Think aloud as you code - explain your approach to NexMentor
+
+def solution():
+    pass`,
   },
   javascript: {
     monacoLang: "javascript",
-    template: `class Solution {
-    twoSum(numbers, target) {
-        // Your approach here
-        // Think: What does the sorted nature of the array tell us?
-        
-        return [];
-    }
+    template: `// Write your solution here
+// Think aloud as you code - explain your approach to NexMentor
+
+function solution() {
+    
 }`,
   },
   java: {
     monacoLang: "java",
-    template: `class Solution {
-    public int[] twoSum(int[] numbers, int target) {
-        // Your approach here
-        // Think: What does the sorted nature of the array tell us?
+    template: `// Write your solution here
+// Think aloud as you code - explain your approach to NexMentor
+
+class Solution {
+    public void solve() {
         
-        return new int[]{};
     }
 }`,
   },
   cpp: {
     monacoLang: "cpp",
-    template: `class Solution {
+    template: `// Write your solution here
+// Think aloud as you code - explain your approach to NexMentor
+
+class Solution {
 public:
-    vector<int> twoSum(vector<int>& numbers, int target) {
-        // Your approach here
-        // Think: What does the sorted nature of the array tell us?
+    void solve() {
         
-        return {};
     }
 };`,
   },
@@ -131,147 +107,103 @@ const LANGUAGES = [
   { value: "cpp", label: "C++" },
 ];
 
-const demoQuestions: Question[] = [
-  {
-    id: "demo-1",
-    title: "Two Sum II - Input Array Is Sorted",
-    pattern: "Two Pointers",
-    difficulty: "medium",
-    description: `Given a 1-indexed array of integers numbers that is already sorted in non-decreasing order, find two numbers such that they add up to a specific target number.
-
-Let these two numbers be numbers[index1] and numbers[index2] where 1 <= index1 < index2 <= numbers.length.
-
-Return the indices of the two numbers, index1 and index2, added by one as an integer array [index1, index2] of length 2.
-
-The tests are generated such that there is exactly one solution. You may not use the same element twice.
-
-Your solution must use only constant extra space.`,
-    examples: [
-      {
-        input: "numbers = [2,7,11,15], target = 9",
-        output: "[1,2]",
-        explanation: "The sum of 2 and 7 is 9. Therefore, index1 = 1, index2 = 2. We return [1, 2].",
-      },
-      {
-        input: "numbers = [2,3,4], target = 6",
-        output: "[1,3]",
-        explanation: "The sum of 2 and 4 is 6. Therefore index1 = 1, index2 = 3. We return [1, 3].",
-      },
-      {
-        input: "numbers = [-1,0], target = -1",
-        output: "[1,2]",
-        explanation: "The sum of -1 and 0 is -1. Therefore index1 = 1, index2 = 2. We return [1, 2].",
-      },
-    ],
-    constraints: [
-      "2 <= numbers.length <= 3 * 10^4",
-      "-1000 <= numbers[i] <= 1000",
-      "numbers is sorted in non-decreasing order",
-      "-1000 <= target <= 1000",
-      "The tests are generated such that there is exactly one solution.",
-    ],
-    hints: [
-      "Think about what the sorted property of the array gives you.",
-      "Can you use two pointers to find the answer efficiently?",
-      "Consider starting one pointer at the beginning and one at the end.",
-    ],
-    companies: ["Google", "Amazon", "Microsoft", "Facebook"],
-    leetcodeLink: "https://leetcode.com/problems/two-sum-ii-input-array-is-sorted/",
-  },
-];
-
 const difficultyConfig = {
   easy: { label: "Easy", color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/30" },
   medium: { label: "Medium", color: "text-amber-500 bg-amber-500/10 border-amber-500/30" },
   hard: { label: "Hard", color: "text-red-500 bg-red-500/10 border-red-500/30" },
 };
 
+type ViewMode = "selection" | "session";
+
 export default function AITutor() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const questionId = searchParams.get("q") || "demo-1";
+  const [searchParams, setSearchParams] = useSearchParams();
+  const questionId = searchParams.get("q");
+
+  // View state
+  const [viewMode, setViewMode] = useState<ViewMode>(questionId ? "session" : "selection");
+  const [selectedQuestion, setSelectedQuestion] = useState<any>(null);
 
   // Session state
   const [sessionTime, setSessionTime] = useState(0);
-  const [isSessionActive, setIsSessionActive] = useState(true);
-  
+  const [isSessionActive, setIsSessionActive] = useState(false);
+
   // Code editor state
   const [language, setLanguage] = useState("python");
   const [code, setCode] = useState(LANGUAGE_CONFIG["python"].template);
   const [isRunning, setIsRunning] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Chat state
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputMessage, setInputMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSpeechEnabled, setIsSpeechEnabled] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  // Panel state
+
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
+  const [patternFilter, setPatternFilter] = useState<string>("all");
+
+  // Hints state
   const [hintsOpen, setHintsOpen] = useState(false);
   const [hintsRevealed, setHintsRevealed] = useState<number[]>([]);
-  
-  // Voice recognition
+
+  // Voice interaction
   const {
-    isListening,
-    transcript,
-    startListening,
-    stopListening,
-    isSupported: isVoiceSupported,
-  } = useVoiceRecognition({
-    onResult: (result) => {
-      setInputMessage((prev) => prev + " " + result);
+    isConnected,
+    isConnecting,
+    isMentorSpeaking,
+    isUserSpeaking,
+    mentorTranscript,
+    userTranscript,
+    connect,
+    disconnect,
+    sendTextMessage,
+  } = useNexMentorRealtime({
+    onConnected: () => {
+      toast.success("Connected to NexMentor");
+      setIsSessionActive(true);
+    },
+    onDisconnected: () => {
+      toast.info("Disconnected from NexMentor");
+      setIsSessionActive(false);
     },
     onError: (error) => {
       toast.error(error);
     },
-    continuous: true,
-    interimResults: true,
   });
 
-  // Fetch real question if ID provided
-  const { data: fetchedQuestion } = useQuery({
-    queryKey: ["nexmentor-question", questionId],
+  // Fetch all questions
+  const { data: questions, isLoading: isLoadingQuestions } = useQuery({
+    queryKey: ["nexmentor-questions"],
     queryFn: async () => {
-      if (questionId.startsWith("demo")) {
-        return demoQuestions.find((q) => q.id === questionId) || demoQuestions[0];
-      }
       const { data, error } = await supabase
         .from("questions")
-        .select("*, patterns(name)")
-        .eq("id", questionId)
-        .single();
+        .select("*, patterns(name, slug)")
+        .order("display_order", { ascending: true });
       if (error) throw error;
-      return {
-        id: data.id,
-        title: data.title,
-        pattern: data.patterns?.name || "Unknown",
-        difficulty: data.difficulty as "easy" | "medium" | "hard",
-        description: data.description || "",
-        examples: [],
-        constraints: [],
-        hints: (data.hints as string[]) || [],
-        companies: data.companies || [],
-        leetcodeLink: data.leetcode_link,
-      };
+      return data;
     },
   });
 
-  const currentQuestion = fetchedQuestion || demoQuestions[0];
+  // Fetch patterns for filter
+  const { data: patterns } = useQuery({
+    queryKey: ["patterns-filter"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("patterns")
+        .select("id, name, slug")
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
 
-  // Initialize welcome message
+  // Fetch selected question if ID is in URL
   useEffect(() => {
-    if (messages.length === 0 && currentQuestion) {
-      setMessages([{
-        id: "welcome",
-        role: "assistant",
-        content: `Welcome! I'm NEXMENTOR. Let's work on "${currentQuestion.title}" together.\n\nBefore we start coding — the array is sorted. What approach are you considering? What pattern might work here?`,
-        timestamp: new Date(),
-      }]);
+    if (questionId && questions) {
+      const question = questions.find((q) => q.id === questionId);
+      if (question) {
+        setSelectedQuestion(question);
+        setViewMode("session");
+      }
     }
-  }, [currentQuestion]);
+  }, [questionId, questions]);
 
   // Session timer
   useEffect(() => {
@@ -284,22 +216,62 @@ export default function AITutor() {
     return () => clearInterval(interval);
   }, [isSessionActive]);
 
-  // Auto scroll to bottom
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // Update input when voice transcript changes
-  useEffect(() => {
-    if (transcript) {
-      setInputMessage(transcript);
-    }
-  }, [transcript]);
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  // Filter questions
+  const filteredQuestions = questions?.filter((q) => {
+    const matchesSearch =
+      q.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      q.patterns?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesDifficulty = difficultyFilter === "all" || q.difficulty === difficultyFilter;
+    const matchesPattern = patternFilter === "all" || q.pattern_id === patternFilter;
+    return matchesSearch && matchesDifficulty && matchesPattern;
+  });
+
+  const handleSelectQuestion = (question: any) => {
+    setSelectedQuestion(question);
+    setSearchParams({ q: question.id });
+    setViewMode("session");
+    setSessionTime(0);
+    setHintsRevealed([]);
+    setCode(LANGUAGE_CONFIG[language].template);
+  };
+
+  const handleStartSession = async () => {
+    if (!selectedQuestion) return;
+
+    const questionContext = `
+Problem: ${selectedQuestion.title}
+Difficulty: ${selectedQuestion.difficulty}
+Pattern: ${selectedQuestion.patterns?.name || "Unknown"}
+Description: ${selectedQuestion.description || "No description"}
+    `.trim();
+
+    await connect(questionContext);
+  };
+
+  const handleEndSession = () => {
+    disconnect();
+    setViewMode("selection");
+    setSelectedQuestion(null);
+    setSearchParams({});
+    setSessionTime(0);
+    setIsSessionActive(false);
+  };
+
+  const handleBackToSelection = () => {
+    if (isConnected) {
+      disconnect();
+    }
+    setViewMode("selection");
+    setSelectedQuestion(null);
+    setSearchParams({});
+    setSessionTime(0);
+    setIsSessionActive(false);
   };
 
   const revealHint = (index: number) => {
@@ -350,184 +322,246 @@ export default function AITutor() {
     setIsRunning(false);
   };
 
-  const handleSubmitCode = async () => {
-    setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    toast.success("Code submitted for review");
-    setIsSubmitting(false);
-  };
+  // QUESTION SELECTION VIEW
+  if (viewMode === "selection") {
+    return (
+      <div className="min-h-screen bg-[#0A0E14] text-foreground">
+        {/* Header */}
+        <header className="bg-[#0D1117] border-b border-border/30 px-4 py-3 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link to="/" className="flex items-center gap-2 group">
+                <motion.div
+                  whileHover={{ scale: 1.05, rotate: 5 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-8 h-8 flex items-center justify-center"
+                >
+                  <img src={logoImage} alt="NexAlgoTrix" className="w-8 h-8 object-contain" />
+                </motion.div>
+                <span className="hidden sm:block font-bold text-lg tracking-tight text-foreground">
+                  NexAlgoTrix
+                </span>
+              </Link>
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                <Sparkles className="w-3 h-3 mr-1" />
+                NexMentor
+              </Badge>
+            </div>
 
-  const sendMessage = async (content?: string) => {
-    const messageContent = content || inputMessage.trim();
-    if (!messageContent || isLoading) return;
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
+              {user ? (
+                <ProfileDropdown />
+              ) : (
+                <Link to="/auth">
+                  <Button size="sm" variant="outline">
+                    Login
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+        </header>
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: messageContent,
-      timestamp: new Date(),
-    };
+        {/* Hero Section */}
+        <div className="bg-gradient-to-b from-primary/5 to-transparent py-12 px-4">
+          <div className="max-w-4xl mx-auto text-center space-y-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30"
+            >
+              <Phone className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-primary">Voice-First AI Mentoring</span>
+            </motion.div>
 
-    setMessages((prev) => [...prev, userMessage]);
-    setInputMessage("");
-    setIsLoading(true);
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-3xl md:text-4xl font-bold"
+            >
+              Practice with <span className="text-primary">NexMentor</span>
+            </motion.h1>
 
-    if (isListening) {
-      stopListening();
-    }
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-muted-foreground max-w-2xl mx-auto"
+            >
+              Select a problem below and practice with your AI mentor who speaks like a senior
+              Indian SDE. Real-time voice interaction — just think aloud and get instant feedback.
+            </motion.p>
+          </div>
+        </div>
 
-    try {
-      const context = {
-        skillLevel: "intermediate" as const,
-        patternStrengths: [],
-        patternWeaknesses: [],
-        pastMistakes: [],
-        conversationHistory: messages.slice(-6).map((m) => ({
-          role: m.role === "assistant" ? "tutor" : "user",
-          content: m.content,
-        })),
-        tutorPreferences: {},
-      };
+        {/* Filters */}
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search problems..."
+                className="pl-10 bg-muted/50 border-border/50"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+              <SelectTrigger className="w-full sm:w-[150px] bg-muted/50 border-border/50">
+                <SelectValue placeholder="Difficulty" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Levels</SelectItem>
+                <SelectItem value="easy">Easy</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="hard">Hard</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={patternFilter} onValueChange={setPatternFilter}>
+              <SelectTrigger className="w-full sm:w-[180px] bg-muted/50 border-border/50">
+                <SelectValue placeholder="Pattern" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Patterns</SelectItem>
+                {patterns?.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-      const { data, error } = await supabase.functions.invoke("ai-tutor", {
-        body: {
-          mode: "custom",
-          question: messageContent,
-          questionTitle: currentQuestion.title,
-          questionDescription: currentQuestion.description?.substring(0, 1000),
-          patternName: currentQuestion.pattern,
-          userCode: code?.substring(0, 2000),
-          context,
-          sessionId: "nexmentor-session",
-        },
-      });
+          {/* Questions Grid */}
+          {isLoadingQuestions ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredQuestions?.map((question, index) => (
+                <motion.div
+                  key={question.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="group relative bg-card/50 border border-border/50 rounded-xl p-5 hover:bg-card/80 hover:border-primary/30 transition-all cursor-pointer"
+                  onClick={() => handleSelectQuestion(question)}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-xs",
+                        difficultyConfig[question.difficulty as keyof typeof difficultyConfig]?.color
+                      )}
+                    >
+                      {difficultyConfig[question.difficulty as keyof typeof difficultyConfig]?.label}
+                    </Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      {question.patterns?.name || "Unknown"}
+                    </Badge>
+                  </div>
 
-      if (error) throw error;
+                  <h3 className="font-semibold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2">
+                    {question.title}
+                  </h3>
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: data.response,
-        timestamp: new Date(),
-      };
+                  {question.companies && question.companies.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-3">
+                      {question.companies.slice(0, 3).map((company: string, idx: number) => (
+                        <span key={idx} className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                          {company}
+                        </span>
+                      ))}
+                      {question.companies.length > 3 && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                          +{question.companies.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  )}
 
-      setMessages((prev) => [...prev, assistantMessage]);
+                  <div className="absolute inset-0 rounded-xl border-2 border-primary/0 group-hover:border-primary/50 transition-all pointer-events-none" />
+                </motion.div>
+              ))}
+            </div>
+          )}
 
-      // Text-to-speech if enabled
-      if (isSpeechEnabled && "speechSynthesis" in window) {
-        const utterance = new SpeechSynthesisUtterance(data.response);
-        utterance.rate = 0.9;
-        utterance.pitch = 1;
-        window.speechSynthesis.speak(utterance);
-      }
-    } catch (error) {
-      console.error("NexMentor error:", error);
-      toast.error("Failed to get response. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+          {filteredQuestions?.length === 0 && (
+            <div className="text-center py-20">
+              <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No problems found</h3>
+              <p className="text-muted-foreground">Try adjusting your filters</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  const toggleVoice = () => {
-    if (isListening) {
-      stopListening();
-    } else {
-      startListening();
-    }
-  };
-
-  const handleEndSession = () => {
-    setIsSessionActive(false);
-    navigate("/curriculum");
-  };
-
+  // SESSION VIEW
   return (
     <div className="min-h-screen bg-[#0A0E14] text-foreground flex flex-col">
-      {/* Top Navigation */}
+      {/* Top Navigation - Minimal during session */}
       <header className="bg-[#0D1117] border-b border-border/30 px-4 py-2 flex-shrink-0">
         <div className="flex items-center justify-between">
-          {/* Left - Logo and Nav */}
-          <div className="flex items-center gap-4 lg:gap-6">
-            <Link to="/" className="flex items-center gap-2 group">
-              <motion.div
-                whileHover={{ scale: 1.05, rotate: 5 }}
-                whileTap={{ scale: 0.95 }}
-                className="w-7 h-7 lg:w-8 lg:h-8 flex items-center justify-center"
-              >
-                <img src={logoImage} alt="NexAlgoTrix" className="w-7 h-7 lg:w-8 lg:h-8 object-contain" />
-              </motion.div>
-              <span className="hidden sm:block font-bold text-base lg:text-lg tracking-tight text-foreground">
-                NexAlgoTrix
-              </span>
-            </Link>
+          {/* Left - Back button and Logo */}
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2"
+              onClick={handleBackToSelection}
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">Back</span>
+            </Button>
 
-            <nav className="hidden lg:flex items-center gap-1">
-              <Link
-                to="/curriculum"
-                className="px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-white/5"
-              >
-                Curriculum
-              </Link>
-              <Link
-                to="/interview"
-                className="px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-white/5"
-              >
-                Interview
-              </Link>
-              <Link
-                to="/dashboard"
-                className="px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-white/5"
-              >
-                Dashboard
-              </Link>
-            </nav>
+            <Link to="/" className="flex items-center gap-2">
+              <img src={logoImage} alt="NexAlgoTrix" className="w-7 h-7 object-contain" />
+              <span className="hidden md:block font-bold text-base tracking-tight">NexAlgoTrix</span>
+            </Link>
           </div>
 
           {/* Center - Problem info */}
-          <div className="hidden md:flex items-center gap-2 lg:gap-3">
+          <div className="hidden md:flex items-center gap-3">
             <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
               <Sparkles className="w-3 h-3 mr-1" />
               NEXMENTOR
             </Badge>
-            <span className="text-muted-foreground hidden lg:inline">|</span>
-            <span className="font-medium text-foreground text-sm truncate max-w-[200px]">
-              {currentQuestion.title}
+            <span className="text-muted-foreground">|</span>
+            <span className="font-medium text-foreground text-sm truncate max-w-[250px]">
+              {selectedQuestion?.title}
             </span>
-            <Badge variant="outline" className={cn("text-xs", difficultyConfig[currentQuestion.difficulty].color)}>
-              {difficultyConfig[currentQuestion.difficulty].label}
+            <Badge
+              variant="outline"
+              className={cn(
+                "text-xs",
+                difficultyConfig[selectedQuestion?.difficulty as keyof typeof difficultyConfig]?.color
+              )}
+            >
+              {difficultyConfig[selectedQuestion?.difficulty as keyof typeof difficultyConfig]?.label}
             </Badge>
           </div>
 
-          {/* Right - Timer, Status, User */}
-          <div className="flex items-center gap-2 lg:gap-4">
-            <div className="hidden sm:flex items-center gap-2 bg-muted/30 px-2 lg:px-3 py-1 lg:py-1.5 rounded-full border border-border/30">
-              <Clock className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-muted-foreground" />
-              <span className="font-mono text-xs lg:text-sm">{formatTime(sessionTime)}</span>
+          {/* Right - Timer, Status */}
+          <div className="flex items-center gap-2 lg:gap-3">
+            <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-full border border-border/30">
+              <Clock className="w-4 h-4 text-muted-foreground" />
+              <span className="font-mono text-sm">{formatTime(sessionTime)}</span>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-emerald-500/10 px-2 lg:px-3 py-1 lg:py-1.5 rounded-full border border-emerald-500/30">
-              <Circle className="w-2 h-2 fill-emerald-500 text-emerald-500 animate-pulse" />
-              <span className="text-xs lg:text-sm text-emerald-500 font-medium hidden sm:inline">Live</span>
-            </div>
+            {isConnected && (
+              <div className="flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/30">
+                <Circle className="w-2 h-2 fill-emerald-500 text-emerald-500 animate-pulse" />
+                <span className="text-sm text-emerald-500 font-medium hidden sm:inline">Live</span>
+              </div>
+            )}
 
             <ThemeToggle />
-
-            {user ? (
-              <ProfileDropdown />
-            ) : (
-              <Link to="/auth">
-                <Button size="sm" variant="outline" className="text-xs">
-                  Login
-                </Button>
-              </Link>
-            )}
           </div>
         </div>
       </header>
@@ -535,98 +569,54 @@ export default function AITutor() {
       {/* Mobile Problem Title */}
       <div className="md:hidden bg-[#0D1117] border-b border-border/30 px-4 py-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
-              <Sparkles className="w-3 h-3 mr-1" />
-              NEXMENTOR
-            </Badge>
-            <span className="font-medium text-foreground text-sm truncate max-w-[180px]">
-              {currentQuestion.title}
-            </span>
-          </div>
-          <Badge variant="outline" className={cn("text-xs", difficultyConfig[currentQuestion.difficulty].color)}>
-            {difficultyConfig[currentQuestion.difficulty].label}
+          <span className="font-medium text-foreground text-sm truncate">
+            {selectedQuestion?.title}
+          </span>
+          <Badge
+            variant="outline"
+            className={cn(
+              "text-xs",
+              difficultyConfig[selectedQuestion?.difficulty as keyof typeof difficultyConfig]?.color
+            )}
+          >
+            {difficultyConfig[selectedQuestion?.difficulty as keyof typeof difficultyConfig]?.label}
           </Badge>
         </div>
       </div>
 
-      {/* Main Content - Responsive 3 Panel Layout */}
+      {/* Main Content - 3 Panel Layout */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* Left Panel - Problem Description */}
-        <div className="lg:w-[320px] xl:w-[360px] border-b lg:border-b-0 lg:border-r border-border/30 bg-[#0D1117] flex-shrink-0 h-[35vh] lg:h-auto overflow-hidden">
+        <div className="lg:w-[320px] xl:w-[360px] border-b lg:border-b-0 lg:border-r border-border/30 bg-[#0D1117] flex-shrink-0 h-[30vh] lg:h-auto overflow-hidden">
           <ScrollArea className="h-full">
             <div className="p-4 lg:p-6 space-y-4 lg:space-y-6">
               {/* Header */}
-              <div className="space-y-3">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <HelpCircle className="w-4 h-4" />
-                    <span className="text-sm font-medium">Problem</span>
-                  </div>
-                  {currentQuestion.leetcodeLink && (
-                    <a
-                      href={currentQuestion.leetcodeLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-                  )}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <HelpCircle className="w-4 h-4" />
+                  <span className="text-sm font-medium">Problem</span>
                 </div>
+                {selectedQuestion?.leetcode_link && (
+                  <a
+                    href={selectedQuestion.leetcode_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                )}
               </div>
 
               {/* Description */}
               <div className="prose prose-sm dark:prose-invert max-w-none">
                 <p className="text-muted-foreground leading-relaxed text-sm whitespace-pre-wrap">
-                  {currentQuestion.description}
+                  {selectedQuestion?.description || "No description available."}
                 </p>
               </div>
 
-              {/* Examples */}
-              {currentQuestion.examples && currentQuestion.examples.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-foreground text-sm">Examples</h3>
-                  {currentQuestion.examples.map((example, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3 rounded-lg bg-muted/30 border border-border/50 space-y-1.5"
-                    >
-                      <div className="font-mono text-xs">
-                        <span className="text-muted-foreground">Input: </span>
-                        <span className="text-foreground">{example.input}</span>
-                      </div>
-                      <div className="font-mono text-xs">
-                        <span className="text-muted-foreground">Output: </span>
-                        <span className="text-primary font-medium">{example.output}</span>
-                      </div>
-                      {example.explanation && (
-                        <div className="text-xs text-muted-foreground pt-1.5 border-t border-border/30">
-                          <span className="font-medium">Explanation: </span>
-                          {example.explanation}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Constraints */}
-              {currentQuestion.constraints && currentQuestion.constraints.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-foreground text-sm">Constraints</h3>
-                  <ul className="space-y-1">
-                    {currentQuestion.constraints.map((constraint, idx) => (
-                      <li key={idx} className="text-xs text-muted-foreground font-mono">
-                        • {constraint}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
               {/* Hints */}
-              {currentQuestion.hints && currentQuestion.hints.length > 0 && (
+              {selectedQuestion?.hints && (selectedQuestion.hints as string[]).length > 0 && (
                 <Collapsible open={hintsOpen} onOpenChange={setHintsOpen}>
                   <CollapsibleTrigger asChild>
                     <Button
@@ -637,24 +627,15 @@ export default function AITutor() {
                         <Lightbulb className="w-4 h-4 text-amber-500" />
                         <span className="font-medium">Hints</span>
                         <Badge variant="secondary" className="text-xs">
-                          {currentQuestion.hints.length}
+                          {(selectedQuestion.hints as string[]).length}
                         </Badge>
                       </div>
-                      {hintsOpen ? (
-                        <ChevronDown className="w-4 h-4" />
-                      ) : (
-                        <ChevronRight className="w-4 h-4" />
-                      )}
+                      {hintsOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                     </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="mt-2 space-y-2">
-                    {currentQuestion.hints.map((hint, idx) => (
-                      <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        className="relative"
-                      >
+                    {(selectedQuestion.hints as string[]).map((hint: string, idx: number) => (
+                      <motion.div key={idx} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
                         {hintsRevealed.includes(idx) ? (
                           <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs">
                             <span className="text-amber-500 font-medium">Hint {idx + 1}: </span>
@@ -677,11 +658,11 @@ export default function AITutor() {
               )}
 
               {/* Companies */}
-              {currentQuestion.companies && currentQuestion.companies.length > 0 && (
+              {selectedQuestion?.companies && selectedQuestion.companies.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="text-xs font-medium text-muted-foreground">Asked by</h4>
                   <div className="flex flex-wrap gap-1.5">
-                    {currentQuestion.companies.map((company, idx) => (
+                    {selectedQuestion.companies.map((company: string, idx: number) => (
                       <Badge key={idx} variant="secondary" className="text-xs">
                         {company}
                       </Badge>
@@ -694,12 +675,12 @@ export default function AITutor() {
         </div>
 
         {/* Center Panel - Code Editor */}
-        <div className="flex-1 min-w-0 flex flex-col h-[30vh] lg:h-auto">
+        <div className="flex-1 min-w-0 flex flex-col h-[35vh] lg:h-auto">
           {/* Editor Header */}
           <div className="flex items-center justify-between px-3 lg:px-4 py-2 border-b border-border/30 bg-[#161B22] flex-shrink-0">
-            <div className="flex items-center gap-2 lg:gap-3">
+            <div className="flex items-center gap-3">
               <Select value={language} onValueChange={handleLanguageChange}>
-                <SelectTrigger className="w-[100px] lg:w-[120px] h-7 lg:h-8 bg-[#21262D] border-border/50 text-xs lg:text-sm">
+                <SelectTrigger className="w-[120px] h-8 bg-[#21262D] border-border/50 text-sm">
                   <SelectValue placeholder="Language" />
                 </SelectTrigger>
                 <SelectContent>
@@ -713,42 +694,27 @@ export default function AITutor() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 lg:h-8 px-2 text-muted-foreground hover:text-foreground"
+                className="h-8 px-2 text-muted-foreground hover:text-foreground"
                 onClick={handleReset}
               >
-                <RotateCcw className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+                <RotateCcw className="w-4 h-4" />
               </Button>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 lg:h-8 text-xs bg-[#21262D] border-border/50 hover:bg-[#30363D]"
-                onClick={handleRunCode}
-                disabled={isRunning}
-              >
-                {isRunning ? (
-                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                ) : (
-                  <Play className="w-3.5 h-3.5 mr-1.5 fill-current" />
-                )}
-                Run
-              </Button>
-              <Button
-                size="sm"
-                className="h-7 lg:h-8 text-xs bg-primary hover:bg-primary/90"
-                onClick={handleSubmitCode}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                ) : (
-                  <Send className="w-3.5 h-3.5 mr-1.5" />
-                )}
-                Submit
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 bg-[#21262D] border-border/50 hover:bg-[#30363D]"
+              onClick={handleRunCode}
+              disabled={isRunning}
+            >
+              {isRunning ? (
+                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+              ) : (
+                <Play className="w-4 h-4 mr-1.5 fill-current" />
+              )}
+              Run
+            </Button>
           </div>
 
           {/* Monaco Editor */}
@@ -762,7 +728,7 @@ export default function AITutor() {
               theme="vs-dark"
               options={{
                 minimap: { enabled: false },
-                fontSize: 13,
+                fontSize: 14,
                 lineNumbers: "on",
                 scrollBeyondLastLine: false,
                 automaticLayout: true,
@@ -770,13 +736,10 @@ export default function AITutor() {
                 wordWrap: "on",
                 padding: { top: 12 },
                 quickSuggestions: true,
-                suggestOnTriggerCharacters: true,
-                acceptSuggestionOnEnter: "on",
                 bracketPairColorization: { enabled: true },
                 folding: true,
                 renderLineHighlight: "all",
                 fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
-                fontLigatures: true,
               }}
               loading={
                 <div className="flex items-center justify-center h-full bg-[#0D1117]">
@@ -787,231 +750,163 @@ export default function AITutor() {
           </div>
         </div>
 
-        {/* Right Panel - NexMentor Chat */}
+        {/* Right Panel - NexMentor Voice Interface */}
         <div className="lg:w-[340px] xl:w-[380px] flex-shrink-0 flex flex-col bg-card/50 backdrop-blur-sm border-t lg:border-t-0 lg:border-l border-border/50 h-[35vh] lg:h-auto">
-          {/* Chat Header */}
-          <div className="p-3 lg:p-4 border-b border-border/50 flex items-center justify-between flex-shrink-0">
-            <div className="flex items-center gap-2 lg:gap-3">
-              {/* Avatar with glow effect */}
+          {/* Header */}
+          <div className="p-4 border-b border-border/50 flex items-center justify-between flex-shrink-0">
+            <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-gradient-to-br from-primary via-purple-600 to-pink-500 flex items-center justify-center ring-2 ring-primary/30 ring-offset-2 ring-offset-background">
-                  <Sparkles className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
+                <div
+                  className={cn(
+                    "w-12 h-12 rounded-full bg-gradient-to-br from-primary via-purple-600 to-pink-500 flex items-center justify-center ring-2 ring-offset-2 ring-offset-background transition-all",
+                    isMentorSpeaking ? "ring-emerald-500 animate-pulse" : isUserSpeaking ? "ring-primary" : "ring-primary/30"
+                  )}
+                >
+                  <Sparkles className="w-6 h-6 text-white" />
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background animate-pulse" />
+                {isConnected && (
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background animate-pulse" />
+                )}
               </div>
               <div>
-                <h3 className="font-semibold text-foreground text-sm lg:text-base flex items-center gap-2">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
                   NexMentor
-                  <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-500 border-emerald-500/30">
-                    Live
-                  </Badge>
+                  {isConnected && (
+                    <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-500 border-emerald-500/30">
+                      Live
+                    </Badge>
+                  )}
                 </h3>
-                <p className="text-[10px] lg:text-xs text-muted-foreground">Your Coding Mentor</p>
+                <p className="text-xs text-muted-foreground">
+                  {isMentorSpeaking ? "Speaking..." : isUserSpeaking ? "Listening..." : "Your AI Mentor"}
+                </p>
               </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 lg:h-8 lg:w-8"
-                onClick={() => setIsSpeechEnabled(!isSpeechEnabled)}
-              >
-                {isSpeechEnabled ? (
-                  <Volume2 className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-primary" />
-                ) : (
-                  <VolumeX className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-muted-foreground" />
-                )}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 lg:h-8 lg:w-8 text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                onClick={handleEndSession}
-              >
-                <X className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
-              </Button>
             </div>
           </div>
 
-          {/* Messages */}
-          <ScrollArea className="flex-1 p-3 lg:p-4">
-            <div className="space-y-3 lg:space-y-4">
-              {messages.map((msg) => (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={cn("flex gap-2 lg:gap-3", msg.role === "user" ? "justify-end" : "justify-start")}
-                >
-                  {msg.role === "assistant" && (
-                    <div className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center flex-shrink-0">
-                      <Sparkles className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-white" />
-                    </div>
-                  )}
-                  <div
-                    className={cn(
-                      "max-w-[85%] rounded-2xl px-3 lg:px-4 py-2 lg:py-3",
-                      msg.role === "user"
-                        ? "bg-primary/20 border border-primary/30 text-foreground"
-                        : "bg-muted/80 border border-border/50"
-                    )}
-                  >
-                    {msg.role === "assistant" && (
-                      <p className="text-[10px] lg:text-xs font-medium text-primary mb-1">NexMentor:</p>
-                    )}
-                    <p className="text-xs lg:text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                  </div>
-                  {msg.role === "user" && (
-                    <div className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                      <User className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-muted-foreground" />
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-              {isLoading && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex gap-2 lg:gap-3"
-                >
-                  <div className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
-                    <Sparkles className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-white" />
-                  </div>
-                  <div className="bg-muted/80 rounded-2xl px-3 lg:px-4 py-2 lg:py-3 border border-border/50">
-                    <div className="flex items-center gap-2">
-                      <div className="flex gap-1">
-                        <span className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
-                        <span className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
-                        <span className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
-                      </div>
-                      <span className="text-xs lg:text-sm text-muted-foreground">Thinking...</span>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
-
-          {/* Input Area */}
-          <div className="p-3 lg:p-4 border-t border-border/50 space-y-2 lg:space-y-3 flex-shrink-0">
-            <div className="relative">
-              <Textarea
-                placeholder="I'm thinking: two pointers might work..."
-                className="min-h-[50px] lg:min-h-[60px] pr-20 lg:pr-24 resize-none bg-muted/50 border-border/50 rounded-xl text-xs lg:text-sm"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={isLoading}
-              />
-              <div className="absolute right-2 bottom-2 flex gap-1">
-                {isVoiceSupported && (
-                  <Button
-                    size="icon"
-                    variant={isListening ? "default" : "ghost"}
-                    className={cn(
-                      "h-7 w-7 lg:h-8 lg:w-8 rounded-lg transition-all",
-                      isListening && "bg-red-500 hover:bg-red-600 animate-pulse"
-                    )}
-                    onClick={toggleVoice}
-                  >
-                    {isListening ? (
-                      <MicOff className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
-                    ) : (
-                      <Mic className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
-                    )}
-                  </Button>
-                )}
+          {/* Voice Visualization Area */}
+          <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6">
+            {!isConnected ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center space-y-6"
+              >
+                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/20 to-purple-600/20 flex items-center justify-center mx-auto border border-primary/30">
+                  <Phone className="w-12 h-12 text-primary" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-lg">Ready to Practice?</h3>
+                  <p className="text-sm text-muted-foreground max-w-xs">
+                    Start a live voice session with NexMentor. Think aloud and get real-time feedback.
+                  </p>
+                </div>
                 <Button
-                  size="icon"
-                  className="h-7 w-7 lg:h-8 lg:w-8 rounded-lg"
-                  onClick={() => sendMessage()}
-                  disabled={!inputMessage.trim() || isLoading}
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 gap-2"
+                  onClick={handleStartSession}
+                  disabled={isConnecting}
                 >
-                  <Send className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+                  {isConnecting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <Phone className="w-5 h-5" />
+                      Start Session
+                    </>
+                  )}
                 </Button>
-              </div>
-            </div>
+              </motion.div>
+            ) : (
+              <>
+                {/* Live Voice Visualizer */}
+                <div className="flex flex-col items-center space-y-4">
+                  <motion.div
+                    className={cn(
+                      "w-32 h-32 rounded-full flex items-center justify-center transition-all",
+                      isMentorSpeaking
+                        ? "bg-gradient-to-br from-emerald-500/30 to-emerald-600/30 border-2 border-emerald-500/50"
+                        : isUserSpeaking
+                        ? "bg-gradient-to-br from-primary/30 to-purple-600/30 border-2 border-primary/50"
+                        : "bg-muted/50 border border-border/50"
+                    )}
+                    animate={isMentorSpeaking || isUserSpeaking ? { scale: [1, 1.05, 1] } : {}}
+                    transition={{ duration: 0.5, repeat: Infinity }}
+                  >
+                    {isMentorSpeaking ? (
+                      <Volume2 className="w-12 h-12 text-emerald-500" />
+                    ) : isUserSpeaking ? (
+                      <Mic className="w-12 h-12 text-primary" />
+                    ) : (
+                      <Mic className="w-12 h-12 text-muted-foreground" />
+                    )}
+                  </motion.div>
 
-            {/* Voice indicator */}
-            <AnimatePresence>
-              {isListening && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="flex items-center gap-2 text-xs text-muted-foreground"
-                >
-                  <div className="flex gap-0.5 items-end h-4">
+                  {/* Audio Wave Animation */}
+                  <div className="flex items-center gap-1 h-8">
                     {[1, 2, 3, 4, 5].map((i) => (
                       <motion.div
                         key={i}
-                        className="w-1 bg-primary rounded-full"
-                        animate={{ height: [4, 16, 8, 12, 4] }}
+                        className={cn(
+                          "w-1.5 rounded-full transition-colors",
+                          isMentorSpeaking ? "bg-emerald-500" : isUserSpeaking ? "bg-primary" : "bg-muted-foreground/30"
+                        )}
+                        animate={
+                          isMentorSpeaking || isUserSpeaking
+                            ? { height: [8, 32, 16, 24, 8] }
+                            : { height: 8 }
+                        }
                         transition={{
-                          duration: 0.8,
-                          repeat: Infinity,
+                          duration: 0.6,
+                          repeat: isMentorSpeaking || isUserSpeaking ? Infinity : 0,
                           delay: i * 0.1,
                         }}
+                        style={{ height: 8 }}
                       />
                     ))}
                   </div>
-                  <span>Listening... Speak now</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
 
-            {/* Quick action buttons */}
-            <div className="flex items-center justify-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="rounded-full h-9 w-9 lg:h-10 lg:w-10 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30"
-                onClick={toggleVoice}
-              >
-                <Mic className={cn("w-4 h-4", isListening ? "text-red-500" : "text-emerald-500")} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="rounded-full h-9 w-9 lg:h-10 lg:w-10 bg-muted hover:bg-muted/80"
-                onClick={() => setIsSpeechEnabled(!isSpeechEnabled)}
-              >
-                {isSpeechEnabled ? (
-                  <Volume2 className="w-4 h-4 text-primary" />
-                ) : (
-                  <VolumeX className="w-4 h-4 text-muted-foreground" />
-                )}
-              </Button>
-              {/* Voice visualizer */}
-              <div className="flex items-center gap-0.5 px-3 lg:px-4 py-2 rounded-full bg-muted/50 border border-border/50">
-                {[1, 2, 3, 4, 5].map((i) => (
+                  <p className="text-sm text-muted-foreground text-center">
+                    {isMentorSpeaking
+                      ? "NexMentor is speaking..."
+                      : isUserSpeaking
+                      ? "You're speaking..."
+                      : "Speak to interact with NexMentor"}
+                  </p>
+                </div>
+
+                {/* Transcript Display */}
+                {mentorTranscript && (
                   <motion.div
-                    key={i}
-                    className={cn(
-                      "w-1 rounded-full transition-all",
-                      isListening ? "bg-primary" : "bg-muted-foreground/30"
-                    )}
-                    animate={isListening ? { height: [4, 16, 8, 12, 4] } : { height: 4 }}
-                    transition={{
-                      duration: 0.8,
-                      repeat: isListening ? Infinity : 0,
-                      delay: i * 0.1,
-                    }}
-                    style={{ height: 4 }}
-                  />
-                ))}
-              </div>
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full p-4 rounded-xl bg-muted/50 border border-border/50"
+                  >
+                    <p className="text-xs font-medium text-primary mb-1">NexMentor:</p>
+                    <p className="text-sm">{mentorTranscript}</p>
+                  </motion.div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Bottom Controls */}
+          {isConnected && (
+            <div className="p-4 border-t border-border/50 flex items-center justify-center gap-4">
               <Button
-                variant="ghost"
-                size="sm"
-                className="rounded-full h-9 w-9 lg:h-10 lg:w-10 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30"
+                variant="destructive"
+                size="lg"
+                className="gap-2"
                 onClick={handleEndSession}
               >
-                <X className="w-4 h-4 text-red-500" />
+                <PhoneOff className="w-5 h-5" />
+                End Session
               </Button>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
