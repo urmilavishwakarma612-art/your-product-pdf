@@ -44,6 +44,8 @@ const Events = lazy(() => import("./pages/Events"));
 const Gamification = lazy(() => import("./pages/Gamification"));
 const Referral = lazy(() => import("./pages/Referral"));
 const ProfileManagement = lazy(() => import("./pages/ProfileManagement"));
+const Jobs = lazy(() => import("./pages/Jobs"));
+const AdminJobs = lazy(() => import("./pages/admin/AdminJobs"));
 
 const queryClient = new QueryClient();
 
@@ -76,6 +78,7 @@ const App = () => (
                 <Route path="email-templates" element={<AdminEmailTemplates />} />
                 <Route path="curriculum" element={<AdminCurriculum />} />
                 <Route path="modules" element={<AdminModules />} />
+                <Route path="jobs" element={<AdminJobs />} />
               </Route>
               <Route path="/shipping" element={<ShippingPolicy />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
@@ -92,6 +95,7 @@ const App = () => (
               <Route path="/gamification" element={<Gamification />} />
               <Route path="/referral" element={<Referral />} />
               <Route path="/profile-settings" element={<ProfileManagement />} />
+              <Route path="/jobs" element={<Jobs />} />
               <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

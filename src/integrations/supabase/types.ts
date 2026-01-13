@@ -339,6 +339,78 @@ export type Database = {
           },
         ]
       }
+      dsa_jobs: {
+        Row: {
+          about_job: string | null
+          apply_link: string
+          closing_date: string | null
+          company_logo: string | null
+          company_name: string
+          created_at: string
+          description: string
+          education: string | null
+          eligibility: string | null
+          experience: string | null
+          id: string
+          is_featured: boolean | null
+          job_type: string
+          location: string | null
+          posted_date: string
+          role: string
+          skills: string[] | null
+          status: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          about_job?: string | null
+          apply_link: string
+          closing_date?: string | null
+          company_logo?: string | null
+          company_name: string
+          created_at?: string
+          description: string
+          education?: string | null
+          eligibility?: string | null
+          experience?: string | null
+          id?: string
+          is_featured?: boolean | null
+          job_type?: string
+          location?: string | null
+          posted_date?: string
+          role: string
+          skills?: string[] | null
+          status?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          about_job?: string | null
+          apply_link?: string
+          closing_date?: string | null
+          company_logo?: string | null
+          company_name?: string
+          created_at?: string
+          description?: string
+          education?: string | null
+          eligibility?: string | null
+          experience?: string | null
+          id?: string
+          is_featured?: boolean | null
+          job_type?: string
+          location?: string | null
+          posted_date?: string
+          role?: string
+          skills?: string[] | null
+          status?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_templates: {
         Row: {
           body_text: string

@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useNexMentorRealtime } from "@/hooks/useNexMentorRealtime";
+import { useFreeTTS } from "@/hooks/useFreeTTS";
 import {
   Clock,
   Circle,
@@ -143,7 +143,7 @@ export default function AITutor() {
   const [hintsOpen, setHintsOpen] = useState(false);
   const [hintsRevealed, setHintsRevealed] = useState<number[]>([]);
 
-  // Voice interaction
+  // Voice interaction - using free Web Speech API
   const {
     isConnected,
     isConnecting,
@@ -154,7 +154,7 @@ export default function AITutor() {
     connect,
     disconnect,
     sendTextMessage,
-  } = useNexMentorRealtime({
+  } = useFreeTTS({
     onConnected: () => {
       toast.success("Connected to NexMentor");
       setIsSessionActive(true);
