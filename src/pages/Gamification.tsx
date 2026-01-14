@@ -6,16 +6,23 @@ import { Navbar } from "@/components/landing/Navbar";
 import { MonthlyTracker } from "@/components/gamification/MonthlyTracker";
 import { BadgesTab } from "@/components/gamification/BadgesTab";
 import { LeaderboardTab } from "@/components/gamification/LeaderboardTab";
+import { InterviewReadinessScore } from "@/components/gamification/InterviewReadinessScore";
+import { PatternMasteryMeter } from "@/components/gamification/PatternMasteryMeter";
+import { WeeklyReflection } from "@/components/gamification/WeeklyReflection";
+import { useBadgeAwarder } from "@/hooks/useBadgeAwarder";
 
 export default function Gamification() {
   const [activeTab, setActiveTab] = useState("tracker");
+  
+  // Initialize badge awarding system
+  useBadgeAwarder();
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       
       <main className="pt-24 pb-20 px-4">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -30,6 +37,13 @@ export default function Gamification() {
               Track your consistency, earn badges, and climb leagues through disciplined practice.
             </p>
           </motion.div>
+
+          {/* V2 Score Cards */}
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
+            <InterviewReadinessScore />
+            <PatternMasteryMeter />
+            <WeeklyReflection />
+          </div>
 
           {/* Main Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
