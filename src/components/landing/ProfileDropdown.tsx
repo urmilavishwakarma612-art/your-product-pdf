@@ -24,7 +24,8 @@ import {
   Flame, 
   Gift, 
   Calendar,
-  BarChart3
+  BarChart3,
+  Briefcase
 } from "lucide-react";
 
 export function ProfileDropdown() {
@@ -55,6 +56,7 @@ export function ProfileDropdown() {
   const secondaryNavItems = [
     { href: "/tutor", label: "NexMentor", icon: Bot },
     { href: "/gamification", label: "Rewards", icon: Trophy },
+    { href: "/jobs", label: "Jobs", icon: Briefcase },
     { href: "/events", label: "Events", icon: Calendar },
     { href: "/referral", label: "Referrals", icon: Gift },
     { href: "/dashboard?tab=analytics", label: "Analytics", icon: BarChart3 },
