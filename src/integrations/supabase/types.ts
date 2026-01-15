@@ -94,6 +94,93 @@ export type Database = {
         }
         Relationships: []
       }
+      coupon_redemptions: {
+        Row: {
+          coupon_id: string
+          id: string
+          payment_id: string | null
+          redeemed_at: string
+          user_id: string
+        }
+        Insert: {
+          coupon_id: string
+          id?: string
+          payment_id?: string | null
+          redeemed_at?: string
+          user_id: string
+        }
+        Update: {
+          coupon_id?: string
+          id?: string
+          payment_id?: string | null
+          redeemed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_redemptions_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_redemptions_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          current_redemptions: number
+          discount_type: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_redemptions: number
+          monthly_discount: number
+          six_month_discount: number
+          starts_at: string
+          updated_at: string
+          yearly_discount: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          current_redemptions?: number
+          discount_type?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_redemptions?: number
+          monthly_discount?: number
+          six_month_discount?: number
+          starts_at?: string
+          updated_at?: string
+          yearly_discount?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          current_redemptions?: number
+          discount_type?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_redemptions?: number
+          monthly_discount?: number
+          six_month_discount?: number
+          starts_at?: string
+          updated_at?: string
+          yearly_discount?: number
+        }
+        Relationships: []
+      }
       curriculum_levels: {
         Row: {
           color: string | null
@@ -726,9 +813,12 @@ export type Database = {
       payments: {
         Row: {
           amount: number
+          coupon_code: string | null
           created_at: string
           currency: string
+          discount_amount: number | null
           id: string
+          original_amount: number | null
           plan_type: string
           razorpay_order_id: string
           razorpay_payment_id: string | null
@@ -739,9 +829,12 @@ export type Database = {
         }
         Insert: {
           amount: number
+          coupon_code?: string | null
           created_at?: string
           currency?: string
+          discount_amount?: number | null
           id?: string
+          original_amount?: number | null
           plan_type: string
           razorpay_order_id: string
           razorpay_payment_id?: string | null
@@ -752,9 +845,12 @@ export type Database = {
         }
         Update: {
           amount?: number
+          coupon_code?: string | null
           created_at?: string
           currency?: string
+          discount_amount?: number | null
           id?: string
+          original_amount?: number | null
           plan_type?: string
           razorpay_order_id?: string
           razorpay_payment_id?: string | null
@@ -935,6 +1031,56 @@ export type Database = {
             columns: ["sub_pattern_id"]
             isOneToOne: false
             referencedRelation: "sub_patterns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      refund_requests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          id: string
+          payment_id: string
+          processed_at: string | null
+          processed_by: string | null
+          reason: string
+          refund_amount: number | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          payment_id: string
+          processed_at?: string | null
+          processed_by?: string | null
+          reason: string
+          refund_amount?: number | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          payment_id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          reason?: string
+          refund_amount?: number | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refund_requests_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
             referencedColumns: ["id"]
           },
         ]

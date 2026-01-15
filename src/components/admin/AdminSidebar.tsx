@@ -3,16 +3,18 @@ import {
   Layers, 
   FileQuestion, 
   Users, 
-  Trophy,
+  Crown,
   ArrowLeft,
   Building2,
-  FolderTree,
-  MessageSquareQuote,
-  CreditCard,
+  Folder,
+  MessageSquare,
   Mail,
   GraduationCap,
   BookOpen,
-  Briefcase
+  Briefcase,
+  Ticket,
+  RefreshCcw,
+  Award
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, Link } from "react-router-dom";
@@ -30,18 +32,20 @@ import {
 
 const menuItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+  { title: "Users", url: "/admin/users", icon: Users },
+  { title: "Subscriptions", url: "/admin/subscriptions", icon: Crown },
+  { title: "Coupons", url: "/admin/coupons", icon: Ticket },
+  { title: "Refunds", url: "/admin/refunds", icon: RefreshCcw },
   { title: "Curriculum", url: "/admin/curriculum", icon: GraduationCap },
   { title: "Modules", url: "/admin/modules", icon: BookOpen },
-  { title: "Topics", url: "/admin/topics", icon: FolderTree },
   { title: "Patterns", url: "/admin/patterns", icon: Layers },
   { title: "Questions", url: "/admin/questions", icon: FileQuestion },
+  { title: "Topics", url: "/admin/topics", icon: Folder },
   { title: "Companies", url: "/admin/companies", icon: Building2 },
-  { title: "Jobs", url: "/admin/jobs", icon: Briefcase },
-  { title: "Users", url: "/admin/users", icon: Users },
-  { title: "Subscriptions", url: "/admin/subscriptions", icon: CreditCard },
+  { title: "Badges", url: "/admin/badges", icon: Award },
+  { title: "Testimonials", url: "/admin/testimonials", icon: MessageSquare },
   { title: "Email Templates", url: "/admin/email-templates", icon: Mail },
-  { title: "Badges", url: "/admin/badges", icon: Trophy },
-  { title: "Testimonials", url: "/admin/testimonials", icon: MessageSquareQuote },
+  { title: "Jobs", url: "/admin/jobs", icon: Briefcase },
 ];
 
 export function AdminSidebar() {
