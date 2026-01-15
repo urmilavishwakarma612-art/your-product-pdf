@@ -22,6 +22,8 @@ interface ShareModalProps {
   value?: string | number;
   userName?: string;
   icon?: string;
+  badgeType?: string;
+  earnedDate?: string;
 }
 
 export const ShareModal = ({
@@ -33,16 +35,19 @@ export const ShareModal = ({
   value,
   userName,
   icon,
+  badgeType,
+  earnedDate,
 }: ShareModalProps) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const defaultMessages: Record<ShareType, string> = {
     level: `Just reached ${title} on NexAlgoTrix! 🎯\n\nFocused on interview-style DSA thinking, not just solving problems.\n\n#DSA #CodingInterview #NexAlgoTrix`,
     streak: `Maintained a ${value}-day practice streak on NexAlgoTrix! 🔥\n\nConsistency is key to mastering DSA.\n\n#DSA #100DaysOfCode #NexAlgoTrix`,
     interview: `Completed ${title} on NexAlgoTrix! 💼\n\nPracticing interview-style problem solving.\n\n#CodingInterview #DSA #NexAlgoTrix`,
     pattern: `Mastered the ${title} pattern on NexAlgoTrix! ⭐\n\nPattern-based learning is the key to interview success.\n\n#DSA #Algorithms #NexAlgoTrix`,
-    badge: `Earned the "${title}" badge on NexAlgoTrix! 🏆\n\n${subtitle || ""}\n\n#DSA #Achievement #NexAlgoTrix`,
+    badge: `Earned the "${title}" badge on NexAlgoTrix! 🏆\n\n${subtitle || "Focused on pattern-based DSA learning."}\n\n#DSA #Achievement #NexAlgoTrix`,
   };
 
   const [message, setMessage] = useState(defaultMessages[type]);
@@ -85,39 +90,54 @@ export const ShareModal = ({
   };
 
   const handleDownloadImage = async () => {
-    if (!cardRef.current) return;
+    if (!cardRef.current || isDownloading) return;
 
+    setIsDownloading(true);
     try {
-      // Dynamic import to avoid SSR issues
       const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(cardRef.current, {
+      
+      // Create a clone and append to body for proper rendering
+      const clone = cardRef.current.cloneNode(true) as HTMLElement;
+      clone.style.position = "absolute";
+      clone.style.left = "-9999px";
+      clone.style.top = "0";
+      document.body.appendChild(clone);
+      
+      const canvas = await html2canvas(clone, {
         scale: 2,
         backgroundColor: null,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
       });
       
+      document.body.removeChild(clone);
+      
       const link = document.createElement("a");
-      link.download = `nexalgotrix-${type}-${Date.now()}.png`;
-      link.href = canvas.toDataURL("image/png");
+      link.download = `nexalgotrix-${type}-${title.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png", 1.0);
       link.click();
       
-      toast.success("Image downloaded!");
+      toast.success("Image downloaded successfully!");
     } catch (error) {
       console.error("Failed to download image:", error);
       toast.error("Failed to download image. Please try again.");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Share Your Achievement</DialogTitle>
+          <DialogTitle className="text-center">Share Your Achievement</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Preview Card */}
-          <div className="flex justify-center overflow-hidden rounded-xl">
-            <div className="scale-[0.85] origin-center">
+          <div className="flex justify-center overflow-hidden rounded-xl bg-muted/30 p-4">
+            <div className="scale-[0.65] origin-center">
               <ShareCard
                 ref={cardRef}
                 type={type}
@@ -126,6 +146,8 @@ export const ShareModal = ({
                 value={value}
                 userName={userName}
                 icon={icon}
+                badgeType={badgeType}
+                earnedDate={earnedDate}
               />
             </div>
           </div>
@@ -175,7 +197,7 @@ export const ShareModal = ({
               onClick={handleCopyLink}
             >
               {copied ? (
-                <Check className="w-4 h-4 text-success" />
+                <Check className="w-4 h-4 text-green-500" />
               ) : (
                 <Copy className="w-4 h-4" />
               )}
@@ -193,13 +215,18 @@ export const ShareModal = ({
               Copy Text
             </Button>
             <Button
-              className="flex-1 gap-2 btn-primary-glow"
+              className="flex-1 gap-2 bg-primary hover:bg-primary/90"
               onClick={handleDownloadImage}
+              disabled={isDownloading}
             >
               <Download className="w-4 h-4" />
-              Download Image
+              {isDownloading ? "Downloading..." : "Download Image"}
             </Button>
           </div>
+
+          <p className="text-xs text-center text-muted-foreground">
+            Share your progress professionally • LinkedIn-safe
+          </p>
         </div>
       </DialogContent>
     </Dialog>

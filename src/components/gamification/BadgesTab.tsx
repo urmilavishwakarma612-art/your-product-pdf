@@ -1,20 +1,21 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useRef } from "react";
+import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Flame, Target, Award, Star, Zap, Trophy, Lock, 
-  Share2, Download, Linkedin, Twitter, Check
+  Download, Linkedin, Twitter, Check, MessageCircle, Copy
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { ShareCard } from "@/components/share/ShareCard";
 
 interface BadgeData {
   id: string;
@@ -35,10 +36,10 @@ const badgeCategories = [
     description: "Awarded for consistent daily practice"
   },
   { 
-    id: "problem_solving", 
+    id: "achievement", 
     label: "Problem Solving", 
     icon: Target,
-    color: "from-green-500 to-emerald-500",
+    color: "from-primary to-pink-500",
     description: "Awarded for solving problems"
   },
   { 
@@ -52,12 +53,12 @@ const badgeCategories = [
     id: "xp", 
     label: "XP Milestones", 
     icon: Star,
-    color: "from-yellow-500 to-amber-500",
+    color: "from-emerald-500 to-teal-500",
     description: "Awarded for earning XP"
   },
 ];
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, React.ElementType> = {
   flame: Flame,
   target: Target,
   award: Award,
@@ -70,6 +71,9 @@ export function BadgesTab() {
   const { user } = useAuth();
   const [selectedBadge, setSelectedBadge] = useState<BadgeData | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [shareMessage, setShareMessage] = useState("");
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // Fetch all badges
   const { data: allBadges = [] } = useQuery({
@@ -135,39 +139,81 @@ export function BadgesTab() {
   const earnedCount = badgesWithStatus.filter((b) => b.earned).length;
   const totalCount = badgesWithStatus.length;
 
-  const handleShareBadge = async (platform: "linkedin" | "twitter" | "download" | "copy") => {
-    if (!selectedBadge || !profile) return;
-
-    const shareText = `🏆 Just earned the "${selectedBadge.name}" badge on NexAlgoTrix!\n\n${selectedBadge.description}\n\n#DSA #CodingInterview #NexAlgoTrix`;
-    
-    switch (platform) {
-      case "linkedin":
-        window.open(
-          `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent("https://nexalgotrix.lovable.app")}&summary=${encodeURIComponent(shareText)}`,
-          "_blank"
-        );
-        break;
-      case "twitter":
-        window.open(
-          `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`,
-          "_blank"
-        );
-        break;
-      case "copy":
-        await navigator.clipboard.writeText(shareText);
-        toast.success("Share text copied to clipboard!");
-        break;
-      case "download":
-        toast.info("Badge image download coming soon!");
-        break;
-    }
-    setShareModalOpen(false);
-  };
-
   const handleBadgeClick = (badge: BadgeData) => {
     if (badge.earned) {
       setSelectedBadge(badge);
+      setShareMessage(
+        `🏆 Just earned the "${badge.name}" badge on NexAlgoTrix!\n\n${badge.description}\n\nFocused on pattern-based DSA learning for interview success.\n\n#DSA #CodingInterview #NexAlgoTrix`
+      );
       setShareModalOpen(true);
+    }
+  };
+
+  const handleShareLinkedIn = () => {
+    const url = encodeURIComponent("https://nexalgotrix.lovable.app");
+    const text = encodeURIComponent(shareMessage);
+    window.open(
+      `https://www.linkedin.com/sharing/share-offsite/?url=${url}&summary=${text}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  const handleShareTwitter = () => {
+    const text = encodeURIComponent(shareMessage);
+    window.open(
+      `https://twitter.com/intent/tweet?text=${text}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  const handleShareWhatsApp = () => {
+    const text = encodeURIComponent(`${shareMessage}\n\nhttps://nexalgotrix.lovable.app`);
+    window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
+  };
+
+  const handleCopyText = async () => {
+    await navigator.clipboard.writeText(shareMessage);
+    toast.success("Message copied to clipboard!");
+  };
+
+  const handleDownloadImage = async () => {
+    if (!cardRef.current || isDownloading) return;
+
+    setIsDownloading(true);
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      
+      // Clone the card for proper rendering
+      const clone = cardRef.current.cloneNode(true) as HTMLElement;
+      clone.style.position = "absolute";
+      clone.style.left = "-9999px";
+      clone.style.top = "0";
+      document.body.appendChild(clone);
+      
+      const canvas = await html2canvas(clone, {
+        scale: 2,
+        backgroundColor: null,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+      });
+      
+      document.body.removeChild(clone);
+      
+      const link = document.createElement("a");
+      const badgeName = selectedBadge?.name.toLowerCase().replace(/\s+/g, "-") || "badge";
+      link.download = `nexalgotrix-${badgeName}-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png", 1.0);
+      link.click();
+      
+      toast.success("Badge image downloaded successfully!");
+    } catch (error) {
+      console.error("Failed to download image:", error);
+      toast.error("Failed to download image. Please try again.");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -307,49 +353,49 @@ export function BadgesTab() {
         ))}
       </Tabs>
 
-      {/* Badge Share Modal */}
+      {/* Premium Badge Share Modal */}
       <Dialog open={shareModalOpen} onOpenChange={setShareModalOpen}>
-        <DialogContent className="sm:max-w-md bg-gradient-to-br from-background via-background to-primary/5">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-center">Share Your Achievement</DialogTitle>
           </DialogHeader>
           
           {selectedBadge && (
-            <div className="space-y-6">
-              {/* Badge Preview Card */}
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="bg-gradient-to-br from-primary/20 to-purple-500/20 rounded-2xl p-6 text-center border border-primary/30"
-              >
-                <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center mb-4 shadow-lg">
-                  {(() => {
-                    const IconComponent = iconMap[selectedBadge.icon || "trophy"] || Trophy;
-                    return <IconComponent className="w-10 h-10 text-white" />;
-                  })()}
+            <div className="space-y-4">
+              {/* Premium Badge Card Preview */}
+              <div className="flex justify-center overflow-hidden rounded-xl bg-muted/30 p-4">
+                <div className="scale-[0.6] origin-center">
+                  <ShareCard
+                    ref={cardRef}
+                    type="badge"
+                    title={selectedBadge.name}
+                    subtitle={selectedBadge.description}
+                    icon={selectedBadge.icon}
+                    userName={profile?.username || "User"}
+                    badgeType={selectedBadge.type}
+                    earnedDate={selectedBadge.earnedAt ? format(new Date(selectedBadge.earnedAt), "MMMM d, yyyy") : undefined}
+                  />
                 </div>
-                <h3 className="text-xl font-bold mb-1">{selectedBadge.name}</h3>
-                <p className="text-sm text-muted-foreground mb-3">{selectedBadge.description}</p>
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                    <span className="text-xs font-bold">
-                      {profile?.username?.[0]?.toUpperCase() || "U"}
-                    </span>
-                  </div>
-                  <span className="text-sm font-medium">{profile?.username || "User"}</span>
-                </div>
-                {selectedBadge.earnedAt && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Earned on {format(new Date(selectedBadge.earnedAt), "MMMM d, yyyy")}
-                  </p>
-                )}
-              </motion.div>
+              </div>
+
+              {/* Editable Share Message */}
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">
+                  Share Message
+                </label>
+                <Textarea
+                  value={shareMessage}
+                  onChange={(e) => setShareMessage(e.target.value)}
+                  rows={4}
+                  className="resize-none text-sm"
+                />
+              </div>
 
               {/* Share Buttons */}
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   variant="outline"
-                  onClick={() => handleShareBadge("linkedin")}
+                  onClick={handleShareLinkedIn}
                   className="flex items-center gap-2"
                 >
                   <Linkedin className="w-4 h-4 text-[#0A66C2]" />
@@ -357,7 +403,7 @@ export function BadgesTab() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => handleShareBadge("twitter")}
+                  onClick={handleShareTwitter}
                   className="flex items-center gap-2"
                 >
                   <Twitter className="w-4 h-4" />
@@ -365,21 +411,31 @@ export function BadgesTab() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => handleShareBadge("download")}
+                  onClick={handleShareWhatsApp}
                   className="flex items-center gap-2"
                 >
-                  <Download className="w-4 h-4" />
-                  Download
+                  <MessageCircle className="w-4 h-4 text-[#25D366]" />
+                  WhatsApp
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => handleShareBadge("copy")}
+                  onClick={handleCopyText}
                   className="flex items-center gap-2"
                 >
-                  <Share2 className="w-4 h-4" />
-                  Copy Link
+                  <Copy className="w-4 h-4" />
+                  Copy Text
                 </Button>
               </div>
+
+              {/* Download Button */}
+              <Button
+                className="w-full gap-2 bg-primary hover:bg-primary/90"
+                onClick={handleDownloadImage}
+                disabled={isDownloading}
+              >
+                <Download className="w-4 h-4" />
+                {isDownloading ? "Downloading..." : "Download Image"}
+              </Button>
 
               <p className="text-xs text-center text-muted-foreground">
                 Share your progress professionally • LinkedIn-safe
