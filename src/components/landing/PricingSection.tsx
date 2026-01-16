@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Check, Crown, Sparkles, Zap, Shield } from "lucide-react";
+import { Check, Crown, Sparkles, Zap, Shield, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -8,20 +8,23 @@ const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
+    transition: { staggerChildren: 0.1 },
   },
 };
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5 },
-  },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
+
+const allFeatures = [
+  "Pattern-first DSA curriculum",
+  "Interview simulator",
+  "4-layer AI support",
+  "Badges & leaderboard",
+  "Daily tracker & contests",
+  "Job apply section",
+];
 
 export function PricingSection() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -33,18 +36,12 @@ export function PricingSection() {
   const backgroundY = useTransform(scrollYProgress, [0, 1], [50, -50]);
 
   return (
-    <section 
-      ref={sectionRef}
-      id="pricing" 
-      className="py-16 sm:py-24 lg:py-32 relative overflow-hidden"
-    >
-      {/* Animated gradient background */}
+    <section ref={sectionRef} id="pricing" className="py-16 sm:py-24 lg:py-32 relative overflow-hidden">
       <motion.div
         style={{ y: backgroundY }}
         className="absolute inset-0 bg-gradient-to-b from-background via-card/30 to-background pointer-events-none"
       />
       
-      {/* Decorative orbs */}
       <div className="absolute top-20 right-20 w-48 sm:w-80 h-48 sm:h-80 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute bottom-20 left-20 w-64 sm:w-96 h-64 sm:h-96 bg-secondary/5 rounded-full blur-[120px] pointer-events-none" />
 
@@ -53,195 +50,137 @@ export function PricingSection() {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="text-center max-w-3xl mx-auto mb-12 sm:mb-16 lg:mb-20"
+          className="text-center max-w-3xl mx-auto mb-12"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 border border-primary/20 mb-4 sm:mb-6"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-4"
           >
             <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
-            <span className="text-xs sm:text-sm font-medium text-primary">Pricing</span>
+            <span className="text-xs sm:text-sm font-medium text-primary">Simple, Student-First</span>
           </motion.div>
-          <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 tracking-tight">
-            Simple, <span className="gradient-text">Transparent</span> Pricing
+          <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-4 tracking-tight">
+            Same features in <span className="gradient-text">every plan</span>
           </h2>
-          <p className="text-base sm:text-lg lg:text-xl text-muted-foreground leading-relaxed">
-            Start free, upgrade when you're ready. Phase 1 is completely free forever.
+          <p className="text-base sm:text-lg text-muted-foreground">
+            No feature locking. Just pay for how long you want to stay consistent.
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto">
-          {/* Free Plan */}
+        {/* Pricing Cards */}
+        <div className="grid md:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto mb-10">
+          {/* Monthly */}
           <motion.div
-            initial={{ opacity: 0, x: -40 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            whileHover={{ y: -8 }}
-            className="interactive-card p-5 sm:p-8 md:p-10 relative"
+            className="interactive-card p-5 sm:p-6"
           >
-            <div className="mb-6 sm:mb-8">
-              <h3 className="text-xl sm:text-2xl font-bold mb-2">Free</h3>
-              <p className="text-sm sm:text-base text-muted-foreground">Perfect to get started</p>
+            <div className="mb-4">
+              <span className="text-xs font-medium text-success bg-success/10 px-2 py-1 rounded-full">🟢 Monthly</span>
             </div>
-
-            <div className="mb-6 sm:mb-10">
-              <span className="text-4xl sm:text-5xl lg:text-6xl font-bold">₹0</span>
-              <span className="text-muted-foreground ml-2 text-base sm:text-lg">forever</span>
+            <div className="mb-4">
+              <span className="text-3xl sm:text-4xl font-bold">₹199</span>
+              <span className="text-muted-foreground text-sm">/month</span>
             </div>
-
-            <motion.ul 
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              className="space-y-3 sm:space-y-4 mb-6 sm:mb-10"
-            >
-              {[
-                "Complete Phase 1 - Foundation",
-                "Arrays, Strings, Two-Pointer",
-                "Sliding Window, Prefix Sum",
-                "Full AI Mentor Access",
-                "XP, Badges & Streaks",
-                "Global Leaderboard",
-              ].map((feature, i) => (
-                <motion.li 
-                  key={i} 
-                  variants={itemVariants}
-                  className="flex items-center gap-3 group"
-                >
-                  <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-success/15 flex items-center justify-center flex-shrink-0 group-hover:bg-success/25 transition-colors">
-                    <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-success" />
-                  </div>
-                  <span className="text-sm sm:text-base text-muted-foreground group-hover:text-foreground transition-colors">{feature}</span>
-                </motion.li>
-              ))}
-            </motion.ul>
-
-            <Link to="/auth">
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button variant="outline" className="w-full rounded-xl h-10 sm:h-12 text-sm sm:text-base" size="lg">
-                  Get Started Free
-                </Button>
-              </motion.div>
+            <p className="text-xs text-muted-foreground mb-4">Best to try the platform</p>
+            <Link to="/pricing">
+              <Button variant="outline" className="w-full rounded-xl h-10 text-sm" size="lg">
+                Start @ ₹199
+              </Button>
             </Link>
           </motion.div>
 
-          {/* Pro Plan */}
+          {/* 6 Months - Most Popular */}
           <motion.div
-            initial={{ opacity: 0, x: 40 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            whileHover={{ y: -8 }}
+            transition={{ delay: 0.1 }}
             className="relative"
           >
-            {/* Glow effect */}
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-secondary to-accent rounded-2xl blur opacity-30 group-hover:opacity-40 transition-opacity" />
-            
-            <div className="interactive-card p-5 sm:p-8 md:p-10 relative border-primary/30 hover:border-primary/50">
-              {/* Popular Badge */}
-              <motion.div 
-                initial={{ opacity: 0, y: -20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="absolute -top-4 left-1/2 -translate-x-1/2"
-              >
-                <motion.div 
-                  animate={{ y: [0, -3, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-primary to-secondary text-primary-foreground text-xs sm:text-sm font-semibold shadow-lg shadow-primary/25"
-                >
-                  <Crown className="w-3 h-3 sm:w-4 sm:h-4" />
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-secondary to-accent rounded-2xl blur opacity-30" />
+            <div className="interactive-card p-5 sm:p-6 relative border-primary/30 h-full">
+              <motion.div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-primary to-secondary text-primary-foreground text-xs font-semibold">
+                  <Star className="w-3 h-3 fill-current" />
                   Most Popular
-                </motion.div>
-              </motion.div>
-
-              <div className="mb-6 sm:mb-8 pt-4">
-                <h3 className="text-xl sm:text-2xl font-bold mb-2 flex items-center gap-2">
-                  Pro 
-                  <motion.div
-                    animate={{ rotate: [0, 15, -15, 0] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  >
-                    <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                  </motion.div>
-                </h3>
-                <p className="text-sm sm:text-base text-muted-foreground">Unlock all advanced patterns</p>
-              </div>
-
-              <div className="mb-6 sm:mb-10">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl sm:text-5xl lg:text-6xl font-bold gradient-text">₹999</span>
-                  <span className="text-muted-foreground text-base sm:text-lg">/year</span>
                 </div>
-                <p className="text-sm text-success mt-2 sm:mt-3 font-medium">
-                  ≈ ₹83/month • Save 2 months vs monthly
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  or ₹99/month
-                </p>
+              </motion.div>
+              <div className="mb-4 pt-2">
+                <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">⭐ 6 Months</span>
               </div>
-
-              <motion.ul 
-                variants={containerVariants}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                className="space-y-3 sm:space-y-4 mb-6 sm:mb-10"
-              >
-                {[
-                  "Everything in Free",
-                  "Phase 2-6 - All Patterns",
-                  "Stack, Queue, Heap, HashMap",
-                  "Trees, Graphs, DP, Greedy",
-                  "Trie, Bit Manipulation",
-                  "Advanced: Segment Trees & more",
-                  "Priority Support",
-                ].map((feature, i) => (
-                  <motion.li 
-                    key={i} 
-                    variants={itemVariants}
-                    className="flex items-center gap-3 group"
-                  >
-                    <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/25 transition-colors">
-                      <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary" />
-                    </div>
-                    <span className="text-sm sm:text-base group-hover:text-foreground transition-colors">{feature}</span>
-                  </motion.li>
-                ))}
-              </motion.ul>
-
+              <div className="mb-4">
+                <span className="text-3xl sm:text-4xl font-bold gradient-text">₹999</span>
+                <span className="text-muted-foreground text-sm">/6 months</span>
+                <p className="text-xs text-success mt-1">≈ ₹166/month</p>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4">Best for semester prep</p>
               <Link to="/pricing">
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Button className="w-full btn-primary-glow rounded-xl h-10 sm:h-12 text-sm sm:text-base" size="lg">
-                    Upgrade to Pro
-                  </Button>
-                </motion.div>
+                <Button className="w-full btn-primary-glow rounded-xl h-10 text-sm" size="lg">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Go Serious @ ₹999
+                </Button>
               </Link>
             </div>
           </motion.div>
+
+          {/* Yearly */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="interactive-card p-5 sm:p-6"
+          >
+            <div className="mb-4">
+              <span className="text-xs font-medium text-violet-400 bg-violet-500/10 px-2 py-1 rounded-full">💎 1 Year</span>
+            </div>
+            <div className="mb-4">
+              <span className="text-3xl sm:text-4xl font-bold gradient-text">₹1,499</span>
+              <span className="text-muted-foreground text-sm">/year</span>
+              <p className="text-xs text-success mt-1">≈ ₹125/month</p>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">Best for placements</p>
+            <Link to="/pricing">
+              <Button variant="outline" className="w-full rounded-xl h-10 text-sm border-violet-500/50 hover:bg-violet-500/10" size="lg">
+                Go All-In @ ₹1,499
+              </Button>
+            </Link>
+          </motion.div>
         </div>
+
+        {/* Features */}
+        <motion.ul
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="flex flex-wrap justify-center gap-3 mb-8 max-w-2xl mx-auto"
+        >
+          {allFeatures.map((feature, i) => (
+            <motion.li key={i} variants={itemVariants} className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-full">
+              <Check className="w-3 h-3 text-success" />
+              <span className="text-xs text-muted-foreground">{feature}</span>
+            </motion.li>
+          ))}
+        </motion.ul>
 
         {/* Trust Badge */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.4 }}
-          className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-10 sm:mt-16 text-xs sm:text-sm text-muted-foreground"
+          className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs text-muted-foreground"
         >
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
-            <span>Secure payment via Razorpay</span>
+          <div className="flex items-center gap-1.5">
+            <Shield className="w-4 h-4 text-success" />
+            <span>Secure via Razorpay</span>
           </div>
-          <div className="w-1 h-1 rounded-full bg-border hidden sm:block" />
-          <span>Cancel anytime</span>
-          <div className="w-1 h-1 rounded-full bg-border hidden sm:block" />
           <span>7-day money back</span>
+          <span>No hidden charges</span>
         </motion.div>
       </div>
     </section>

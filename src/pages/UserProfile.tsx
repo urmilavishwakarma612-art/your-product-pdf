@@ -8,6 +8,7 @@ import { BadgesSection } from "@/components/profile/BadgesSection";
 import { RecentActivity } from "@/components/profile/RecentActivity";
 import { DifficultyBreakdown } from "@/components/profile/DifficultyBreakdown";
 import { PaymentHistory } from "@/components/profile/PaymentHistory";
+import { RefundSection } from "@/components/profile/RefundSection";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { format } from "date-fns";
@@ -247,6 +248,9 @@ export default function UserProfile() {
 
           {/* Payment History - Only show on own profile */}
           {isOwnProfile && <PaymentHistory />}
+
+          {/* Refunds Section - Only show on own profile */}
+          {isOwnProfile && <RefundSection />}
         </div>
       </div>
     </div>

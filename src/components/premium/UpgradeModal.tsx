@@ -8,7 +8,7 @@ import { useRazorpay } from "@/hooks/useRazorpay";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PaymentOverlay } from "./PaymentOverlay";
 
-type PlanType = 'monthly' | 'lifetime';
+type PlanType = 'monthly' | 'six_month' | 'yearly';
 type PaymentStatus = 'loading' | 'success' | 'error' | null;
 
 interface UpgradeModalProps {
@@ -31,7 +31,7 @@ export const UpgradeModal = ({ isOpen, onClose, triggerContext, initialPlan }: U
   const { user, loading: authLoading } = useAuth();
   const { initiatePayment, isLoading } = useRazorpay();
   const { isPremium, subscriptionStatus, refetch } = useSubscription();
-  const [selectedPlan, setSelectedPlan] = useState<PlanType>(initialPlan ?? 'lifetime');
+  const [selectedPlan, setSelectedPlan] = useState<PlanType>(initialPlan ?? 'yearly');
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
@@ -287,10 +287,10 @@ export const UpgradeModal = ({ isOpen, onClose, triggerContext, initialPlan }: U
                       <div className="space-y-3 mb-6">
                         {/* Yearly Plan - Best Value */}
                         <button
-                          onClick={() => setSelectedPlan('lifetime')}
+                          onClick={() => setSelectedPlan('yearly')}
                           disabled={isLoading}
                           className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
-                            selectedPlan === 'lifetime'
+                            selectedPlan === 'yearly'
                               ? 'border-primary bg-primary/10'
                               : 'border-border bg-muted/30 hover:border-primary/50'
                           }`}
@@ -298,16 +298,43 @@ export const UpgradeModal = ({ isOpen, onClose, triggerContext, initialPlan }: U
                           <div className="flex items-center justify-between">
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className="font-semibold">Yearly Access</span>
+                                <span className="font-semibold">1 Year</span>
                                 <span className="text-xs bg-success/20 text-success px-2 py-0.5 rounded-full font-bold">
-                                  SAVE 2 MONTHS
+                                  BEST VALUE
                                 </span>
                               </div>
-                              <p className="text-xs text-muted-foreground mt-1">≈ ₹83/month</p>
+                              <p className="text-xs text-muted-foreground mt-1">≈ ₹125/month</p>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-2xl font-bold gradient-text">₹1,499</span>
+                              <p className="text-xs text-muted-foreground">/year</p>
+                            </div>
+                          </div>
+                        </button>
+
+                        {/* 6 Month Plan - Most Popular */}
+                        <button
+                          onClick={() => setSelectedPlan('six_month')}
+                          disabled={isLoading}
+                          className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
+                            selectedPlan === 'six_month'
+                              ? 'border-primary bg-primary/10'
+                              : 'border-border bg-muted/30 hover:border-primary/50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold">6 Months</span>
+                                <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">
+                                  MOST POPULAR
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">≈ ₹166/month</p>
                             </div>
                             <div className="text-right">
                               <span className="text-2xl font-bold gradient-text">₹999</span>
-                              <p className="text-xs text-muted-foreground">/year</p>
+                              <p className="text-xs text-muted-foreground">/6 months</p>
                             </div>
                           </div>
                         </button>
@@ -328,7 +355,7 @@ export const UpgradeModal = ({ isOpen, onClose, triggerContext, initialPlan }: U
                               <p className="text-xs text-muted-foreground mt-1">Cancel anytime</p>
                             </div>
                             <div className="text-right">
-                              <span className="text-2xl font-bold">₹99</span>
+                              <span className="text-2xl font-bold">₹199</span>
                               <p className="text-xs text-muted-foreground">/month</p>
                             </div>
                           </div>
@@ -351,7 +378,7 @@ export const UpgradeModal = ({ isOpen, onClose, triggerContext, initialPlan }: U
                           ) : (
                             <>
                               <Sparkles className="w-4 h-4 mr-2" />
-                              {user ? `Pay ${selectedPlan === 'lifetime' ? '₹999' : '₹99'}` : "Sign Up & Upgrade"}
+                              {user ? `Pay ${selectedPlan === 'yearly' ? '₹1,499' : selectedPlan === 'six_month' ? '₹999' : '₹199'}` : "Sign Up & Upgrade"}
                             </>
                           )}
                         </Button>
