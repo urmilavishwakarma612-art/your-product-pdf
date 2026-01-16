@@ -42,7 +42,7 @@ interface RazorpayResponse {
   razorpay_signature: string;
 }
 
-type PlanType = 'monthly' | 'lifetime';
+type PlanType = 'monthly' | 'six_month' | 'yearly';
 
 export const useRazorpay = () => {
   const [isLoading, setIsLoading] = useState(false);

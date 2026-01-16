@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,32 +6,24 @@ import { Ticket, Check, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
-interface Coupon {
-  id: string;
-  code: string;
-  discount_type: string;
-  monthly_discount: number;
-  six_month_discount: number;
-  yearly_discount: number;
-  max_redemptions: number;
-  current_redemptions: number;
-  starts_at: string;
-  expires_at: string | null;
-  is_active: boolean;
-}
-
 interface CouponInputProps {
   planType: 'monthly' | 'six_month' | 'yearly';
-  onCouponApplied: (discount: number, couponCode: string, couponId: string) => void;
-  onCouponRemoved: () => void;
-  appliedCoupon: string | null;
+  onCouponApply: (coupon: {
+    code: string;
+    monthlyDiscount: number;
+    sixMonthDiscount: number;
+    yearlyDiscount: number;
+    couponId: string;
+  }) => void;
+  onCouponRemove: () => void;
 }
 
-export function CouponInput({ planType, onCouponApplied, onCouponRemoved, appliedCoupon }: CouponInputProps) {
+export function CouponInput({ planType, onCouponApply, onCouponRemove }: CouponInputProps) {
   const { user } = useAuth();
   const [couponCode, setCouponCode] = useState("");
   const [isValidating, setIsValidating] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
 
   // Check if user already used this coupon
   const checkUserRedemption = async (couponId: string) => {
@@ -95,7 +86,7 @@ export function CouponInput({ planType, onCouponApplied, onCouponRemoved, applie
         }
       }
 
-      // Get discount for selected plan
+      // Get discount for selected plan to check validity
       let discount = 0;
       switch (planType) {
         case 'monthly':
@@ -114,7 +105,14 @@ export function CouponInput({ planType, onCouponApplied, onCouponRemoved, applie
         return;
       }
 
-      onCouponApplied(discount, coupon.code, coupon.id);
+      setAppliedCoupon(coupon.code);
+      onCouponApply({
+        code: coupon.code,
+        monthlyDiscount: coupon.monthly_discount,
+        sixMonthDiscount: coupon.six_month_discount,
+        yearlyDiscount: coupon.yearly_discount,
+        couponId: coupon.id,
+      });
       toast.success("Coupon applied successfully!");
     } catch (err) {
       setValidationError("Failed to validate coupon");
@@ -125,8 +123,9 @@ export function CouponInput({ planType, onCouponApplied, onCouponRemoved, applie
 
   const removeCoupon = () => {
     setCouponCode("");
+    setAppliedCoupon(null);
     setValidationError(null);
-    onCouponRemoved();
+    onCouponRemove();
   };
 
   if (appliedCoupon) {
@@ -189,6 +188,9 @@ export function CouponInput({ planType, onCouponApplied, onCouponRemoved, applie
           {validationError}
         </p>
       )}
+      <p className="text-xs text-muted-foreground">
+        🔒 Coupon applies instantly. No hidden charges.
+      </p>
     </div>
   );
 }
