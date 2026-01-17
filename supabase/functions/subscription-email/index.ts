@@ -13,9 +13,18 @@ const corsHeaders = {
 interface SubscriptionEmailRequest {
   email: string;
   username: string;
-  type: "granted" | "revoked" | "expiring" | "payment_failed";
+  type:
+    | "granted"
+    | "revoked"
+    | "expiring"
+    | "payment_failed"
+    | "refund_requested"
+    | "refund_approved"
+    | "refund_rejected";
   expiresAt?: string;
   daysUntilExpiry?: number;
+  refundStatus?: "pending" | "approved" | "rejected";
+  adminNotes?: string;
 }
 
 interface EmailTemplate {
@@ -33,7 +42,8 @@ const getDefaultTemplate = (type: string): EmailTemplate => {
     granted: {
       subject: "🎉 Welcome to Nexalgotrix Pro!",
       heading: "Welcome to Pro!",
-      body_text: "Congratulations! Your Nexalgotrix Pro subscription is now active. You've just unlocked access to our complete DSA mastery curriculum including Phase 2-6 advanced patterns, AI Mentor, and complete solutions.",
+      body_text:
+        "Congratulations! Your Nexalgotrix Pro subscription is now active. You've just unlocked access to our complete DSA mastery curriculum including Phase 2-6 advanced patterns, AI Mentor, and complete solutions.",
       cta_text: "Start Learning Now",
       cta_url: "https://nexalgotrix.com/patterns",
       primary_color: "#f59e0b",
@@ -42,7 +52,8 @@ const getDefaultTemplate = (type: string): EmailTemplate => {
     revoked: {
       subject: "Your Nexalgotrix Pro Access Has Ended",
       heading: "Pro Access Ended",
-      body_text: "Your Nexalgotrix Pro subscription has ended. You'll continue to have access to all Phase 1 patterns completely free. All your solved questions, notes, and XP are preserved. When you renew, you'll pick up right where you left off.",
+      body_text:
+        "Your Nexalgotrix Pro subscription has ended. You'll continue to have access to all Phase 1 patterns completely free. All your solved questions, notes, and XP are preserved. When you renew, you'll pick up right where you left off.",
       cta_text: "Renew Pro Access",
       cta_url: "https://nexalgotrix.com/patterns",
       primary_color: "#6366f1",
@@ -51,7 +62,8 @@ const getDefaultTemplate = (type: string): EmailTemplate => {
     expiring: {
       subject: "⏰ Your Nexalgotrix Pro expires soon!",
       heading: "Pro Expiring Soon!",
-      body_text: "Your Nexalgotrix Pro subscription will expire soon. Don't lose access to the advanced patterns you've been working on! Continue Phase 2-6 patterns, keep your AI Mentor access, and maintain your learning streak.",
+      body_text:
+        "Your Nexalgotrix Pro subscription will expire soon. Don't lose access to the advanced patterns you've been working on! Continue Phase 2-6 patterns, keep your AI Mentor access, and maintain your learning streak.",
       cta_text: "Renew Now",
       cta_url: "https://nexalgotrix.com/patterns",
       primary_color: "#f59e0b",
@@ -60,11 +72,42 @@ const getDefaultTemplate = (type: string): EmailTemplate => {
     payment_failed: {
       subject: "⚠️ Payment Failed - Action Required",
       heading: "Payment Failed",
-      body_text: "We were unable to process your payment for Nexalgotrix Pro. Don't worry, you can try again. Please check your payment details and retry. If you continue to face issues, contact us at hello.nexalgotrix@gmail.com.",
+      body_text:
+        "We were unable to process your payment for Nexalgotrix Pro. Don't worry, you can try again. Please check your payment details and retry. If you continue to face issues, contact us at hello.nexalgotrix@gmail.com.",
       cta_text: "Retry Payment",
       cta_url: "https://nexalgotrix.com/patterns",
       primary_color: "#ef4444",
       footer_text: "Need help? Contact hello.nexalgotrix@gmail.com",
+    },
+    refund_requested: {
+      subject: "✅ Refund request received",
+      heading: "We got your refund request",
+      body_text:
+        "We’ve received your refund request. Our team will review it within 24–48 hours. You can track the status anytime inside your Profile → Refunds section.",
+      cta_text: "Track Refund Status",
+      cta_url: "https://nexalgotrix.com/profile",
+      primary_color: "#f59e0b",
+      footer_text: "Transparent refunds. Student-first policies.",
+    },
+    refund_approved: {
+      subject: "🎉 Refund approved",
+      heading: "Refund Approved",
+      body_text:
+        "Your refund request has been approved. Your Pro access has been cancelled, and the refund will be processed within 3–5 business days.",
+      cta_text: "View Details",
+      cta_url: "https://nexalgotrix.com/profile",
+      primary_color: "#22c55e",
+      footer_text: "Transparent refunds. Student-first policies.",
+    },
+    refund_rejected: {
+      subject: "ℹ️ Refund update",
+      heading: "Refund Request Update",
+      body_text:
+        "We reviewed your refund request, but it was not approved. If you think this is a mistake, reply to this email and we’ll help.",
+      cta_text: "View Details",
+      cta_url: "https://nexalgotrix.com/profile",
+      primary_color: "#ef4444",
+      footer_text: "Transparent refunds. Student-first policies.",
     },
   };
   return defaults[type] || defaults.granted;

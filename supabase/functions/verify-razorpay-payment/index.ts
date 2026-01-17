@@ -11,7 +11,7 @@ interface VerifyRequest {
   razorpay_order_id: string;
   razorpay_payment_id: string;
   razorpay_signature: string;
-  plan_type: 'monthly' | 'lifetime';
+  plan_type: 'monthly' | 'six_month' | 'yearly' | 'lifetime';
 }
 
 async function verifySignature(
@@ -24,7 +24,7 @@ async function verifySignature(
   const encoder = new TextEncoder();
   const keyData = encoder.encode(secret);
   const messageData = encoder.encode(message);
-  
+
   const cryptoKey = await crypto.subtle.importKey(
     'raw',
     keyData,
@@ -32,12 +32,12 @@ async function verifySignature(
     false,
     ['sign']
   );
-  
+
   const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
   const expectedSignature = Array.from(new Uint8Array(signatureBuffer))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
-  
+
   return expectedSignature === signature;
 }
 
@@ -60,7 +60,7 @@ serve(async (req) => {
 
     // Get the user from the JWT
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-    
+
     if (userError || !user) {
       console.error('Auth error:', userError);
       return new Response(
@@ -98,23 +98,38 @@ serve(async (req) => {
 
     console.log('Payment verified successfully for user:', user.id, 'Payment ID:', razorpay_payment_id);
 
-    // Calculate subscription expiry based on plan type
-    const now = new Date();
-    let expiresAt: Date;
-    
-    if (plan_type === 'lifetime') {
-      // Set to 100 years from now for lifetime
-      expiresAt = new Date(now.getFullYear() + 100, now.getMonth(), now.getDate());
-    } else {
-      // Monthly subscription - 30 days from now
-      expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-    }
-
-    // Use service role client to update the profile
+    // Use service role client to update data
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    // Fetch payment row for this order (coupon tracking + email context)
+    const { data: paymentRow, error: paymentFetchError } = await supabaseAdmin
+      .from('payments')
+      .select('id, amount, plan_type, coupon_code, user_id')
+      .eq('razorpay_order_id', razorpay_order_id)
+      .maybeSingle();
+
+    if (paymentFetchError) {
+      console.error('Failed to fetch payment row:', paymentFetchError);
+    }
+
+    // Calculate subscription expiry based on plan type
+    const now = new Date();
+    let expiresAt: Date;
+
+    if (plan_type === 'lifetime') {
+      // Set to 100 years from now for lifetime
+      expiresAt = new Date(now.getFullYear() + 100, now.getMonth(), now.getDate());
+    } else if (plan_type === 'six_month') {
+      expiresAt = new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000);
+    } else if (plan_type === 'yearly') {
+      expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+    } else {
+      // Monthly subscription - 30 days from now
+      expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    }
 
     // Update user's subscription status
     const { error: updateError } = await supabaseAdmin
@@ -145,6 +160,47 @@ serve(async (req) => {
       })
       .eq('razorpay_order_id', razorpay_order_id);
 
+    // Coupon tracking (only on successful payment)
+    try {
+      const couponCode = (paymentRow?.coupon_code || '').trim().toUpperCase();
+
+      if (couponCode && paymentRow?.id) {
+        const { data: coupon } = await supabaseAdmin
+          .from('coupons')
+          .select('id, current_redemptions, max_redemptions')
+          .eq('code', couponCode)
+          .maybeSingle();
+
+        if (coupon?.id) {
+          // avoid duplicates
+          const { data: existing } = await supabaseAdmin
+            .from('coupon_redemptions')
+            .select('id')
+            .eq('coupon_id', coupon.id)
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (!existing) {
+            await supabaseAdmin.from('coupon_redemptions').insert({
+              coupon_id: coupon.id,
+              user_id: user.id,
+              payment_id: paymentRow.id,
+            });
+
+            const next = (coupon.current_redemptions ?? 0) + 1;
+            if ((coupon.max_redemptions ?? 0) === 0 || next <= (coupon.max_redemptions ?? 0)) {
+              await supabaseAdmin
+                .from('coupons')
+                .update({ current_redemptions: next })
+                .eq('id', coupon.id);
+            }
+          }
+        }
+      }
+    } catch (couponTrackError) {
+      console.error('Coupon tracking failed (non-fatal):', couponTrackError);
+    }
+
     console.log('Subscription activated for user:', user.id, 'Expires:', expiresAt.toISOString());
 
     // Get user profile for email
@@ -154,7 +210,7 @@ serve(async (req) => {
       .eq('id', user.id)
       .single();
 
-    // Send confirmation email using the existing subscription-email function
+    // Send confirmation email using the subscription-email function
     try {
       const emailPayload = {
         email: user.email,
@@ -162,13 +218,13 @@ serve(async (req) => {
         type: 'granted' as const,
         expiresAt: plan_type === 'lifetime' ? undefined : expiresAt.toISOString(),
       };
-      
+
       console.log('Sending confirmation email with payload:', emailPayload);
-      
+
       const { data: emailResult, error: emailError } = await supabaseAdmin.functions.invoke('subscription-email', {
-        body: emailPayload
+        body: emailPayload,
       });
-      
+
       if (emailError) {
         console.error('Email function error:', emailError);
       } else {
@@ -180,7 +236,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
         message: 'Subscription activated successfully',
         expires_at: expiresAt.toISOString(),

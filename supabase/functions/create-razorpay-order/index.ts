@@ -7,7 +7,8 @@ const corsHeaders = {
 };
 
 interface OrderRequest {
-  plan_type: 'monthly' | 'lifetime';
+  plan_type: 'monthly' | 'six_month' | 'yearly';
+  coupon_code?: string;
 }
 
 serve(async (req) => {
@@ -18,7 +19,7 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get('Authorization');
-    
+
     if (!authHeader) {
       console.error('No authorization header provided');
       return new Response(
@@ -39,7 +40,7 @@ serve(async (req) => {
 
     // Get the user from the JWT
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-    
+
     if (userError || !user) {
       console.error('Auth error:', userError);
       return new Response(
@@ -50,12 +51,13 @@ serve(async (req) => {
 
     console.log('User authenticated:', user.id);
 
-    const { plan_type }: OrderRequest = await req.json();
-    
+    const { plan_type, coupon_code }: OrderRequest = await req.json();
+
     // Define pricing (amounts in paise)
-    const pricing = {
-      monthly: { amount: 9900, description: 'Nexalgotrix Pro - Monthly' }, // ₹99
-      lifetime: { amount: 99900, description: 'Nexalgotrix Pro - Yearly' }, // ₹999
+    const pricing: Record<OrderRequest['plan_type'], { amount: number; description: string }> = {
+      monthly: { amount: 19900, description: 'Nexalgotrix Pro - Monthly' },
+      six_month: { amount: 99900, description: 'Nexalgotrix Pro - 6 Months' },
+      yearly: { amount: 149900, description: 'Nexalgotrix Pro - 1 Year' },
     };
 
     const selectedPlan = pricing[plan_type];
@@ -77,13 +79,81 @@ serve(async (req) => {
       );
     }
 
+    // Admin client (used for coupon validation + writing payments)
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Coupon validation + discount calc (final authority lives in backend)
+    const normalizedCoupon = (coupon_code || '').trim().toUpperCase();
+    let discountAmount = 0;
+    let appliedCouponCode: string | null = null;
+
+    if (normalizedCoupon) {
+      const { data: coupon, error: couponError } = await supabaseAdmin
+        .from('coupons')
+        .select('id, code, is_active, starts_at, expires_at, max_redemptions, current_redemptions, monthly_discount, six_month_discount, yearly_discount')
+        .eq('code', normalizedCoupon)
+        .maybeSingle();
+
+      if (couponError) {
+        console.error('Coupon lookup error:', couponError);
+      } else if (!coupon) {
+        console.log('Coupon not found:', normalizedCoupon);
+      } else {
+        const now = new Date();
+        const startsAt = coupon.starts_at ? new Date(coupon.starts_at) : null;
+        const expiresAt = coupon.expires_at ? new Date(coupon.expires_at) : null;
+
+        const isWithinWindow = (!startsAt || now >= startsAt) && (!expiresAt || now <= expiresAt);
+        const hasRemaining = (coupon.current_redemptions ?? 0) < (coupon.max_redemptions ?? 0);
+
+        // enforce once-per-user
+        const { data: existingRedemption, error: redemptionError } = await supabaseAdmin
+          .from('coupon_redemptions')
+          .select('id')
+          .eq('coupon_id', coupon.id)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (redemptionError) {
+          console.error('Coupon redemption lookup error:', redemptionError);
+        }
+
+        if (coupon.is_active && isWithinWindow && hasRemaining && !existingRedemption) {
+          const discountRupees =
+            plan_type === 'monthly'
+              ? (coupon.monthly_discount ?? 0)
+              : plan_type === 'six_month'
+                ? (coupon.six_month_discount ?? 0)
+                : (coupon.yearly_discount ?? 0);
+
+          discountAmount = Math.max(0, Math.round(discountRupees * 100));
+          appliedCouponCode = coupon.code;
+          console.log('Coupon applied:', appliedCouponCode, 'discount:', discountAmount);
+        } else {
+          console.log('Coupon not applicable:', {
+            code: coupon.code,
+            is_active: coupon.is_active,
+            isWithinWindow,
+            hasRemaining,
+            alreadyUsedByUser: !!existingRedemption,
+          });
+        }
+      }
+    }
+
+    const originalAmount = selectedPlan.amount;
+    const finalAmount = Math.max(100, originalAmount - discountAmount); // Razorpay min amount safety
+
     // Create a short receipt ID (max 40 chars)
     // Use last 8 chars of user ID + timestamp in base36 for uniqueness
     const shortUserId = user.id.replace(/-/g, '').slice(-8);
     const timestamp = Date.now().toString(36);
     const receipt = `rcpt_${shortUserId}_${timestamp}`;
-    
-    console.log('Creating Razorpay order with receipt:', receipt);
+
+    console.log('Creating Razorpay order with receipt:', receipt, 'finalAmount:', finalAmount);
 
     // Create Razorpay order
     const orderResponse = await fetch('https://api.razorpay.com/v1/orders', {
@@ -93,13 +163,16 @@ serve(async (req) => {
         'Authorization': 'Basic ' + btoa(`${razorpayKeyId}:${razorpayKeySecret}`),
       },
       body: JSON.stringify({
-        amount: selectedPlan.amount,
+        amount: finalAmount,
         currency: 'INR',
         receipt: receipt,
         notes: {
           user_id: user.id,
           plan_type: plan_type,
           user_email: user.email,
+          coupon_code: appliedCouponCode ?? undefined,
+          original_amount: originalAmount,
+          discount_amount: discountAmount,
         },
       }),
     });
@@ -117,17 +190,15 @@ serve(async (req) => {
     console.log('Razorpay order created:', order.id);
 
     // Record the payment in our database
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
     const { error: insertError } = await supabaseAdmin
       .from('payments')
       .insert({
         user_id: user.id,
         razorpay_order_id: order.id,
-        amount: selectedPlan.amount,
+        amount: finalAmount,
+        original_amount: originalAmount,
+        discount_amount: discountAmount > 0 ? discountAmount : null,
+        coupon_code: appliedCouponCode,
         currency: 'INR',
         plan_type: plan_type,
         status: 'pending',
@@ -149,7 +220,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         order_id: order.id,
-        amount: selectedPlan.amount,
+        amount: finalAmount,
         currency: 'INR',
         key_id: razorpayKeyId,
         description: selectedPlan.description,

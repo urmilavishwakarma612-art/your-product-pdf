@@ -81,26 +81,17 @@ const AdminRefunds = () => {
 
   const processRefundMutation = useMutation({
     mutationFn: async ({ id, status, notes }: { id: string; status: string; notes: string }) => {
-      const { error } = await supabase
-        .from("refund_requests")
-        .update({
-          status,
+      const { data, error } = await supabase.functions.invoke('update-refund-status', {
+        body: {
+          refund_request_id: id,
+          status: status === 'approved' ? 'approved' : 'rejected',
           admin_notes: notes,
-          processed_at: new Date().toISOString(),
-        })
-        .eq("id", id);
-      
-      if (error) throw error;
+        },
+      });
 
-      // If approved, also update user subscription
-      if (status === "approved" && selectedRequest) {
-        await supabase
-          .from("profiles")
-          .update({
-            subscription_status: "free",
-            subscription_expires_at: null,
-          })
-          .eq("id", selectedRequest.user_id);
+      if (error) throw error;
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to update refund request');
       }
     },
     onSuccess: () => {

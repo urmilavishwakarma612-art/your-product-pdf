@@ -88,17 +88,18 @@ export function RefundSection() {
   const submitRefundMutation = useMutation({
     mutationFn: async () => {
       if (!selectedPayment || !reason.trim()) throw new Error("Invalid request");
-      
-      const { error } = await supabase
-        .from("refund_requests")
-        .insert({
+
+      const { data, error } = await supabase.functions.invoke('request-refund', {
+        body: {
           payment_id: selectedPayment.id,
-          user_id: user!.id,
           reason: reason.trim(),
-          refund_amount: selectedPayment.amount,
-        });
-      
+        },
+      });
+
       if (error) throw error;
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to submit refund request');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-refund-requests"] });
