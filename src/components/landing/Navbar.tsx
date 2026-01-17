@@ -157,6 +157,13 @@ export function Navbar() {
                         </div>
                       </div>
                     )}
+
+                    {/* Mobile: show profile dropdown (includes secondary nav items) */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Account</span>
+                      <ProfileDropdown />
+                    </div>
+
                     <Link to="/dashboard" onClick={() => setIsOpen(false)}>
                       <Button className="w-full rounded-full">Dashboard</Button>
                     </Link>

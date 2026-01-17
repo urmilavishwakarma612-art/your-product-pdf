@@ -183,7 +183,7 @@ export default function Pricing() {
 
     setPaymentStatus('loading');
     setErrorMessage('');
-    
+
     initiatePayment(
       plan,
       () => {
@@ -193,7 +193,8 @@ export default function Pricing() {
       (error) => {
         setPaymentStatus('error');
         setErrorMessage(error || 'An unexpected error occurred');
-      }
+      },
+      appliedCoupon?.code
     );
   };
 

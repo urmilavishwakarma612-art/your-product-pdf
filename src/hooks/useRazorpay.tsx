@@ -66,7 +66,8 @@ export const useRazorpay = () => {
   const initiatePayment = useCallback(async (
     planType: PlanType,
     onSuccess: () => void,
-    onError?: (error: string) => void
+    onError?: (error: string) => void,
+    couponCode?: string
   ) => {
     setIsLoading(true);
 
@@ -79,23 +80,23 @@ export const useRazorpay = () => {
 
       // Get current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
+
       if (sessionError) {
         console.error('Session error:', sessionError);
         throw new Error('Authentication error. Please login again.');
       }
-      
+
       if (!session) {
         throw new Error('Please login to continue');
       }
 
-      console.log('Creating Razorpay order for plan:', planType);
+      console.log('Creating Razorpay order for plan:', planType, 'coupon:', couponCode);
 
       // Create order (explicitly attach JWT to avoid missing-session issues)
       const { data: orderData, error: orderError } = await supabase.functions.invoke(
         'create-razorpay-order',
         {
-          body: { plan_type: planType },
+          body: { plan_type: planType, coupon_code: couponCode },
           headers: {
             Authorization: `Bearer ${session.access_token}`,
           },
