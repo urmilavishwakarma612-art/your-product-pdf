@@ -9,6 +9,7 @@ import { Zap, Trophy, Flame, Target, LogOut, BookOpen, ArrowRight, User, BarChar
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { SubscriptionExpiryReminder } from "@/components/dashboard/SubscriptionExpiryReminder";
+import { PaymentFailedBanner } from "@/components/dashboard/PaymentFailedBanner";
 import { WeaknessAnalytics } from "@/components/analytics/WeaknessAnalytics";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -135,6 +136,9 @@ const Dashboard = () => {
               </div>
             </div>
           </motion.div>
+
+          {/* Payment Failed Banner */}
+          <PaymentFailedBanner />
 
           {/* Subscription Expiry Reminder */}
           <SubscriptionExpiryReminder />

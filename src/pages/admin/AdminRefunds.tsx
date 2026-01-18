@@ -60,7 +60,7 @@ const AdminRefunds = () => {
   const [selectedRequest, setSelectedRequest] = useState<RefundRequest | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [adminNotes, setAdminNotes] = useState("");
-  const [action, setAction] = useState<"approve" | "reject" | null>(null);
+  const [action, setAction] = useState<"approve" | "reject" | "processed" | null>(null);
 
   const { data: refundRequests, isLoading } = useQuery({
     queryKey: ["admin-refunds"],
@@ -84,7 +84,7 @@ const AdminRefunds = () => {
       const { data, error } = await supabase.functions.invoke('update-refund-status', {
         body: {
           refund_request_id: id,
-          status: status === 'approved' ? 'approved' : 'rejected',
+          status: status,
           admin_notes: notes,
         },
       });
@@ -96,7 +96,12 @@ const AdminRefunds = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-refunds"] });
-      toast.success(action === "approve" ? "Refund approved" : "Refund rejected");
+      const messages = {
+        approve: "Refund approved",
+        reject: "Refund rejected",
+        processed: "Refund marked as processed & user notified"
+      };
+      toast.success(messages[action as keyof typeof messages] || "Updated");
       setShowDialog(false);
       setSelectedRequest(null);
       setAdminNotes("");
@@ -106,7 +111,7 @@ const AdminRefunds = () => {
     },
   });
 
-  const openActionDialog = (request: RefundRequest, actionType: "approve" | "reject") => {
+  const openActionDialog = (request: RefundRequest, actionType: "approve" | "reject" | "processed") => {
     setSelectedRequest(request);
     setAction(actionType);
     setAdminNotes("");
@@ -117,7 +122,7 @@ const AdminRefunds = () => {
     if (!selectedRequest || !action) return;
     processRefundMutation.mutate({
       id: selectedRequest.id,
-      status: action === "approve" ? "approved" : "rejected",
+      status: action,
       notes: adminNotes,
     });
   };
@@ -249,7 +254,7 @@ const AdminRefunds = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       {request.status === "pending" ? (
-                        <div className="flex items-center justify-end gap-1">
+                        <div className="flex items-center justify-end gap-1 flex-wrap">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -267,6 +272,29 @@ const AdminRefunds = () => {
                           >
                             <X className="w-4 h-4 mr-1" />
                             <span className="hidden sm:inline">Reject</span>
+                          </Button>
+                        </div>
+                      ) : request.status === "approved" ? (
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-blue-500 hover:text-blue-400 h-8"
+                            onClick={() => openActionDialog(request, "processed")}
+                          >
+                            <RefreshCcw className="w-4 h-4 mr-1" />
+                            <span className="hidden sm:inline">Mark Processed</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedRequest(request);
+                              setShowDialog(true);
+                              setAction(null);
+                            }}
+                          >
+                            <MessageSquare className="w-4 h-4" />
                           </Button>
                         </div>
                       ) : (
@@ -300,13 +328,19 @@ const AdminRefunds = () => {
                 <Check className="w-5 h-5 text-green-500" />
               ) : action === "reject" ? (
                 <X className="w-5 h-5 text-red-500" />
+              ) : action === "processed" ? (
+                <RefreshCcw className="w-5 h-5 text-blue-500" />
               ) : (
                 <MessageSquare className="w-5 h-5 text-primary" />
               )}
-              {action === "approve" ? "Approve Refund" : action === "reject" ? "Reject Refund" : "Request Details"}
+              {action === "approve" ? "Approve Refund" : action === "reject" ? "Reject Refund" : action === "processed" ? "Mark as Processed" : "Request Details"}
             </DialogTitle>
             <DialogDescription>
-              {action ? "Add notes for this decision" : "View request details"}
+              {action === "processed" 
+                ? "Mark this refund as processed after completing manual Razorpay refund"
+                : action 
+                  ? "Add notes for this decision" 
+                  : "View request details"}
             </DialogDescription>
           </DialogHeader>
           
@@ -367,20 +401,37 @@ const AdminRefunds = () => {
                   </p>
                 </div>
               )}
+
+              {action === "processed" && (
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                  <RefreshCcw className="w-4 h-4 text-blue-500 mt-0.5" />
+                  <p className="text-xs text-blue-400">
+                    Only mark as processed after you've completed the manual refund in Razorpay dashboard. 
+                    User will be notified via email that refund has been processed.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDialog(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setShowDialog(false)} className="w-full sm:w-auto">
               {action ? "Cancel" : "Close"}
             </Button>
             {action && (
               <Button 
                 onClick={handleProcess}
                 disabled={processRefundMutation.isPending}
-                variant={action === "approve" ? "default" : "destructive"}
+                variant={action === "approve" ? "default" : action === "processed" ? "default" : "destructive"}
+                className={`w-full sm:w-auto ${action === "processed" ? "bg-blue-600 hover:bg-blue-700" : ""}`}
               >
-                {processRefundMutation.isPending ? "Processing..." : action === "approve" ? "Approve" : "Reject"}
+                {processRefundMutation.isPending 
+                  ? "Processing..." 
+                  : action === "approve" 
+                    ? "Approve" 
+                    : action === "processed"
+                      ? "Mark as Processed & Notify User"
+                      : "Reject"}
               </Button>
             )}
           </DialogFooter>

@@ -48,6 +48,7 @@ const Jobs = lazy(() => import("./pages/Jobs"));
 const AdminJobs = lazy(() => import("./pages/admin/AdminJobs"));
 const AdminCoupons = lazy(() => import("./pages/admin/AdminCoupons"));
 const AdminRefunds = lazy(() => import("./pages/admin/AdminRefunds"));
+const Payments = lazy(() => import("./pages/Payments"));
 
 const queryClient = new QueryClient();
 
@@ -100,6 +101,7 @@ const App = () => (
               <Route path="/referral" element={<Referral />} />
               <Route path="/profile-settings" element={<ProfileManagement />} />
               <Route path="/jobs" element={<Jobs />} />
+              <Route path="/payments" element={<Payments />} />
               <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
