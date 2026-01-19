@@ -8,7 +8,7 @@ const corsHeaders = {
 
 interface UpdateRefundBody {
   refund_request_id: string;
-  status: 'approved' | 'rejected';
+  status: 'approved' | 'rejected' | 'processed';
   admin_notes?: string;
 }
 
@@ -63,7 +63,7 @@ serve(async (req) => {
     const body: UpdateRefundBody = await req.json();
     const refundRequestId = (body.refund_request_id || '').trim();
 
-    if (!refundRequestId || (body.status !== 'approved' && body.status !== 'rejected')) {
+    if (!refundRequestId || !['approved', 'rejected', 'processed'].includes(body.status)) {
       return new Response(JSON.stringify({ error: 'Invalid payload' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -92,8 +92,14 @@ serve(async (req) => {
       });
     }
 
-    if (rr.status !== 'pending') {
-      return new Response(JSON.stringify({ error: 'Refund request already processed' }), {
+    // Allow transition: pending -> approved/rejected, or approved -> processed
+    const validTransitions = {
+      pending: ['approved', 'rejected'],
+      approved: ['processed'],
+    };
+    const allowed = validTransitions[rr.status as keyof typeof validTransitions] || [];
+    if (!allowed.includes(body.status)) {
+      return new Response(JSON.stringify({ error: `Cannot transition from ${rr.status} to ${body.status}` }), {
         status: 409,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -143,11 +149,16 @@ serve(async (req) => {
         .single();
 
       if (email) {
+        const emailTypeMap = {
+          approved: 'refund_approved',
+          rejected: 'refund_rejected',
+          processed: 'refund_processed',
+        };
         await supabaseAdmin.functions.invoke('subscription-email', {
           body: {
             email,
             username: profile?.username || email.split('@')[0] || 'User',
-            type: body.status === 'approved' ? 'refund_approved' : 'refund_rejected',
+            type: emailTypeMap[body.status],
             refundStatus: body.status,
             adminNotes: body.admin_notes ?? undefined,
           },

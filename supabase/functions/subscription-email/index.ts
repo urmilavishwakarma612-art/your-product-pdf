@@ -20,10 +20,11 @@ interface SubscriptionEmailRequest {
     | "payment_failed"
     | "refund_requested"
     | "refund_approved"
-    | "refund_rejected";
+    | "refund_rejected"
+    | "refund_processed";
   expiresAt?: string;
   daysUntilExpiry?: number;
-  refundStatus?: "pending" | "approved" | "rejected";
+  refundStatus?: "pending" | "approved" | "rejected" | "processed";
   adminNotes?: string;
 }
 
@@ -108,6 +109,16 @@ const getDefaultTemplate = (type: string): EmailTemplate => {
       cta_url: "https://nexalgotrix.com/profile",
       primary_color: "#ef4444",
       footer_text: "Transparent refunds. Student-first policies.",
+    },
+    refund_processed: {
+      subject: "✅ Refund completed",
+      heading: "Refund Completed",
+      body_text:
+        "Great news! Your refund has been processed and sent to your original payment method. It may take 3-5 business days to appear in your account depending on your bank.",
+      cta_text: "View Payment History",
+      cta_url: "https://nexalgotrix.com/payments",
+      primary_color: "#22c55e",
+      footer_text: "Thank you for trying Nexalgotrix. We hope to see you again!",
     },
   };
   return defaults[type] || defaults.granted;
