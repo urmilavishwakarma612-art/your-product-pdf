@@ -7,9 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   Clock,
   Code2,
-  Sparkles,
   ChevronRight,
-  ExternalLink,
   Send,
   Loader2,
   ArrowLeft,
@@ -17,7 +15,6 @@ import {
   BookOpen,
   Brain,
   CheckCircle,
-  Lock,
   Target,
   Lightbulb,
   Zap,
@@ -30,7 +27,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import logoImage from "@/assets/logo.png";
@@ -54,6 +50,8 @@ import {
 import Editor from "@monaco-editor/react";
 import { cn } from "@/lib/utils";
 import { Json } from "@/integrations/supabase/types";
+import { LeetCodeProblemPanel } from "@/components/nexmentor/LeetCodeProblemPanel";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Step definitions for the 7-step flow
 const STEPS = [
@@ -119,6 +117,65 @@ type SavedSession = {
   created_at: string | null;
   ended_at: string | null;
 };
+
+// Helper: Parse hints JSON to examples array (if hints contains examples)
+function parseHintsToExamples(hints: any): { input: string; output: string; explanation?: string }[] {
+  if (!hints) return [];
+  
+  // If hints is an array with example objects
+  if (Array.isArray(hints)) {
+    return hints
+      .filter((h: any) => h.input && h.output)
+      .map((h: any) => ({
+        input: h.input,
+        output: h.output,
+        explanation: h.explanation,
+      }));
+  }
+  
+  return [];
+}
+
+// Helper: Parse constraints from description
+function parseConstraints(description: string | undefined): string[] {
+  if (!description) return [];
+  
+  const constraints: string[] = [];
+  const constraintMatch = description.match(/Constraints?:\s*\n?((?:[\s•\-*]*[^\n]+\n?)+)/i);
+  
+  if (constraintMatch) {
+    const lines = constraintMatch[1].split('\n');
+    for (const line of lines) {
+      const cleaned = line.replace(/^[\s•\-*]+/, '').trim();
+      if (cleaned && cleaned.length > 2) {
+        constraints.push(cleaned);
+      }
+    }
+  }
+  
+  return constraints;
+}
+
+// Helper: Parse hints array from JSON hints field
+function parseHintsArray(hints: any): string[] {
+  if (!hints) return [];
+  
+  // If it's already an array of strings
+  if (Array.isArray(hints)) {
+    return hints
+      .filter((h: any) => typeof h === 'string')
+      .map((h: string) => h);
+  }
+  
+  // If it's an object with hint properties
+  if (typeof hints === 'object') {
+    return Object.values(hints)
+      .filter((h: any) => typeof h === 'string')
+      .map((h: any) => h as string);
+  }
+  
+  return [];
+}
 
 export default function NexMentor() {
   const { user } = useAuth();
@@ -880,48 +937,20 @@ export default function NexMentor() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* Left Panel - Problem Description */}
-        <div className="lg:w-[320px] xl:w-[360px] border-b lg:border-b-0 lg:border-r border-border bg-card flex-shrink-0 h-[25vh] lg:h-auto overflow-hidden">
-          <ScrollArea className="h-full">
-            <div className="p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">Problem</span>
-                {leetcodeUnlocked && selectedQuestion?.leetcode_link ? (
-                  <a
-                    href={selectedQuestion.leetcode_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs text-primary hover:underline"
-                  >
-                    <ExternalLink className="w-3 h-3" />
-                    Submit on LeetCode
-                  </a>
-                ) : (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Lock className="w-3 h-3" />
-                    Complete flow to unlock
-                  </div>
-                )}
-              </div>
-
-              <div className="prose prose-sm dark:prose-invert max-w-none">
-                <p className="text-muted-foreground leading-relaxed text-sm whitespace-pre-wrap">
-                  {selectedQuestion?.description || "No description available."}
-                </p>
-              </div>
-
-              {selectedQuestion?.companies && selectedQuestion.companies.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-xs font-medium text-muted-foreground">Asked by</h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedQuestion.companies.map((company: string, idx: number) => (
-                      <Badge key={idx} variant="secondary" className="text-xs">{company}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
+        {/* Left Panel - LeetCode-Identical Problem Description */}
+        <div className="lg:w-[360px] xl:w-[400px] border-b lg:border-b-0 lg:border-r border-border bg-card flex-shrink-0 h-[30vh] lg:h-auto overflow-hidden">
+          <LeetCodeProblemPanel
+            title={selectedQuestion?.title || "Loading..."}
+            difficulty={selectedQuestion?.difficulty || "medium"}
+            description={selectedQuestion?.description || "No description available."}
+            examples={parseHintsToExamples(selectedQuestion?.hints)}
+            constraints={parseConstraints(selectedQuestion?.description)}
+            hints={parseHintsArray(selectedQuestion?.hints)}
+            companies={selectedQuestion?.companies || []}
+            leetcodeLink={selectedQuestion?.leetcode_link}
+            isLeetcodeUnlocked={leetcodeUnlocked}
+            userCode={code}
+          />
         </div>
 
         {/* Center/Right - Chat & Code Editor */}
