@@ -1,6 +1,5 @@
 import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
-const NexMentor = lazy(() => import("./pages/NexMentor"));
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -40,7 +39,7 @@ const Pricing = lazy(() => import("./pages/Pricing"));
 const InterviewSimulator = lazy(() => import("./pages/InterviewSimulator"));
 const Curriculum = lazy(() => import("./pages/Curriculum"));
 const CurriculumModule = lazy(() => import("./pages/CurriculumModule"));
-const AITutor = lazy(() => import("./pages/AITutor"));
+const NexMentor = lazy(() => import("./pages/NexMentor"));
 const Events = lazy(() => import("./pages/Events"));
 const Gamification = lazy(() => import("./pages/Gamification"));
 const Referral = lazy(() => import("./pages/Referral"));
@@ -95,8 +94,9 @@ const App = () => (
               <Route path="/interview" element={<InterviewSimulator />} />
               <Route path="/curriculum" element={<Curriculum />} />
               <Route path="/curriculum/module/:id" element={<CurriculumModule />} />
-              <Route path="/tutor" element={<AITutor />} />
+              <Route path="/tutor" element={<NexMentor />} />
               <Route path="/practice" element={<Navigate to="/tutor" replace />} />
+              <Route path="/nexmentor" element={<Navigate to="/tutor" replace />} />
               <Route path="/events" element={<Events />} />
               <Route path="/gamification" element={<Gamification />} />
               <Route path="/referral" element={<Referral />} />

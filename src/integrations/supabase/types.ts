@@ -1245,43 +1245,61 @@ export type Database = {
       tutor_sessions: {
         Row: {
           created_at: string | null
+          current_step: number | null
           ended_at: string | null
           hints_given: number | null
           id: string
+          language: string | null
+          leetcode_unlocked: boolean | null
+          messages: Json | null
           pattern_id: string | null
           problem_solved: boolean | null
           question_id: string | null
           session_type: string | null
           started_at: string | null
+          time_spent: number | null
           total_messages: number | null
+          user_code: string | null
           user_id: string
           user_skill_level: string | null
         }
         Insert: {
           created_at?: string | null
+          current_step?: number | null
           ended_at?: string | null
           hints_given?: number | null
           id?: string
+          language?: string | null
+          leetcode_unlocked?: boolean | null
+          messages?: Json | null
           pattern_id?: string | null
           problem_solved?: boolean | null
           question_id?: string | null
           session_type?: string | null
           started_at?: string | null
+          time_spent?: number | null
           total_messages?: number | null
+          user_code?: string | null
           user_id: string
           user_skill_level?: string | null
         }
         Update: {
           created_at?: string | null
+          current_step?: number | null
           ended_at?: string | null
           hints_given?: number | null
           id?: string
+          language?: string | null
+          leetcode_unlocked?: boolean | null
+          messages?: Json | null
           pattern_id?: string | null
           problem_solved?: boolean | null
           question_id?: string | null
           session_type?: string | null
           started_at?: string | null
+          time_spent?: number | null
           total_messages?: number | null
+          user_code?: string | null
           user_id?: string
           user_skill_level?: string | null
         }
