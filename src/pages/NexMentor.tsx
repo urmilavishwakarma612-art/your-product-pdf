@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -14,16 +14,17 @@ import {
   Loader2,
   ArrowLeft,
   Search,
-  Filter,
   BookOpen,
   Brain,
   CheckCircle,
   Lock,
-  MessageSquare,
   Target,
   Lightbulb,
   Zap,
   Trophy,
+  Save,
+  RotateCcw,
+  History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,8 +44,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import Editor from "@monaco-editor/react";
 import { cn } from "@/lib/utils";
+import { Json } from "@/integrations/supabase/types";
 
 // Step definitions for the 7-step flow
 const STEPS = [
@@ -98,18 +107,36 @@ type Message = {
 
 type ViewMode = "selection" | "session";
 
+type SavedSession = {
+  id: string;
+  question_id: string;
+  current_step: number;
+  messages: Message[];
+  user_code: string | null;
+  language: string | null;
+  leetcode_unlocked: boolean | null;
+  time_spent: number | null;
+  created_at: string | null;
+  ended_at: string | null;
+};
+
 export default function NexMentor() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const questionId = searchParams.get("q");
+  const sessionIdParam = searchParams.get("session");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // View state
   const [viewMode, setViewMode] = useState<ViewMode>(questionId ? "session" : "selection");
   const [selectedQuestion, setSelectedQuestion] = useState<any>(null);
+  const [showSessionsDialog, setShowSessionsDialog] = useState(false);
 
   // Session state
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(sessionIdParam);
   const [currentStep, setCurrentStep] = useState(0);
   const [sessionTime, setSessionTime] = useState(0);
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -154,6 +181,114 @@ export default function NexMentor() {
     },
   });
 
+  // Fetch saved sessions for the current question
+  const { data: savedSessions } = useQuery({
+    queryKey: ["nexmentor-sessions", questionId, user?.id],
+    queryFn: async () => {
+      if (!user?.id || !questionId) return [];
+      const { data, error } = await supabase
+        .from("tutor_sessions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("question_id", questionId)
+        .eq("session_type", "nexmentor")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data as unknown as SavedSession[];
+    },
+    enabled: !!user?.id && !!questionId,
+  });
+
+  // Create session mutation
+  const createSessionMutation = useMutation({
+    mutationFn: async (question: any) => {
+      if (!user?.id) throw new Error("User not authenticated");
+      const { data, error } = await supabase
+        .from("tutor_sessions")
+        .insert({
+          user_id: user.id,
+          question_id: question.id,
+          pattern_id: question.pattern_id,
+          session_type: "nexmentor",
+          current_step: 0,
+          messages: [] as unknown as Json,
+          language: "python",
+          user_code: LANGUAGE_CONFIG["python"].template,
+          leetcode_unlocked: false,
+          time_spent: 0,
+          started_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      setCurrentSessionId(data.id);
+      queryClient.invalidateQueries({ queryKey: ["nexmentor-sessions"] });
+    },
+  });
+
+  // Update session mutation
+  const updateSessionMutation = useMutation({
+    mutationFn: async (updates: Partial<SavedSession>) => {
+      if (!currentSessionId) throw new Error("No session ID");
+      const { error } = await supabase
+        .from("tutor_sessions")
+        .update({
+          ...updates,
+          messages: updates.messages as unknown as Json,
+        })
+        .eq("id", currentSessionId);
+      if (error) throw error;
+    },
+  });
+
+  // Auto-save session (debounced)
+  const saveSession = useCallback(() => {
+    if (!currentSessionId || !user?.id) return;
+    
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      updateSessionMutation.mutate({
+        current_step: currentStep,
+        messages,
+        user_code: code,
+        language,
+        leetcode_unlocked: leetcodeUnlocked,
+        time_spent: sessionTime,
+      });
+    }, 2000); // Save after 2 seconds of inactivity
+  }, [currentSessionId, user?.id, currentStep, messages, code, language, leetcodeUnlocked, sessionTime]);
+
+  // Trigger auto-save when session state changes
+  useEffect(() => {
+    if (isSessionActive && currentSessionId) {
+      saveSession();
+    }
+  }, [messages, code, currentStep, leetcodeUnlocked]);
+
+  // Load existing session
+  const loadSession = useCallback((session: SavedSession, question: any) => {
+    setCurrentSessionId(session.id);
+    setCurrentStep(session.current_step || 0);
+    setMessages((session.messages as unknown as Message[]) || []);
+    setCode(session.user_code || LANGUAGE_CONFIG[session.language || "python"].template);
+    setLanguage(session.language || "python");
+    setLeetcodeUnlocked(session.leetcode_unlocked || false);
+    setSessionTime(session.time_spent || 0);
+    setShowEditor((session.current_step || 0) >= 5);
+    setSelectedQuestion(question);
+    setViewMode("session");
+    setIsSessionActive(true);
+    setShowSessionsDialog(false);
+    setSearchParams({ q: question.id, session: session.id });
+  }, [setSearchParams]);
+
   // Fetch selected question if ID is in URL
   useEffect(() => {
     if (questionId && questions) {
@@ -161,10 +296,23 @@ export default function NexMentor() {
       if (question) {
         setSelectedQuestion(question);
         setViewMode("session");
-        startSession(question);
+        
+        // If there's a session ID in URL, load that session
+        if (sessionIdParam && savedSessions) {
+          const session = savedSessions.find((s) => s.id === sessionIdParam);
+          if (session) {
+            loadSession(session, question);
+            return;
+          }
+        }
+        
+        // Otherwise start new session
+        if (!currentSessionId && user) {
+          startSession(question);
+        }
       }
     }
-  }, [questionId, questions]);
+  }, [questionId, questions, sessionIdParam, savedSessions, user]);
 
   // Session timer
   useEffect(() => {
@@ -182,6 +330,15 @@ export default function NexMentor() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -198,19 +355,33 @@ export default function NexMentor() {
     return matchesSearch && matchesDifficulty && matchesPattern;
   });
 
-  const startSession = (question: any) => {
-    setIsSessionActive(true);
-    setCurrentStep(0);
-    setMessages([
-      {
-        role: "assistant",
-        content: `Chalo shuru karte hain! 🚀\n\n**[Step 0/7: Question Decode]**\n\nBefore we jump into solving, let me ask you:\n\n**"${question.title}" - is question mein exactly kya puchha ja raha hai?**\n\nInput kya hai, output kya expect hai, aur constraints kya hain - apne words mein samjhao.`,
-        step: 0,
-      },
-    ]);
+  const startSession = async (question: any) => {
+    if (!user) {
+      toast.error("Please login to start a session");
+      navigate("/auth");
+      return;
+    }
+
+    try {
+      const session = await createSessionMutation.mutateAsync(question);
+      setCurrentSessionId(session.id);
+      setIsSessionActive(true);
+      setCurrentStep(0);
+      setMessages([
+        {
+          role: "assistant",
+          content: `Chalo shuru karte hain! 🚀\n\n**[Step 0/7: Question Decode]**\n\nBefore we jump into solving, let me ask you:\n\n**"${question.title}" - is question mein exactly kya puchha ja raha hai?**\n\nInput kya hai, output kya expect hai, aur constraints kya hain - apne words mein samjhao.`,
+          step: 0,
+        },
+      ]);
+      setSearchParams({ q: question.id, session: session.id });
+    } catch (error) {
+      console.error("Failed to create session:", error);
+      toast.error("Failed to start session");
+    }
   };
 
-  const handleSelectQuestion = (question: any) => {
+  const handleSelectQuestion = async (question: any) => {
     setSelectedQuestion(question);
     setSearchParams({ q: question.id });
     setViewMode("session");
@@ -218,10 +389,42 @@ export default function NexMentor() {
     setCode(LANGUAGE_CONFIG[language].template);
     setLeetcodeUnlocked(false);
     setShowEditor(false);
+    setCurrentSessionId(null);
+
+    // Check for existing sessions
+    if (user) {
+      const { data: existingSessions } = await supabase
+        .from("tutor_sessions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("question_id", question.id)
+        .eq("session_type", "nexmentor")
+        .is("ended_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (existingSessions && existingSessions.length > 0) {
+        setShowSessionsDialog(true);
+        return;
+      }
+    }
+
     startSession(question);
   };
 
   const handleBackToSelection = () => {
+    // Save session before leaving
+    if (currentSessionId) {
+      updateSessionMutation.mutate({
+        current_step: currentStep,
+        messages,
+        user_code: code,
+        language,
+        leetcode_unlocked: leetcodeUnlocked,
+        time_spent: sessionTime,
+      });
+    }
+
     setViewMode("selection");
     setSelectedQuestion(null);
     setSearchParams({});
@@ -231,6 +434,7 @@ export default function NexMentor() {
     setCurrentStep(0);
     setLeetcodeUnlocked(false);
     setShowEditor(false);
+    setCurrentSessionId(null);
   };
 
   const sendMessage = async () => {
@@ -342,6 +546,24 @@ export default function NexMentor() {
   const handleLanguageChange = (newLang: string) => {
     setLanguage(newLang);
     setCode(LANGUAGE_CONFIG[newLang]?.template || "");
+  };
+
+  const handleManualSave = () => {
+    if (!currentSessionId) return;
+    updateSessionMutation.mutate({
+      current_step: currentStep,
+      messages,
+      user_code: code,
+      language,
+      leetcode_unlocked: leetcodeUnlocked,
+      time_spent: sessionTime,
+    });
+    toast.success("Session saved!");
+  };
+
+  const handleStartNewSession = () => {
+    setShowSessionsDialog(false);
+    startSession(selectedQuestion);
   };
 
   // QUESTION SELECTION VIEW
@@ -522,6 +744,45 @@ export default function NexMentor() {
             </div>
           )}
         </div>
+
+        {/* Resume Session Dialog */}
+        <Dialog open={showSessionsDialog} onOpenChange={setShowSessionsDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <History className="w-5 h-5 text-primary" />
+                Resume Previous Session?
+              </DialogTitle>
+              <DialogDescription>
+                You have an incomplete session for this problem. Would you like to continue where you left off?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 mt-4">
+              {savedSessions?.filter(s => !s.ended_at).map((session) => (
+                <div
+                  key={session.id}
+                  className="p-3 border border-border rounded-lg hover:border-primary/50 cursor-pointer transition-colors"
+                  onClick={() => loadSession(session, selectedQuestion)}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium">Step {(session.current_step || 0) + 1}/8</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatTime(session.time_spent || 0)} spent
+                    </span>
+                  </div>
+                  <Progress value={((session.current_step || 0) + 1) / 8 * 100} className="h-1.5" />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {session.created_at ? new Date(session.created_at).toLocaleDateString() : "Unknown date"}
+                  </p>
+                </div>
+              ))}
+              <Button variant="outline" className="w-full" onClick={handleStartNewSession}>
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Start Fresh Session
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
@@ -553,6 +814,20 @@ export default function NexMentor() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2"
+              onClick={handleManualSave}
+              disabled={updateSessionMutation.isPending}
+            >
+              {updateSessionMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              <span className="hidden sm:inline ml-1">Save</span>
+            </Button>
             <div className="flex items-center gap-2 bg-muted/50 px-2 sm:px-3 py-1.5 rounded-full border border-border/30">
               <Clock className="w-4 h-4 text-muted-foreground" />
               <span className="font-mono text-xs sm:text-sm">{formatTime(sessionTime)}</span>
