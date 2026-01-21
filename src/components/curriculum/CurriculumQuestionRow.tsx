@@ -1,14 +1,16 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { 
   Youtube, 
   FileText, 
   Code2, 
   Bot, 
   Bookmark, 
-  BookmarkCheck 
+  BookmarkCheck,
+  Lock,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 interface Question {
   id: string;
@@ -53,8 +55,31 @@ export const CurriculumQuestionRow = ({
   companyLogoMap,
   isLocked = false,
 }: CurriculumQuestionRowProps) => {
+  const navigate = useNavigate();
   const difficulty = difficultyConfig[question.difficulty];
   const tier = question.practice_tier ? tierConfig[question.practice_tier] : null;
+
+  // Handle checkbox click - redirect to practice if not solved
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (isLocked) return;
+    
+    if (isSolved) {
+      // Already solved, allow viewing
+      onToggleSolved();
+    } else {
+      // Not solved - redirect to practice
+      toast.info("Complete the question to mark as solved!", {
+        description: "Practice with NexMentor to solve this question.",
+        action: {
+          label: "Practice",
+          onClick: () => navigate(`/tutor?q=${question.id}`),
+        },
+      });
+    }
+  };
 
   return (
     <div
@@ -64,13 +89,27 @@ export const CurriculumQuestionRow = ({
     >
       {/* Row 1: Title + Difficulty + LeetCode & YouTube */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Checkbox */}
-        <Checkbox
-          checked={isSolved}
-          onCheckedChange={onToggleSolved}
-          disabled={isLocked}
-          className="h-4 w-4 sm:h-5 sm:w-5 rounded border-2 border-muted-foreground/40 data-[state=checked]:bg-primary data-[state=checked]:border-primary shrink-0"
-        />
+        {/* Checkbox - clicking opens practice if not solved */}
+        <div 
+          onClick={handleCheckboxClick}
+          className={`relative cursor-pointer ${isLocked ? "cursor-not-allowed" : ""}`}
+          title={isSolved ? "Completed" : "Practice to complete"}
+        >
+          <Checkbox
+            checked={isSolved}
+            disabled={true} // Always disabled - can only be marked via practice
+            className={`h-4 w-4 sm:h-5 sm:w-5 rounded border-2 shrink-0 pointer-events-none ${
+              isSolved 
+                ? "bg-primary border-primary data-[state=checked]:bg-primary data-[state=checked]:border-primary" 
+                : "border-muted-foreground/40"
+            }`}
+          />
+          {!isSolved && !isLocked && (
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+              <Lock className="w-3 h-3 text-muted-foreground" />
+            </div>
+          )}
+        </div>
 
         {/* Title + Badges */}
         <div className="flex items-center gap-2 flex-1 min-w-0">

@@ -959,6 +959,7 @@ export type Database = {
           practice_tier: string | null
           signal: string | null
           sub_pattern_id: string | null
+          test_cases: Json | null
           title: string
           updated_at: string
           what_fails_if_wrong: string | null
@@ -985,6 +986,7 @@ export type Database = {
           practice_tier?: string | null
           signal?: string | null
           sub_pattern_id?: string | null
+          test_cases?: Json | null
           title: string
           updated_at?: string
           what_fails_if_wrong?: string | null
@@ -1011,6 +1013,7 @@ export type Database = {
           practice_tier?: string | null
           signal?: string | null
           sub_pattern_id?: string | null
+          test_cases?: Json | null
           title?: string
           updated_at?: string
           what_fails_if_wrong?: string | null
