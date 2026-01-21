@@ -22,6 +22,11 @@ import {
   Save,
   RotateCcw,
   History,
+  Play,
+  Upload,
+  ExternalLink,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,37 +55,32 @@ import {
 import Editor from "@monaco-editor/react";
 import { cn } from "@/lib/utils";
 import { Json } from "@/integrations/supabase/types";
-import { LeetCodeProblemPanel } from "@/components/nexmentor/LeetCodeProblemPanel";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-// Step definitions for the 7-step flow
+// SIMPLIFIED 4-STEP FLOW
 const STEPS = [
-  { id: 0, name: "Decode", icon: Target, description: "Understand the question" },
-  { id: 1, name: "Pattern", icon: Brain, description: "Identify the pattern" },
-  { id: 2, name: "Brute Force", icon: Code2, description: "Write brute force" },
-  { id: 3, name: "Optimize", icon: Zap, description: "Find bottleneck" },
-  { id: 4, name: "Approach", icon: Lightbulb, description: "Optimal logic" },
-  { id: 5, name: "Code", icon: Code2, description: "Implementation" },
-  { id: 6, name: "Verify", icon: CheckCircle, description: "Complexity check" },
-  { id: 7, name: "Explain", icon: Trophy, description: "Interview ready" },
+  { id: 1, name: "Decode + Pattern", icon: Brain, description: "Understand & identify pattern" },
+  { id: 2, name: "Brute Force", icon: Target, description: "Brute approach + complexity" },
+  { id: 3, name: "Optimal", icon: Zap, description: "Optimize solution" },
+  { id: 4, name: "Code & Verify", icon: Code2, description: "Implement & verify" },
 ];
 
 const LANGUAGE_CONFIG: Record<string, { monacoLang: string; template: string }> = {
   python: {
     monacoLang: "python",
-    template: `# Write your solution here\n# Think through each step before coding\n\ndef solution():\n    pass`,
+    template: `# Write your solution here\n\ndef solution():\n    pass`,
   },
   javascript: {
     monacoLang: "javascript",
-    template: `// Write your solution here\n// Think through each step before coding\n\nfunction solution() {\n    \n}`,
+    template: `// Write your solution here\n\nfunction solution() {\n    \n}`,
   },
   java: {
     monacoLang: "java",
-    template: `// Write your solution here\n// Think through each step before coding\n\nclass Solution {\n    public void solve() {\n        \n    }\n}`,
+    template: `// Write your solution here\n\nclass Solution {\n    public void solve() {\n        \n    }\n}`,
   },
   cpp: {
     monacoLang: "cpp",
-    template: `// Write your solution here\n// Think through each step before coding\n\nclass Solution {\npublic:\n    void solve() {\n        \n    }\n};`,
+    template: `// Write your solution here\n\nclass Solution {\npublic:\n    void solve() {\n        \n    }\n};`,
   },
 };
 
@@ -116,66 +116,8 @@ type SavedSession = {
   time_spent: number | null;
   created_at: string | null;
   ended_at: string | null;
+  problem_solved: boolean | null;
 };
-
-// Helper: Parse hints JSON to examples array (if hints contains examples)
-function parseHintsToExamples(hints: any): { input: string; output: string; explanation?: string }[] {
-  if (!hints) return [];
-  
-  // If hints is an array with example objects
-  if (Array.isArray(hints)) {
-    return hints
-      .filter((h: any) => h.input && h.output)
-      .map((h: any) => ({
-        input: h.input,
-        output: h.output,
-        explanation: h.explanation,
-      }));
-  }
-  
-  return [];
-}
-
-// Helper: Parse constraints from description
-function parseConstraints(description: string | undefined): string[] {
-  if (!description) return [];
-  
-  const constraints: string[] = [];
-  const constraintMatch = description.match(/Constraints?:\s*\n?((?:[\s•\-*]*[^\n]+\n?)+)/i);
-  
-  if (constraintMatch) {
-    const lines = constraintMatch[1].split('\n');
-    for (const line of lines) {
-      const cleaned = line.replace(/^[\s•\-*]+/, '').trim();
-      if (cleaned && cleaned.length > 2) {
-        constraints.push(cleaned);
-      }
-    }
-  }
-  
-  return constraints;
-}
-
-// Helper: Parse hints array from JSON hints field
-function parseHintsArray(hints: any): string[] {
-  if (!hints) return [];
-  
-  // If it's already an array of strings
-  if (Array.isArray(hints)) {
-    return hints
-      .filter((h: any) => typeof h === 'string')
-      .map((h: string) => h);
-  }
-  
-  // If it's an object with hint properties
-  if (typeof hints === 'object') {
-    return Object.values(hints)
-      .filter((h: any) => typeof h === 'string')
-      .map((h: any) => h as string);
-  }
-  
-  return [];
-}
 
 export default function NexMentor() {
   const { user } = useAuth();
@@ -191,16 +133,19 @@ export default function NexMentor() {
   const [viewMode, setViewMode] = useState<ViewMode>(questionId ? "session" : "selection");
   const [selectedQuestion, setSelectedQuestion] = useState<any>(null);
   const [showSessionsDialog, setShowSessionsDialog] = useState(false);
+  const [showLeetCodeCelebration, setShowLeetCodeCelebration] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
 
   // Session state
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(sessionIdParam);
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(1);
   const [sessionTime, setSessionTime] = useState(0);
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [leetcodeUnlocked, setLeetcodeUnlocked] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   // Code editor state
   const [language, setLanguage] = useState("python");
@@ -238,7 +183,7 @@ export default function NexMentor() {
     },
   });
 
-  // Fetch saved sessions for the current question
+  // Fetch saved sessions
   const { data: savedSessions } = useQuery({
     queryKey: ["nexmentor-sessions", questionId, user?.id],
     queryFn: async () => {
@@ -268,7 +213,7 @@ export default function NexMentor() {
           question_id: question.id,
           pattern_id: question.pattern_id,
           session_type: "nexmentor",
-          current_step: 0,
+          current_step: 1,
           messages: [] as unknown as Json,
           language: "python",
           user_code: LANGUAGE_CONFIG["python"].template,
@@ -302,7 +247,109 @@ export default function NexMentor() {
     },
   });
 
-  // Auto-save session (debounced)
+  // Mark question as solved mutation
+  const markQuestionSolvedMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.id || !selectedQuestion) throw new Error("Missing data");
+      
+      // Check if progress exists
+      const { data: existingProgress } = await supabase
+        .from("user_progress")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("question_id", selectedQuestion.id)
+        .single();
+
+      if (existingProgress?.is_solved) {
+        return existingProgress;
+      }
+
+      const xpEarned = selectedQuestion.xp_reward || 10;
+
+      if (existingProgress) {
+        // Update existing progress
+        const { data, error } = await supabase
+          .from("user_progress")
+          .update({
+            is_solved: true,
+            solved_at: new Date().toISOString(),
+            xp_earned: xpEarned,
+          })
+          .eq("id", existingProgress.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      } else {
+        // Create new progress
+        const { data, error } = await supabase
+          .from("user_progress")
+          .insert({
+            user_id: user.id,
+            question_id: selectedQuestion.id,
+            is_solved: true,
+            solved_at: new Date().toISOString(),
+            xp_earned: xpEarned,
+          })
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+    },
+    onSuccess: async (data) => {
+      // Update profile XP and streak
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("total_xp, current_streak, longest_streak, last_solved_at")
+        .eq("id", user!.id)
+        .single();
+
+      if (profile) {
+        const today = new Date().toDateString();
+        const lastSolvedDate = profile.last_solved_at 
+          ? new Date(profile.last_solved_at).toDateString() 
+          : null;
+        
+        let newStreak = profile.current_streak;
+        if (lastSolvedDate !== today) {
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          if (lastSolvedDate === yesterday.toDateString()) {
+            newStreak = profile.current_streak + 1;
+          } else if (lastSolvedDate !== today) {
+            newStreak = 1;
+          }
+        }
+
+        await supabase
+          .from("profiles")
+          .update({
+            total_xp: profile.total_xp + (data.xp_earned || 0),
+            current_streak: newStreak,
+            longest_streak: Math.max(profile.longest_streak, newStreak),
+            last_solved_at: new Date().toISOString(),
+          })
+          .eq("id", user!.id);
+      }
+
+      // Mark session as completed
+      if (currentSessionId) {
+        await supabase
+          .from("tutor_sessions")
+          .update({
+            problem_solved: true,
+            ended_at: new Date().toISOString(),
+          })
+          .eq("id", currentSessionId);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["user-progress"] });
+      toast.success(`+${data.xp_earned || 10} XP earned!`);
+    },
+  });
+
+  // Auto-save session
   const saveSession = useCallback(() => {
     if (!currentSessionId || !user?.id) return;
     
@@ -319,10 +366,9 @@ export default function NexMentor() {
         leetcode_unlocked: leetcodeUnlocked,
         time_spent: sessionTime,
       });
-    }, 2000); // Save after 2 seconds of inactivity
+    }, 2000);
   }, [currentSessionId, user?.id, currentStep, messages, code, language, leetcodeUnlocked, sessionTime]);
 
-  // Trigger auto-save when session state changes
   useEffect(() => {
     if (isSessionActive && currentSessionId) {
       saveSession();
@@ -332,13 +378,13 @@ export default function NexMentor() {
   // Load existing session
   const loadSession = useCallback((session: SavedSession, question: any) => {
     setCurrentSessionId(session.id);
-    setCurrentStep(session.current_step || 0);
+    setCurrentStep(session.current_step || 1);
     setMessages((session.messages as unknown as Message[]) || []);
     setCode(session.user_code || LANGUAGE_CONFIG[session.language || "python"].template);
     setLanguage(session.language || "python");
     setLeetcodeUnlocked(session.leetcode_unlocked || false);
     setSessionTime(session.time_spent || 0);
-    setShowEditor((session.current_step || 0) >= 5);
+    setShowEditor((session.current_step || 1) >= 4);
     setSelectedQuestion(question);
     setViewMode("session");
     setIsSessionActive(true);
@@ -346,7 +392,7 @@ export default function NexMentor() {
     setSearchParams({ q: question.id, session: session.id });
   }, [setSearchParams]);
 
-  // Fetch selected question if ID is in URL
+  // Fetch selected question
   useEffect(() => {
     if (questionId && questions) {
       const question = questions.find((q) => q.id === questionId);
@@ -354,7 +400,6 @@ export default function NexMentor() {
         setSelectedQuestion(question);
         setViewMode("session");
         
-        // If there's a session ID in URL, load that session
         if (sessionIdParam && savedSessions) {
           const session = savedSessions.find((s) => s.id === sessionIdParam);
           if (session) {
@@ -363,7 +408,6 @@ export default function NexMentor() {
           }
         }
         
-        // Otherwise start new session
         if (!currentSessionId && user) {
           startSession(question);
         }
@@ -387,7 +431,7 @@ export default function NexMentor() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Cleanup on unmount
+  // Cleanup
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
@@ -423,12 +467,12 @@ export default function NexMentor() {
       const session = await createSessionMutation.mutateAsync(question);
       setCurrentSessionId(session.id);
       setIsSessionActive(true);
-      setCurrentStep(0);
+      setCurrentStep(1);
       setMessages([
         {
           role: "assistant",
-          content: `Chalo shuru karte hain! 🚀\n\n**[Step 0/7: Question Decode]**\n\nBefore we jump into solving, let me ask you:\n\n**"${question.title}" - is question mein exactly kya puchha ja raha hai?**\n\nInput kya hai, output kya expect hai, aur constraints kya hain - apne words mein samjhao.`,
-          step: 0,
+          content: `Chalo shuru karte hain! 🚀\n\n**[Step 1/4: Decode + Pattern]**\n\n"${question.title}" - Dekho yaar:\n1. Question exactly kya puchh raha hai?\n2. Kaunsa pattern lagta hai - Array, Two Pointer, Sliding Window, etc.? Kyu?`,
+          step: 1,
         },
       ]);
       setSearchParams({ q: question.id, session: session.id });
@@ -447,8 +491,8 @@ export default function NexMentor() {
     setLeetcodeUnlocked(false);
     setShowEditor(false);
     setCurrentSessionId(null);
+    setIsCompleted(false);
 
-    // Check for existing sessions
     if (user) {
       const { data: existingSessions } = await supabase
         .from("tutor_sessions")
@@ -470,7 +514,6 @@ export default function NexMentor() {
   };
 
   const handleBackToSelection = () => {
-    // Save session before leaving
     if (currentSessionId) {
       updateSessionMutation.mutate({
         current_step: currentStep,
@@ -488,10 +531,11 @@ export default function NexMentor() {
     setSessionTime(0);
     setIsSessionActive(false);
     setMessages([]);
-    setCurrentStep(0);
+    setCurrentStep(1);
     setLeetcodeUnlocked(false);
     setShowEditor(false);
     setCurrentSessionId(null);
+    setIsCompleted(false);
   };
 
   const sendMessage = async () => {
@@ -527,7 +571,6 @@ export default function NexMentor() {
         throw new Error(errData.error || "Failed to get response");
       }
 
-      // Stream the response
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let assistantMessage = "";
@@ -565,12 +608,11 @@ export default function NexMentor() {
         }
       }
 
-      // Check for step progression cues in the response
       checkStepProgression(assistantMessage);
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error(error instanceof Error ? error.message : "Failed to send message");
-      setMessages((prev) => prev.slice(0, -1)); // Remove the empty assistant message
+      setMessages((prev) => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
     }
@@ -579,24 +621,23 @@ export default function NexMentor() {
   const checkStepProgression = (response: string) => {
     const lowerResponse = response.toLowerCase();
 
-    // Auto-unlock features based on progress
-    if (currentStep < 5 && (lowerResponse.includes("step 5") || lowerResponse.includes("code implementation"))) {
-      setShowEditor(true);
-      setCurrentStep(5);
-    } else if (currentStep === 7 || lowerResponse.includes("step 7")) {
-      setLeetcodeUnlocked(true);
-    }
-
-    // Detect step changes from AI response
-    for (let i = 0; i <= 7; i++) {
-      if (lowerResponse.includes(`[step ${i}/7]`) || lowerResponse.includes(`step ${i}:`)) {
+    // Detect step changes
+    for (let i = 1; i <= 4; i++) {
+      if (lowerResponse.includes(`[step ${i}/4]`) || lowerResponse.includes(`step ${i}:`)) {
         if (i > currentStep) {
           setCurrentStep(i);
-          if (i >= 5) setShowEditor(true);
-          if (i === 7) setLeetcodeUnlocked(true);
+          if (i >= 4) setShowEditor(true);
         }
         break;
       }
+    }
+
+    // Check for completion
+    if (lowerResponse.includes("leetcode pe submit") || lowerResponse.includes("🎉")) {
+      setLeetcodeUnlocked(true);
+      setIsCompleted(true);
+      markQuestionSolvedMutation.mutate();
+      setShowLeetCodeCelebration(true);
     }
   };
 
@@ -621,6 +662,13 @@ export default function NexMentor() {
   const handleStartNewSession = () => {
     setShowSessionsDialog(false);
     startSession(selectedQuestion);
+  };
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(code);
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2000);
+    toast.success("Code copied!");
   };
 
   // QUESTION SELECTION VIEW
@@ -665,7 +713,7 @@ export default function NexMentor() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30"
             >
               <Brain className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-primary">Thinking Training System</span>
+              <span className="text-sm font-medium text-primary">4-Step Thinking Flow</span>
             </motion.div>
 
             <motion.h1
@@ -683,7 +731,7 @@ export default function NexMentor() {
               transition={{ delay: 0.2 }}
               className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base"
             >
-              Not copy them. 7-step guided flow with your AI mentor who never gives direct answers.
+              Train here. Submit on LeetCode. Simple 4-step flow with your AI mentor.
             </motion.p>
 
             {/* Flow Overview */}
@@ -811,7 +859,7 @@ export default function NexMentor() {
                 Resume Previous Session?
               </DialogTitle>
               <DialogDescription>
-                You have an incomplete session for this problem. Would you like to continue where you left off?
+                You have an incomplete session. Continue where you left off?
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 mt-4">
@@ -822,20 +870,20 @@ export default function NexMentor() {
                   onClick={() => loadSession(session, selectedQuestion)}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium">Step {(session.current_step || 0) + 1}/8</span>
+                    <span className="text-sm font-medium">Step {session.current_step || 1}/4</span>
                     <span className="text-xs text-muted-foreground">
                       {formatTime(session.time_spent || 0)} spent
                     </span>
                   </div>
-                  <Progress value={((session.current_step || 0) + 1) / 8 * 100} className="h-1.5" />
+                  <Progress value={((session.current_step || 1) / 4) * 100} className="h-1.5" />
                   <p className="text-xs text-muted-foreground mt-2">
-                    {session.created_at ? new Date(session.created_at).toLocaleDateString() : "Unknown date"}
+                    {session.created_at ? new Date(session.created_at).toLocaleDateString() : "Unknown"}
                   </p>
                 </div>
               ))}
               <Button variant="outline" className="w-full" onClick={handleStartNewSession}>
                 <RotateCcw className="w-4 h-4 mr-2" />
-                Start Fresh Session
+                Start Fresh
               </Button>
             </div>
           </DialogContent>
@@ -844,9 +892,9 @@ export default function NexMentor() {
     );
   }
 
-  // SESSION VIEW
+  // SESSION VIEW - Split layout with fixed code editor
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
       {/* Top Navigation */}
       <header className="bg-card border-b border-border px-3 sm:px-4 py-2 flex-shrink-0">
         <div className="flex items-center justify-between">
@@ -894,200 +942,220 @@ export default function NexMentor() {
         </div>
       </header>
 
-      {/* Mobile Problem Title */}
-      <div className="md:hidden bg-card border-b border-border px-4 py-2">
-        <span className="font-medium text-sm truncate block">{selectedQuestion?.title}</span>
-      </div>
-
-      {/* Step Progress Bar */}
-      <div className="bg-card border-b border-border px-4 py-3">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-muted-foreground">Step {currentStep + 1} of 8</span>
-            <span className="text-xs font-medium text-primary">{STEPS[currentStep]?.name}</span>
-          </div>
-          <Progress value={((currentStep + 1) / 8) * 100} className="h-2" />
-          <div className="flex justify-between mt-2 overflow-x-auto pb-1">
-            {STEPS.map((step) => (
+      {/* Step Progress */}
+      <div className="bg-card border-b border-border px-4 py-2 flex-shrink-0">
+        <div className="flex items-center justify-between gap-4 overflow-x-auto">
+          {STEPS.map((step) => (
+            <div
+              key={step.id}
+              className={cn(
+                "flex items-center gap-2 min-w-fit",
+                step.id <= currentStep ? "text-primary" : "text-muted-foreground"
+              )}
+            >
               <div
-                key={step.id}
                 className={cn(
-                  "flex flex-col items-center min-w-[50px]",
-                  step.id <= currentStep ? "text-primary" : "text-muted-foreground"
+                  "w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium",
+                  step.id < currentStep ? "bg-primary text-primary-foreground" :
+                  step.id === currentStep ? "bg-primary/20 text-primary border-2 border-primary" :
+                  "bg-muted text-muted-foreground"
                 )}
               >
-                <div
-                  className={cn(
-                    "w-6 h-6 rounded-full flex items-center justify-center text-xs mb-1",
-                    step.id < currentStep
-                      ? "bg-primary text-primary-foreground"
-                      : step.id === currentStep
-                      ? "bg-primary/20 border-2 border-primary"
-                      : "bg-muted"
-                  )}
-                >
-                  {step.id < currentStep ? <CheckCircle className="w-3 h-3" /> : step.id + 1}
-                </div>
-                <span className="text-[10px] hidden sm:block">{step.name}</span>
+                {step.id < currentStep ? <CheckCircle className="w-4 h-4" /> : step.id}
               </div>
-            ))}
-          </div>
+              <span className="text-xs font-medium hidden sm:inline">{step.name}</span>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* Left Panel - LeetCode-Identical Problem Description */}
-        <div className="lg:w-[360px] xl:w-[400px] border-b lg:border-b-0 lg:border-r border-border bg-card flex-shrink-0 h-[30vh] lg:h-auto overflow-hidden">
-          <LeetCodeProblemPanel
-            title={selectedQuestion?.title || "Loading..."}
-            difficulty={selectedQuestion?.difficulty || "medium"}
-            description={selectedQuestion?.description || "No description available."}
-            examples={parseHintsToExamples(selectedQuestion?.hints)}
-            constraints={parseConstraints(selectedQuestion?.description)}
-            hints={parseHintsArray(selectedQuestion?.hints)}
-            companies={selectedQuestion?.companies || []}
-            leetcodeLink={selectedQuestion?.leetcode_link}
-            isLeetcodeUnlocked={leetcodeUnlocked}
-            userCode={code}
-          />
-        </div>
-
-        {/* Center/Right - Chat & Code Editor */}
-        <div className="flex-1 flex flex-col lg:flex-row min-w-0">
-          {/* Chat Panel */}
-          <div className={cn("flex-1 flex flex-col min-w-0", showEditor ? "lg:w-1/2" : "w-full")}>
-            {/* Messages */}
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4 max-w-2xl mx-auto">
-                {messages.map((message, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
+      {/* Main Content - Chat + Code Editor */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Chat Panel */}
+        <div className={cn(
+          "flex flex-col",
+          showEditor ? "w-1/2 border-r border-border" : "w-full"
+        )}>
+          {/* Messages */}
+          <ScrollArea className="flex-1 p-4">
+            <div className="space-y-4 max-w-3xl mx-auto">
+              {messages.map((message, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={cn(
+                    "flex",
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  )}
+                >
+                  <div
                     className={cn(
-                      "flex",
-                      message.role === "user" ? "justify-end" : "justify-start"
+                      "max-w-[85%] rounded-2xl px-4 py-3",
+                      message.role === "user"
+                        ? "bg-primary text-primary-foreground rounded-br-md"
+                        : "bg-muted rounded-bl-md"
                     )}
                   >
-                    <div
-                      className={cn(
-                        "max-w-[85%] rounded-2xl px-4 py-3",
-                        message.role === "user"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
-                      )}
-                    >
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                    </div>
-                  </motion.div>
-                ))}
-                {isLoading && (
-                  <div className="flex justify-start">
-                    <div className="bg-muted rounded-2xl px-4 py-3">
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    </div>
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                   </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollArea>
+                </motion.div>
+              ))}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
+                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
 
-            {/* Input */}
-            <div className="p-3 sm:p-4 border-t border-border bg-card">
-              <div className="max-w-2xl mx-auto flex gap-2">
-                <Textarea
-                  placeholder="Type your response..."
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      sendMessage();
-                    }
-                  }}
-                  className="min-h-[44px] max-h-32 resize-none"
-                  rows={1}
-                />
+          {/* Input */}
+          <div className="p-4 border-t border-border bg-card flex-shrink-0">
+            <div className="flex gap-2 max-w-3xl mx-auto">
+              <Textarea
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                placeholder="Type your answer..."
+                className="min-h-[50px] max-h-[120px] resize-none bg-muted/50"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+              />
+              <Button
+                onClick={sendMessage}
+                disabled={isLoading || !inputMessage.trim()}
+                className="h-auto px-4"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Fixed Code Editor Panel - Only shown in Step 4 */}
+        {showEditor && (
+          <div className="w-1/2 flex flex-col bg-[#1e1e1e]">
+            {/* Editor Header */}
+            <div className="flex items-center justify-between px-4 py-2 border-b border-border/30 bg-[#252526]">
+              <Select value={language} onValueChange={handleLanguageChange}>
+                <SelectTrigger className="w-[120px] h-8 bg-transparent border-border/50 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {LANGUAGES.map((lang) => (
+                    <SelectItem key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <div className="flex items-center gap-2">
                 <Button
-                  size="icon"
-                  onClick={sendMessage}
-                  disabled={!inputMessage.trim() || isLoading}
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs bg-transparent border-border/50 text-white hover:bg-white/10"
+                  onClick={handleCopyCode}
                 >
-                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {codeCopied ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
+                  Copy
                 </Button>
               </div>
             </div>
-          </div>
 
-          {/* Code Editor Panel - Only visible from Step 5 */}
-          <AnimatePresence>
-            {showEditor && (
-              <motion.div
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: "50%", opacity: 1 }}
-                exit={{ width: 0, opacity: 0 }}
-                className="hidden lg:flex flex-col border-l border-border"
-              >
-                <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/50">
-                  <Select value={language} onValueChange={handleLanguageChange}>
-                    <SelectTrigger className="w-[120px] h-8 bg-background border-border text-sm">
-                      <SelectValue placeholder="Language" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {LANGUAGES.map((lang) => (
-                        <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Badge variant="outline" className="text-xs">
-                    <Code2 className="w-3 h-3 mr-1" />
-                    Step 5+
-                  </Badge>
-                </div>
-                <div className="flex-1 min-h-0">
-                  <Editor
-                    height="100%"
-                    language={LANGUAGE_CONFIG[language]?.monacoLang || "python"}
-                    value={code}
-                    onChange={(value) => setCode(value || "")}
-                    theme="vs-dark"
-                    options={{
-                      minimap: { enabled: false },
-                      fontSize: 14,
-                      lineNumbers: "on",
-                      scrollBeyondLastLine: false,
-                      automaticLayout: true,
-                      tabSize: 4,
-                      wordWrap: "on",
-                      padding: { top: 12 },
-                    }}
-                    loading={
-                      <div className="flex items-center justify-center h-full">
-                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                      </div>
-                    }
-                  />
-                </div>
-              </motion.div>
+            {/* Monaco Editor */}
+            <div className="flex-1">
+              <Editor
+                height="100%"
+                language={LANGUAGE_CONFIG[language]?.monacoLang || "python"}
+                value={code}
+                onChange={(value) => setCode(value || "")}
+                theme="vs-dark"
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 14,
+                  lineNumbers: "on",
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                  tabSize: 4,
+                  wordWrap: "on",
+                  padding: { top: 16 },
+                }}
+              />
+            </div>
+
+            {/* Completion Button */}
+            {isCompleted && (
+              <div className="p-4 bg-emerald-500/10 border-t border-emerald-500/30">
+                <Button
+                  className="w-full bg-emerald-600 hover:bg-emerald-700"
+                  onClick={() => setShowLeetCodeCelebration(true)}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Submit on LeetCode
+                </Button>
+              </div>
             )}
-          </AnimatePresence>
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* Mobile Code Editor Toggle */}
-      {showEditor && (
-        <div className="lg:hidden fixed bottom-20 right-4 z-50">
-          <Button
-            size="icon"
-            variant="secondary"
-            className="rounded-full w-12 h-12 shadow-lg"
-            onClick={() => toast.info("Use desktop for code editor")}
+      {/* LeetCode Celebration Dialog */}
+      <Dialog open={showLeetCodeCelebration} onOpenChange={setShowLeetCodeCelebration}>
+        <DialogContent className="max-w-md text-center">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="py-4"
           >
-            <Code2 className="w-5 h-5" />
-          </Button>
-        </div>
-      )}
+            <div className="w-20 h-20 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trophy className="w-10 h-10 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">🎉 Congratulations!</h2>
+            <p className="text-muted-foreground mb-6">
+              You've completed the thinking flow! Now submit your solution on LeetCode.
+            </p>
+            
+            <div className="space-y-3">
+              <Button
+                className="w-full"
+                onClick={handleCopyCode}
+              >
+                {codeCopied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
+                {codeCopied ? "Code Copied!" : "Copy Code"}
+              </Button>
+              
+              {selectedQuestion?.leetcode_link && (
+                <a
+                  href={selectedQuestion.leetcode_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block"
+                >
+                  <Button variant="outline" className="w-full">
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Open LeetCode Problem
+                  </Button>
+                </a>
+              )}
+              
+              <Button
+                variant="ghost"
+                className="w-full"
+                onClick={handleBackToSelection}
+              >
+                Practice Another Problem
+              </Button>
+            </div>
+          </motion.div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
