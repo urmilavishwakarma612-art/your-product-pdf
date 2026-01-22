@@ -156,7 +156,7 @@ export default function Pricing() {
     yearly: 149900,
   };
 
-  // Calculate discounted prices
+  // Calculate discounted prices - ensure never negative
   const getDiscountedPrice = (plan: PlanType) => {
     const basePrice = basePrices[plan];
     if (!appliedCoupon) return basePrice;
@@ -167,7 +167,18 @@ export default function Pricing() {
         ? appliedCoupon.sixMonthDiscount * 100
         : appliedCoupon.yearlyDiscount * 100;
     
-    return basePrice - discount;
+    // Ensure price never goes below 0
+    return Math.max(0, basePrice - discount);
+  };
+
+  // Get discount amount for display
+  const getDiscountAmount = (plan: PlanType) => {
+    if (!appliedCoupon) return 0;
+    return plan === 'monthly' 
+      ? appliedCoupon.monthlyDiscount
+      : plan === 'six_month' 
+        ? appliedCoupon.sixMonthDiscount
+        : appliedCoupon.yearlyDiscount;
   };
 
   const handleUpgrade = async (plan: PlanType) => {
@@ -293,6 +304,23 @@ export default function Pricing() {
             {/* Countdown Timer */}
             <CountdownTimer />
 
+            {/* Coupon Hint - Show available offer */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="max-w-md mx-auto mb-4"
+            >
+              <div className="glass-card p-3 border-primary/30 bg-gradient-to-r from-primary/5 to-secondary/5">
+                <div className="flex items-center justify-center gap-2 text-sm">
+                  <Tag className="w-4 h-4 text-primary" />
+                  <span className="font-medium text-primary">Launch Offer:</span>
+                  <code className="px-2 py-0.5 rounded bg-primary/10 text-primary font-bold">NEX100</code>
+                  <span className="text-muted-foreground">• Save up to ₹300</span>
+                </div>
+              </div>
+            </motion.div>
+
             {/* Coupon Input */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -317,9 +345,16 @@ export default function Pricing() {
                 whileHover={{ y: -4 }}
                 onClick={() => setSelectedPlan('monthly')}
                 className={`interactive-card p-4 sm:p-6 relative cursor-pointer transition-all ${
-                  selectedPlan === 'monthly' ? 'ring-2 ring-primary' : ''
+                  selectedPlan === 'monthly' ? 'ring-2 ring-primary border-primary' : ''
                 }`}
               >
+                {selectedPlan === 'monthly' && (
+                  <div className="absolute top-3 right-3">
+                    <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                      <Check className="w-3 h-3 text-primary-foreground" />
+                    </div>
+                  </div>
+                )}
                 <div className="mb-4 sm:mb-6">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-success/10 border border-success/20 mb-3">
                     <span className="text-xs font-medium text-success">🟢 Monthly Plan</span>
@@ -329,7 +364,7 @@ export default function Pricing() {
 
                 <div className="mb-4 sm:mb-6">
                   <div className="flex items-baseline gap-2">
-                    {appliedCoupon && appliedCoupon.monthlyDiscount > 0 && (
+                    {appliedCoupon && getDiscountAmount('monthly') > 0 && (
                       <span className="text-base text-muted-foreground line-through">₹199</span>
                     )}
                     <span className="text-3xl sm:text-4xl font-bold gradient-text">
@@ -337,16 +372,16 @@ export default function Pricing() {
                     </span>
                     <span className="text-muted-foreground text-sm">/month</span>
                   </div>
-                  {appliedCoupon && appliedCoupon.monthlyDiscount > 0 && (
+                  {appliedCoupon && getDiscountAmount('monthly') > 0 && (
                     <p className="text-xs text-success mt-1 flex items-center gap-1">
                       <Tag className="w-3 h-3" />
-                      Save ₹{appliedCoupon.monthlyDiscount}
+                      Save ₹{getDiscountAmount('monthly')}
                     </p>
                   )}
                 </div>
 
                 <Button 
-                  variant="outline"
+                  variant={selectedPlan === 'monthly' ? 'default' : 'outline'}
                   className="w-full rounded-xl h-10 text-sm" 
                   size="lg"
                   onClick={(e) => {
@@ -403,7 +438,7 @@ export default function Pricing() {
 
                   <div className="mb-4 sm:mb-6">
                     <div className="flex items-baseline gap-2">
-                      {appliedCoupon && appliedCoupon.sixMonthDiscount > 0 && (
+                      {appliedCoupon && getDiscountAmount('six_month') > 0 && (
                         <span className="text-base text-muted-foreground line-through">₹999</span>
                       )}
                       <span className="text-3xl sm:text-4xl font-bold gradient-text">
@@ -414,10 +449,10 @@ export default function Pricing() {
                     <p className="text-xs text-success mt-1 font-medium">
                       ≈ ₹{Math.round(getDiscountedPrice('six_month') / 600)}/month
                     </p>
-                    {appliedCoupon && appliedCoupon.sixMonthDiscount > 0 && (
+                    {appliedCoupon && getDiscountAmount('six_month') > 0 && (
                       <p className="text-xs text-success mt-1 flex items-center gap-1">
                         <Tag className="w-3 h-3" />
-                        Save ₹{appliedCoupon.sixMonthDiscount}
+                        Save ₹{getDiscountAmount('six_month')}
                       </p>
                     )}
                   </div>
@@ -463,7 +498,7 @@ export default function Pricing() {
 
                 <div className="mb-4 sm:mb-6">
                   <div className="flex items-baseline gap-2">
-                    {appliedCoupon && appliedCoupon.yearlyDiscount > 0 && (
+                    {appliedCoupon && getDiscountAmount('yearly') > 0 && (
                       <span className="text-base text-muted-foreground line-through">₹1,499</span>
                     )}
                     <span className="text-3xl sm:text-4xl font-bold gradient-text">
@@ -474,13 +509,13 @@ export default function Pricing() {
                   <p className="text-xs text-success mt-1 font-medium">
                     ≈ ₹{Math.round(getDiscountedPrice('yearly') / 1200)}/month
                   </p>
-                  {appliedCoupon && appliedCoupon.yearlyDiscount > 0 && (
+                  {appliedCoupon && getDiscountAmount('yearly') > 0 && (
                     <p className="text-xs text-success mt-1 flex items-center gap-1">
                       <Tag className="w-3 h-3" />
-                      Save ₹{appliedCoupon.yearlyDiscount}
+                      Save ₹{getDiscountAmount('yearly')}
                     </p>
                   )}
-                  <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20">
+                </div>
                     <Crown className="w-3 h-3 text-violet-400" />
                     <span className="text-xs font-medium text-violet-400">Best Value</span>
                   </div>

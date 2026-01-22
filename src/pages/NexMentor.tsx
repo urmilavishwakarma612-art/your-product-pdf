@@ -27,6 +27,8 @@ import {
   ExternalLink,
   Copy,
   Check,
+  Lock,
+  GripVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +58,12 @@ import Editor from "@monaco-editor/react";
 import { cn } from "@/lib/utils";
 import { Json } from "@/integrations/supabase/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import { LeetCodeProblemPanel } from "@/components/nexmentor/LeetCodeProblemPanel";
 
 // SIMPLIFIED 4-STEP FLOW
 const STEPS = [
@@ -119,6 +127,40 @@ type SavedSession = {
   problem_solved: boolean | null;
 };
 
+// Helper functions to parse question data
+function parseTestCasesToExamples(testCases: any): { input: string; output: string; explanation?: string }[] {
+  if (!testCases || !Array.isArray(testCases)) return [];
+  return testCases.map((tc: any) => ({
+    input: tc.input || "",
+    output: tc.output || "",
+    explanation: tc.explanation,
+  }));
+}
+
+function parseConstraints(description: string): string[] {
+  const constraints: string[] = [];
+  const constraintMatch = description?.match(/Constraints?:\s*([\s\S]*?)(?=\n\n|$)/i);
+  if (constraintMatch) {
+    const lines = constraintMatch[1].split('\n');
+    lines.forEach(line => {
+      const cleaned = line.replace(/^[\s•-]+/, '').trim();
+      if (cleaned) constraints.push(cleaned);
+    });
+  }
+  return constraints;
+}
+
+function parseHintsArray(hints: any): string[] {
+  if (!hints) return [];
+  if (Array.isArray(hints)) {
+    return hints.map(h => typeof h === 'string' ? h : h?.text || '').filter(Boolean);
+  }
+  if (typeof hints === 'object') {
+    return Object.values(hints).map(h => typeof h === 'string' ? h : '').filter(Boolean);
+  }
+  return [];
+}
+
 export default function NexMentor() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -150,7 +192,6 @@ export default function NexMentor() {
   // Code editor state
   const [language, setLanguage] = useState("python");
   const [code, setCode] = useState(LANGUAGE_CONFIG["python"].template);
-  const [showEditor, setShowEditor] = useState(false);
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -384,7 +425,6 @@ export default function NexMentor() {
     setLanguage(session.language || "python");
     setLeetcodeUnlocked(session.leetcode_unlocked || false);
     setSessionTime(session.time_spent || 0);
-    setShowEditor((session.current_step || 1) >= 4);
     setSelectedQuestion(question);
     setViewMode("session");
     setIsSessionActive(true);
@@ -489,7 +529,6 @@ export default function NexMentor() {
     setSessionTime(0);
     setCode(LANGUAGE_CONFIG[language].template);
     setLeetcodeUnlocked(false);
-    setShowEditor(false);
     setCurrentSessionId(null);
     setIsCompleted(false);
 
@@ -533,7 +572,6 @@ export default function NexMentor() {
     setMessages([]);
     setCurrentStep(1);
     setLeetcodeUnlocked(false);
-    setShowEditor(false);
     setCurrentSessionId(null);
     setIsCompleted(false);
   };
@@ -561,7 +599,7 @@ export default function NexMentor() {
             questionDescription: selectedQuestion?.description,
             userMessage,
             conversationHistory: messages.map((m) => ({ role: m.role, content: m.content })),
-            userCode: showEditor ? code : undefined,
+            userCode: currentStep >= 4 ? code : undefined,
           }),
         }
       );
@@ -626,7 +664,6 @@ export default function NexMentor() {
       if (lowerResponse.includes(`[step ${i}/4]`) || lowerResponse.includes(`step ${i}:`)) {
         if (i > currentStep) {
           setCurrentStep(i);
-          if (i >= 4) setShowEditor(true);
         }
         break;
       }
@@ -892,7 +929,7 @@ export default function NexMentor() {
     );
   }
 
-  // SESSION VIEW - Split layout with fixed code editor
+  // SESSION VIEW - 3-Section Resizable Layout
   return (
     <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
       {/* Top Navigation */}
@@ -969,80 +1006,68 @@ export default function NexMentor() {
         </div>
       </div>
 
-      {/* Main Content - Chat + Code Editor */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Chat Panel */}
-        <div className={cn(
-          "flex flex-col",
-          showEditor ? "w-1/2 border-r border-border" : "w-full"
-        )}>
-          {/* Messages */}
-          <ScrollArea className="flex-1 p-4">
-            <div className="space-y-4 max-w-3xl mx-auto">
-              {messages.map((message, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={cn(
-                    "flex",
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "max-w-[85%] rounded-2xl px-4 py-3",
-                      message.role === "user"
-                        ? "bg-primary text-primary-foreground rounded-br-md"
-                        : "bg-muted rounded-bl-md"
-                    )}
-                  >
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+      {/* Main Content - 3 Section Resizable Layout */}
+      <ResizablePanelGroup direction="horizontal" className="flex-1">
+        {/* LEFT: Problem Description */}
+        <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+          <div className="h-full overflow-hidden border-r border-border">
+            <LeetCodeProblemPanel
+              title={selectedQuestion?.title || ""}
+              difficulty={selectedQuestion?.difficulty || "medium"}
+              description={selectedQuestion?.description || ""}
+              examples={parseTestCasesToExamples(selectedQuestion?.test_cases)}
+              constraints={parseConstraints(selectedQuestion?.description)}
+              hints={parseHintsArray(selectedQuestion?.hints)}
+              companies={selectedQuestion?.companies || []}
+              leetcodeLink={selectedQuestion?.leetcode_link}
+              isLeetcodeUnlocked={leetcodeUnlocked}
+              userCode={code}
+            />
+          </div>
+        </ResizablePanel>
+
+        <ResizableHandle withHandle />
+
+        {/* MIDDLE: Code Editor (Fixed, locked until step 4) */}
+        <ResizablePanel defaultSize={40} minSize={30} maxSize={50}>
+          <div className="h-full flex flex-col bg-[#1e1e1e] relative">
+            {/* Lock Overlay for Steps 1-3 */}
+            {currentStep < 4 && (
+              <div className="absolute inset-0 z-10 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6">
+                <div className="bg-slate-800/90 p-6 rounded-xl border border-slate-700 text-center max-w-sm">
+                  <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-4">
+                    <Lock className="w-8 h-8 text-amber-500" />
                   </div>
-                </motion.div>
-              ))}
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
-                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                  <h3 className="text-white font-bold text-lg mb-2">Code Editor Locked</h3>
+                  <p className="text-slate-300 text-sm mb-4">
+                    Complete the thinking flow (Steps 1-3) to unlock the code editor.
+                  </p>
+                  <div className="space-y-2">
+                    {STEPS.slice(0, 3).map((step) => (
+                      <div 
+                        key={step.id}
+                        className={cn(
+                          "flex items-center gap-2 text-sm px-3 py-2 rounded-lg",
+                          step.id < currentStep ? "bg-emerald-500/20 text-emerald-400" :
+                          step.id === currentStep ? "bg-primary/20 text-primary" :
+                          "bg-slate-700/50 text-slate-400"
+                        )}
+                      >
+                        {step.id < currentStep ? (
+                          <CheckCircle className="w-4 h-4" />
+                        ) : (
+                          <step.icon className="w-4 h-4" />
+                        )}
+                        <span>{step.name}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
+              </div>
+            )}
 
-          {/* Input */}
-          <div className="p-4 border-t border-border bg-card flex-shrink-0">
-            <div className="flex gap-2 max-w-3xl mx-auto">
-              <Textarea
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Type your answer..."
-                className="min-h-[50px] max-h-[120px] resize-none bg-muted/50"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                  }
-                }}
-              />
-              <Button
-                onClick={sendMessage}
-                disabled={isLoading || !inputMessage.trim()}
-                className="h-auto px-4"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Fixed Code Editor Panel - Only shown in Step 4 */}
-        {showEditor && (
-          <div className="w-1/2 flex flex-col bg-[#1e1e1e]">
             {/* Editor Header */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-border/30 bg-[#252526]">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-border/30 bg-[#252526] flex-shrink-0">
               <Select value={language} onValueChange={handleLanguageChange}>
                 <SelectTrigger className="w-[120px] h-8 bg-transparent border-border/50 text-white">
                   <SelectValue />
@@ -1062,6 +1087,7 @@ export default function NexMentor() {
                   size="sm"
                   className="h-7 text-xs bg-transparent border-border/50 text-white hover:bg-white/10"
                   onClick={handleCopyCode}
+                  disabled={currentStep < 4}
                 >
                   {codeCopied ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
                   Copy
@@ -1070,7 +1096,7 @@ export default function NexMentor() {
             </div>
 
             {/* Monaco Editor */}
-            <div className="flex-1">
+            <div className="flex-1 min-h-0">
               <Editor
                 height="100%"
                 language={LANGUAGE_CONFIG[language]?.monacoLang || "python"}
@@ -1086,25 +1112,117 @@ export default function NexMentor() {
                   tabSize: 4,
                   wordWrap: "on",
                   padding: { top: 16 },
+                  readOnly: currentStep < 4,
                 }}
               />
             </div>
 
-            {/* Completion Button */}
-            {isCompleted && (
-              <div className="p-4 bg-emerald-500/10 border-t border-emerald-500/30">
+            {/* Action Buttons for Step 4 */}
+            {currentStep >= 4 && (
+              <div className="p-3 bg-[#252526] border-t border-border/30 flex gap-2 flex-shrink-0">
                 <Button
-                  className="w-full bg-emerald-600 hover:bg-emerald-700"
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 bg-transparent border-border/50 text-white hover:bg-white/10"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Run
+                </Button>
+                <Button
+                  size="sm"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  disabled={!isCompleted}
                   onClick={() => setShowLeetCodeCelebration(true)}
                 >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Submit on LeetCode
+                  <Upload className="w-4 h-4 mr-2" />
+                  Submit
                 </Button>
               </div>
             )}
           </div>
-        )}
-      </div>
+        </ResizablePanel>
+
+        <ResizableHandle withHandle />
+
+        {/* RIGHT: NexMentor Chat */}
+        <ResizablePanel defaultSize={35} minSize={25} maxSize={45}>
+          <div className="h-full flex flex-col bg-card">
+            {/* Chat Header */}
+            <div className="px-4 py-3 border-b border-border flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Brain className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm">NexMentor</h3>
+                  <p className="text-xs text-muted-foreground">Step {currentStep}/4 • {STEPS[currentStep - 1]?.name}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-4">
+                {messages.map((message, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={cn(
+                      "flex",
+                      message.role === "user" ? "justify-end" : "justify-start"
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "max-w-[90%] rounded-2xl px-4 py-3",
+                        message.role === "user"
+                          ? "bg-primary text-primary-foreground rounded-br-md"
+                          : "bg-muted rounded-bl-md"
+                      )}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    </div>
+                  </motion.div>
+                ))}
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
+                      <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+
+            {/* Input */}
+            <div className="p-4 border-t border-border flex-shrink-0">
+              <div className="flex gap-2">
+                <Textarea
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  placeholder="Type your answer..."
+                  className="min-h-[50px] max-h-[100px] resize-none bg-muted/50"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
+                />
+                <Button
+                  onClick={sendMessage}
+                  disabled={isLoading || !inputMessage.trim()}
+                  className="h-auto px-4"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
 
       {/* LeetCode Celebration Dialog */}
       <Dialog open={showLeetCodeCelebration} onOpenChange={setShowLeetCodeCelebration}>

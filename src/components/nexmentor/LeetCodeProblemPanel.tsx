@@ -172,7 +172,7 @@ export function LeetCodeProblemPanel({
             >
               <Lock className="w-4 h-4 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">
-                Complete all 7 steps to unlock LeetCode submission
+                Complete all 4 steps to unlock LeetCode submission
               </span>
             </motion.div>
           )}

@@ -305,6 +305,7 @@ function NavLinks({ mobile, onClick }: { mobile?: boolean; onClick?: () => void 
     { href: "/tutor", label: "NexMentor", isRoute: true },
     { href: "/curriculum", label: "Curriculum", isRoute: true },
     { href: "/interview", label: "Interview", isRoute: true },
+    { href: "/pricing", label: "Pricing", isRoute: true },
     { href: "/dashboard", label: "Dashboard", isRoute: true },
   ];
 
