@@ -688,7 +688,7 @@ export default function NexMentor() {
   const checkStepProgression = (response: string) => {
     const lowerResponse = response.toLowerCase();
 
-    // Detect step changes more reliably (handles: [Step 4/4: ...], [Step 4/4] etc.)
+    // Detect step changes (handles: [Step 4/4: ...], [Step 4/4] etc.)
     let detectedStep: number | null = null;
     for (let i = 4; i >= 1; i--) {
       const re = new RegExp(`\\[\\s*step\\s*${i}\\s*\\/\\s*4`, "i");
@@ -696,6 +696,19 @@ export default function NexMentor() {
         detectedStep = i;
         break;
       }
+    }
+
+    // Fallback unlock logic:
+    // Sometimes the mentor replies with [Step 3/4] but still says “ab code karo”.
+    // In that case, we must transition to Step 4 so the editor unlocks.
+    if (!detectedStep) {
+      const step4Intent =
+        /\b(step\s*4|4\s*\/\s*4|code\s*&\s*verify|code\s+kar(o|na)|ab\s+code|editor\s+unlock|unlock\s+the\s+editor|now\s+code)\b/i.test(
+          response
+        ) ||
+        lowerResponse.includes("leetcode pe submit");
+
+      if (step4Intent) detectedStep = 4;
     }
 
     if (detectedStep) {
@@ -1429,29 +1442,36 @@ export default function NexMentor() {
               </div>
             </ScrollArea>
 
-            {/* Input */}
+            {/* Input (Steps 1-3 only). Step 4 = code in editor, not chat. */}
             <div className="p-4 border-t border-border flex-shrink-0">
-              <div className="flex gap-2">
-                <Textarea
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  placeholder="Type your answer..."
-                  className="min-h-[50px] max-h-[100px] resize-none bg-muted/50"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      sendMessage();
-                    }
-                  }}
-                />
-                <Button
-                  onClick={sendMessage}
-                  disabled={isLoading || !inputMessage.trim()}
-                  className="h-auto px-4"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
+              {currentStep < 4 ? (
+                <div className="flex gap-2">
+                  <Textarea
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    placeholder="Type your answer..."
+                    className="min-h-[50px] max-h-[100px] resize-none bg-muted/50"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                      }
+                    }}
+                    disabled={isLoading}
+                  />
+                  <Button
+                    onClick={sendMessage}
+                    disabled={isLoading || !inputMessage.trim()}
+                    className="h-auto px-4"
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+                  Step 4 active — code editor me coding karo. Chat me code nahi. Run/Submit buttons use karo.
+                </div>
+              )}
             </div>
           </div>
         </ResizablePanel>
