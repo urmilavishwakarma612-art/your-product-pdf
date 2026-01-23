@@ -17,9 +17,11 @@ type PaymentStatus = 'loading' | 'success' | 'error' | null;
 
 interface AppliedCoupon {
   code: string;
+  // NOTE: stored in the backend as amounts in paise (not ₹)
   monthlyDiscount: number;
   sixMonthDiscount: number;
   yearlyDiscount: number;
+  discountType?: "fixed" | "percentage";
 }
 
 // Countdown Timer Component
@@ -156,30 +158,38 @@ export default function Pricing() {
     yearly: 149900,
   };
 
-  // Calculate discounted prices - ensure never negative
-  const getDiscountedPrice = (plan: PlanType) => {
-    const basePrice = basePrices[plan];
-    if (!appliedCoupon) return basePrice;
-    
-    const discount = plan === 'monthly' 
-      ? appliedCoupon.monthlyDiscount * 100
-      : plan === 'six_month' 
-        ? appliedCoupon.sixMonthDiscount * 100
-        : appliedCoupon.yearlyDiscount * 100;
-    
-    // Ensure price never goes below 0
-    return Math.max(0, basePrice - discount);
+  const getBasePrice = (plan: PlanType) => basePrices[plan];
+
+  const getDiscountPaise = (plan: PlanType) => {
+    if (!appliedCoupon) return 0;
+    const basePrice = getBasePrice(plan);
+
+    const raw =
+      plan === "monthly"
+        ? appliedCoupon.monthlyDiscount
+        : plan === "six_month"
+          ? appliedCoupon.sixMonthDiscount
+          : appliedCoupon.yearlyDiscount;
+
+    // Backward compatible:
+    // - fixed coupons store amounts in paise (e.g., ₹50 => 5000)
+    // - percentage coupons store percent (e.g., 10 => 10%)
+    const discountType = appliedCoupon.discountType || "fixed";
+    const discountPaise =
+      discountType === "percentage" ? Math.round(basePrice * (raw / 100)) : raw;
+
+    // Never exceed base price
+    return Math.min(Math.max(0, discountPaise), basePrice);
   };
 
-  // Get discount amount for display
-  const getDiscountAmount = (plan: PlanType) => {
-    if (!appliedCoupon) return 0;
-    return plan === 'monthly' 
-      ? appliedCoupon.monthlyDiscount
-      : plan === 'six_month' 
-        ? appliedCoupon.sixMonthDiscount
-        : appliedCoupon.yearlyDiscount;
+  // Calculate discounted prices - ensure never negative
+  const getDiscountedPrice = (plan: PlanType) => {
+    const basePrice = getBasePrice(plan);
+    const discountPaise = getDiscountPaise(plan);
+    return Math.max(0, basePrice - discountPaise);
   };
+
+  const formatRupees = (paise: number) => Math.round(paise / 100);
 
   const handleUpgrade = async (plan: PlanType) => {
     if (!user) {
@@ -229,6 +239,7 @@ export default function Pricing() {
     sixMonthDiscount: number;
     yearlyDiscount: number;
     couponId: string;
+    discountType?: "fixed" | "percentage";
   }) => {
     setAppliedCoupon(coupon);
   };
@@ -364,7 +375,7 @@ export default function Pricing() {
 
                 <div className="mb-4 sm:mb-6">
                   <div className="flex items-baseline gap-2">
-                    {appliedCoupon && getDiscountAmount('monthly') > 0 && (
+                      {appliedCoupon && getDiscountPaise('monthly') > 0 && (
                       <span className="text-base text-muted-foreground line-through">₹199</span>
                     )}
                     <span className="text-3xl sm:text-4xl font-bold gradient-text">
@@ -372,10 +383,10 @@ export default function Pricing() {
                     </span>
                     <span className="text-muted-foreground text-sm">/month</span>
                   </div>
-                  {appliedCoupon && getDiscountAmount('monthly') > 0 && (
+                  {appliedCoupon && getDiscountPaise('monthly') > 0 && (
                     <p className="text-xs text-success mt-1 flex items-center gap-1">
                       <Tag className="w-3 h-3" />
-                      Save ₹{getDiscountAmount('monthly')}
+                      Save ₹{formatRupees(getDiscountPaise('monthly'))}
                     </p>
                   )}
                 </div>
@@ -438,7 +449,7 @@ export default function Pricing() {
 
                   <div className="mb-4 sm:mb-6">
                     <div className="flex items-baseline gap-2">
-                      {appliedCoupon && getDiscountAmount('six_month') > 0 && (
+                      {appliedCoupon && getDiscountPaise('six_month') > 0 && (
                         <span className="text-base text-muted-foreground line-through">₹999</span>
                       )}
                       <span className="text-3xl sm:text-4xl font-bold gradient-text">
@@ -449,10 +460,10 @@ export default function Pricing() {
                     <p className="text-xs text-success mt-1 font-medium">
                       ≈ ₹{Math.round(getDiscountedPrice('six_month') / 600)}/month
                     </p>
-                    {appliedCoupon && getDiscountAmount('six_month') > 0 && (
+                    {appliedCoupon && getDiscountPaise('six_month') > 0 && (
                       <p className="text-xs text-success mt-1 flex items-center gap-1">
                         <Tag className="w-3 h-3" />
-                        Save ₹{getDiscountAmount('six_month')}
+                        Save ₹{formatRupees(getDiscountPaise('six_month'))}
                       </p>
                     )}
                   </div>
@@ -498,7 +509,7 @@ export default function Pricing() {
 
                 <div className="mb-4 sm:mb-6">
                   <div className="flex items-baseline gap-2">
-                    {appliedCoupon && getDiscountAmount('yearly') > 0 && (
+                    {appliedCoupon && getDiscountPaise('yearly') > 0 && (
                       <span className="text-base text-muted-foreground line-through">₹1,499</span>
                     )}
                     <span className="text-3xl sm:text-4xl font-bold gradient-text">
@@ -509,10 +520,10 @@ export default function Pricing() {
                   <p className="text-xs text-success mt-1 font-medium">
                     ≈ ₹{Math.round(getDiscountedPrice('yearly') / 1200)}/month
                   </p>
-                  {appliedCoupon && getDiscountAmount('yearly') > 0 && (
+                  {appliedCoupon && getDiscountPaise('yearly') > 0 && (
                     <p className="text-xs text-success mt-1 flex items-center gap-1">
                       <Tag className="w-3 h-3" />
-                      Save ₹{getDiscountAmount('yearly')}
+                      Save ₹{formatRupees(getDiscountPaise('yearly'))}
                     </p>
                   )}
                   <div className="inline-flex items-center gap-1 mt-2">

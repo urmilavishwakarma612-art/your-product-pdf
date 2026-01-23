@@ -64,6 +64,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { LeetCodeProblemPanel } from "@/components/nexmentor/LeetCodeProblemPanel";
+import { TestCaseResults, type TestCaseResult } from "@/components/interview/TestCaseResults";
 
 // SIMPLIFIED 4-STEP FLOW
 const STEPS = [
@@ -171,6 +172,14 @@ export default function NexMentor() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Monaco refs (for markers)
+  const monacoRef = useRef<any>(null);
+  const editorRef = useRef<any>(null);
+  const analysisTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSuggestionAtRef = useRef<number>(0);
+  const step4UnlockedAtRef = useRef<number | null>(null);
+  const firstKeystrokeAtRef = useRef<number | null>(null);
+
   // View state
   const [viewMode, setViewMode] = useState<ViewMode>(questionId ? "session" : "selection");
   const [selectedQuestion, setSelectedQuestion] = useState<any>(null);
@@ -192,6 +201,14 @@ export default function NexMentor() {
   // Code editor state
   const [language, setLanguage] = useState("python");
   const [code, setCode] = useState(LANGUAGE_CONFIG["python"].template);
+
+  // Run/submit state (Step 4)
+  const [runCount, setRunCount] = useState(0);
+  const [isRunningTests, setIsRunningTests] = useState(false);
+  const [isSubmittingCode, setIsSubmittingCode] = useState(false);
+  const [lastRunSummary, setLastRunSummary] = useState<{ passed: number; total: number } | null>(null);
+  const [testResults, setTestResults] = useState<TestCaseResult[]>([]);
+  const [showTestResults, setShowTestResults] = useState(false);
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -531,6 +548,12 @@ export default function NexMentor() {
     setLeetcodeUnlocked(false);
     setCurrentSessionId(null);
     setIsCompleted(false);
+    setRunCount(0);
+    setLastRunSummary(null);
+    setTestResults([]);
+    setShowTestResults(false);
+    step4UnlockedAtRef.current = null;
+    firstKeystrokeAtRef.current = null;
 
     if (user) {
       const { data: existingSessions } = await supabase
@@ -574,6 +597,12 @@ export default function NexMentor() {
     setLeetcodeUnlocked(false);
     setCurrentSessionId(null);
     setIsCompleted(false);
+    setRunCount(0);
+    setLastRunSummary(null);
+    setTestResults([]);
+    setShowTestResults(false);
+    step4UnlockedAtRef.current = null;
+    firstKeystrokeAtRef.current = null;
   };
 
   const sendMessage = async () => {
@@ -659,22 +688,26 @@ export default function NexMentor() {
   const checkStepProgression = (response: string) => {
     const lowerResponse = response.toLowerCase();
 
-    // Detect step changes
-    for (let i = 1; i <= 4; i++) {
-      if (lowerResponse.includes(`[step ${i}/4]`) || lowerResponse.includes(`step ${i}:`)) {
-        if (i > currentStep) {
-          setCurrentStep(i);
-        }
+    // Detect step changes more reliably (handles: [Step 4/4: ...], [Step 4/4] etc.)
+    let detectedStep: number | null = null;
+    for (let i = 4; i >= 1; i--) {
+      const re = new RegExp(`\\[\\s*step\\s*${i}\\s*\\/\\s*4`, "i");
+      if (re.test(response) || lowerResponse.includes(`step ${i}/4`)) {
+        detectedStep = i;
         break;
       }
     }
 
-    // Check for completion
-    if (lowerResponse.includes("leetcode pe submit") || lowerResponse.includes("🎉")) {
-      setLeetcodeUnlocked(true);
-      setIsCompleted(true);
-      markQuestionSolvedMutation.mutate();
-      setShowLeetCodeCelebration(true);
+    if (detectedStep) {
+      setCurrentStep((prev) => {
+        const next = Math.max(prev, detectedStep!);
+        return next;
+      });
+
+      if (detectedStep >= 4 && !step4UnlockedAtRef.current) {
+        step4UnlockedAtRef.current = Date.now();
+        toast.success("Step 4 unlocked — now code in the editor!");
+      }
     }
   };
 
@@ -707,6 +740,186 @@ export default function NexMentor() {
     setTimeout(() => setCodeCopied(false), 2000);
     toast.success("Code copied!");
   };
+
+  const handleRunCode = async () => {
+    if (!selectedQuestion) return;
+    if (currentStep < 4) {
+      toast.error("Complete Steps 1-3 to unlock coding");
+      return;
+    }
+    if (!code || code.trim().length < 20) {
+      toast.error("Please write more code before running tests");
+      return;
+    }
+
+    setIsRunningTests(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("run-test-cases", {
+        body: {
+          code,
+          language,
+          questionTitle: selectedQuestion.title,
+          difficulty: selectedQuestion.difficulty,
+        },
+      });
+      if (error) throw error;
+
+      setRunCount((c) => c + 1);
+      setTestResults((data?.results || []) as TestCaseResult[]);
+      setLastRunSummary({ passed: data?.passed || 0, total: data?.total || 0 });
+      setShowTestResults(true);
+
+      const passed = data?.passed || 0;
+      const total = data?.total || 0;
+      if (total > 0 && passed === total) toast.success(`All ${total} test cases passed!`);
+      else toast.info(`${passed}/${total} test cases passed.`);
+    } catch (e) {
+      console.error("Run tests error:", e);
+      toast.error("Failed to run tests. Try again.");
+    } finally {
+      setIsRunningTests(false);
+    }
+  };
+
+  const handleSubmitCode = async () => {
+    if (!selectedQuestion) return;
+    if (currentStep < 4) {
+      toast.error("Complete Steps 1-3 to unlock coding");
+      return;
+    }
+    if (!code || code.trim().length < 20) {
+      toast.error("Please write more code before submitting");
+      return;
+    }
+
+    setIsSubmittingCode(true);
+    try {
+      const step4UnlockedAt = step4UnlockedAtRef.current;
+      const firstKeystrokeAt = firstKeystrokeAtRef.current;
+      const now = Date.now();
+      const thinkingTime = step4UnlockedAt ? Math.max(0, Math.round(((firstKeystrokeAt || now) - step4UnlockedAt) / 1000)) : 0;
+      const codingTime = firstKeystrokeAt ? Math.max(0, Math.round((now - firstKeystrokeAt) / 1000)) : 0;
+
+      const { data, error } = await supabase.functions.invoke("evaluate-code", {
+        body: {
+          code,
+          language,
+          questionTitle: selectedQuestion.title,
+          difficulty: selectedQuestion.difficulty,
+          patternName: selectedQuestion.patterns?.name,
+          thinkingTime,
+          codingTime,
+          runCount,
+          pasteDetected: false,
+          hintsUsed: 0,
+          expectedTime: 0,
+        },
+      });
+      if (error) throw error;
+
+      const evaluation = data?.evaluation || data;
+
+      if (evaluation?.is_correct) {
+        toast.success("Platform submit successful! Now submit on LeetCode.");
+        setLeetcodeUnlocked(true);
+        setIsCompleted(true);
+        markQuestionSolvedMutation.mutate();
+        setShowLeetCodeCelebration(true);
+      } else {
+        toast.error("Not correct yet — fix and re-submit.");
+        setIsCompleted(false);
+      }
+    } catch (e) {
+      console.error("Submit error:", e);
+      toast.error("Failed to submit. Try again.");
+    } finally {
+      setIsSubmittingCode(false);
+    }
+  };
+
+  const setEditorMarkers = useCallback((markers: any[]) => {
+    const monaco = monacoRef.current;
+    const editor = editorRef.current;
+    if (!monaco || !editor) return;
+    const model = editor.getModel?.();
+    if (!model) return;
+
+    monaco.editor.setModelMarkers(model, "nexmentor", markers);
+  }, []);
+
+  const quickAnalyzeCode = useCallback((source: string) => {
+    // Minimal, fast heuristics (2s loop) — avoids spamming AI calls.
+    const markers: any[] = [];
+    const lines = source.split("\n");
+
+    const addMarker = (line: number, message: string, severity: "error" | "warning" = "warning") => {
+      markers.push({
+        startLineNumber: line,
+        endLineNumber: line,
+        startColumn: 1,
+        endColumn: Math.max(1, (lines[line - 1] || "").length),
+        message,
+        severity:
+          severity === "error"
+            ? monacoRef.current?.MarkerSeverity?.Error
+            : monacoRef.current?.MarkerSeverity?.Warning,
+      });
+    };
+
+    if (source.trim().length < 40) {
+      addMarker(1, "Code too short — implement the full solution.", "warning");
+    }
+
+    lines.forEach((ln, idx) => {
+      const lineNo = idx + 1;
+      if (/\bpass\b/.test(ln)) addMarker(lineNo, "Placeholder 'pass' found — write real logic.");
+      if (/placeholder/i.test(ln)) addMarker(lineNo, "Placeholder comment found — replace with solution.");
+      if (/while\s*\(\s*true\s*\)/i.test(ln)) addMarker(lineNo, "Potential infinite loop detected.", "warning");
+      if (/console\.log\(/.test(ln)) addMarker(lineNo, "Remove debug prints before final submit.", "warning");
+    });
+
+    return markers;
+  }, []);
+
+  // Step 4: analyze every ~2s (debounced on code changes)
+  useEffect(() => {
+    if (currentStep < 4) {
+      setEditorMarkers([]);
+      return;
+    }
+
+    if (analysisTimeoutRef.current) clearTimeout(analysisTimeoutRef.current);
+
+    analysisTimeoutRef.current = setTimeout(() => {
+      const markers = quickAnalyzeCode(code);
+      setEditorMarkers(markers);
+
+      // Gentle suggestion (no spam)
+      if (markers.length > 0) {
+        const now = Date.now();
+        if (now - lastSuggestionAtRef.current > 8000) {
+          lastSuggestionAtRef.current = now;
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            if (last?.role === "assistant" && last?.content?.includes("[Step 4/4")) return prev;
+            return [
+              ...prev,
+              {
+                role: "assistant",
+                step: 4,
+                content:
+                  "[Step 4/4] Dekho yaar, editor me kuch placeholder/short code dikh raha. Pehle full logic implement karo, phir Run dabao."
+              },
+            ];
+          });
+        }
+      }
+    }, 2000);
+
+    return () => {
+      if (analysisTimeoutRef.current) clearTimeout(analysisTimeoutRef.current);
+    };
+  }, [code, currentStep, quickAnalyzeCode, setEditorMarkers]);
 
   // QUESTION SELECTION VIEW
   if (viewMode === "selection") {
@@ -1101,7 +1314,17 @@ export default function NexMentor() {
                 height="100%"
                 language={LANGUAGE_CONFIG[language]?.monacoLang || "python"}
                 value={code}
-                onChange={(value) => setCode(value || "")}
+                onChange={(value) => {
+                  const next = value || "";
+                  if (currentStep >= 4 && !firstKeystrokeAtRef.current && next.trim() && next !== LANGUAGE_CONFIG[language]?.template) {
+                    firstKeystrokeAtRef.current = Date.now();
+                  }
+                  setCode(next);
+                }}
+                onMount={(editor, monaco) => {
+                  editorRef.current = editor;
+                  monacoRef.current = monaco;
+                }}
                 theme="vs-dark"
                 options={{
                   minimap: { enabled: false },
@@ -1124,17 +1347,27 @@ export default function NexMentor() {
                   variant="outline"
                   size="sm"
                   className="flex-1 bg-transparent border-border/50 text-white hover:bg-white/10"
+                  onClick={handleRunCode}
+                  disabled={isRunningTests}
                 >
-                  <Play className="w-4 h-4 mr-2" />
+                  {isRunningTests ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Play className="w-4 h-4 mr-2" />
+                  )}
                   Run
                 </Button>
                 <Button
                   size="sm"
                   className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-                  disabled={!isCompleted}
-                  onClick={() => setShowLeetCodeCelebration(true)}
+                  onClick={handleSubmitCode}
+                  disabled={isSubmittingCode}
                 >
-                  <Upload className="w-4 h-4 mr-2" />
+                  {isSubmittingCode ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4 mr-2" />
+                  )}
                   Submit
                 </Button>
               </div>
@@ -1223,6 +1456,24 @@ export default function NexMentor() {
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
+
+      {/* Test Results Dialog */}
+      <Dialog open={showTestResults} onOpenChange={setShowTestResults}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Test Results</DialogTitle>
+            <DialogDescription>
+              {lastRunSummary ? `${lastRunSummary.passed}/${lastRunSummary.total} passed` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <TestCaseResults
+            results={testResults}
+            passed={lastRunSummary?.passed || 0}
+            total={lastRunSummary?.total || 0}
+            isLoading={isRunningTests}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* LeetCode Celebration Dialog */}
       <Dialog open={showLeetCodeCelebration} onOpenChange={setShowLeetCodeCelebration}>

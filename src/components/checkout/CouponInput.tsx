@@ -14,6 +14,7 @@ interface CouponInputProps {
     sixMonthDiscount: number;
     yearlyDiscount: number;
     couponId: string;
+    discountType?: "fixed" | "percentage";
   }) => void;
   onCouponRemove: () => void;
 }
@@ -112,6 +113,7 @@ export function CouponInput({ planType, onCouponApply, onCouponRemove }: CouponI
         sixMonthDiscount: coupon.six_month_discount,
         yearlyDiscount: coupon.yearly_discount,
         couponId: coupon.id,
+        discountType: coupon.discount_type === "percentage" ? "percentage" : "fixed",
       });
       toast.success("Coupon applied successfully!");
     } catch (err) {
