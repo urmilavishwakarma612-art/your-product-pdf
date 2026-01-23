@@ -515,7 +515,7 @@ export default function Pricing() {
                       Save ₹{getDiscountAmount('yearly')}
                     </p>
                   )}
-                </div>
+                  <div className="inline-flex items-center gap-1 mt-2">
                     <Crown className="w-3 h-3 text-violet-400" />
                     <span className="text-xs font-medium text-violet-400">Best Value</span>
                   </div>
