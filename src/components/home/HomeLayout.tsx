@@ -1,43 +1,80 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { HomeHeader } from "./HomeHeader";
 import { HomeSidebar } from "./HomeSidebar";
 import { HomeCenterPanel } from "./HomeCenterPanel";
 import { HomeRightPanel } from "./HomeRightPanel";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function HomeLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   return (
     <div className="min-h-screen bg-background">
       {/* Fixed Header */}
-      <HomeHeader searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-
-      {/* Fixed Sidebar */}
-      <HomeSidebar 
-        collapsed={sidebarCollapsed} 
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
+      <HomeHeader 
+        searchQuery={searchQuery} 
+        onSearchChange={setSearchQuery}
+        onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
       />
+
+      {/* Sidebar - Hidden on mobile */}
+      {!isMobile && (
+        <HomeSidebar 
+          collapsed={sidebarCollapsed} 
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
+        />
+      )}
+
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isMobile && mobileMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <motion.div
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed left-0 top-0 bottom-0 w-[280px] z-50"
+            >
+              <HomeSidebar 
+                collapsed={false} 
+                onToggle={() => setMobileMenuOpen(false)}
+                isMobile={true}
+              />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Main Content Area */}
       <div
         className={cn(
           "pt-16 min-h-screen transition-all duration-200",
-          sidebarCollapsed ? "pl-16" : "pl-[200px]"
+          !isMobile && (sidebarCollapsed ? "pl-16" : "pl-[200px]")
         )}
       >
-        <div className="flex">
+        <div className="flex flex-col lg:flex-row">
           {/* Center Panel - Scrollable */}
-          <main className="flex-1 p-6 lg:pr-0 overflow-y-auto">
-            <div className="max-w-4xl">
+          <main className="flex-1 p-4 sm:p-6 lg:pr-0 overflow-y-auto">
+            <div className="max-w-4xl mx-auto lg:mx-0">
               <HomeCenterPanel searchQuery={searchQuery} />
             </div>
           </main>
 
-          {/* Right Panel - Fixed on large screens */}
-          <aside className="hidden lg:block w-[340px] xl:w-[380px] p-6 pl-4 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto scrollbar-hide">
+          {/* Right Panel - Below on mobile/tablet, Side on desktop */}
+          <aside className="w-full lg:w-[320px] xl:w-[360px] p-4 sm:p-6 lg:pl-4 lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] lg:overflow-y-auto scrollbar-hide">
             <HomeRightPanel />
           </aside>
         </div>
