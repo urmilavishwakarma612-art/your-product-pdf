@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Navbar } from "@/components/landing/Navbar";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { SessionSetup } from "@/components/interview/SessionSetup";
 import { InterviewSession } from "@/components/interview/InterviewSession";
 import { InterviewResults } from "@/components/interview/InterviewResults";
@@ -179,30 +179,27 @@ const InterviewSimulator = () => {
     );
   }
 
-  // Setup and Results views with navbar
+  // Setup and Results views with new layout
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <main className="container mx-auto px-4 pt-24 pb-12">
-        {view === "setup" && (
-          <SessionSetup
-            patterns={patterns || []}
-            companies={companies || []}
-            onStart={handleStartSession}
-            isLoading={startSessionMutation.isPending}
-          />
-        )}
+    <AppLayout>
+      {view === "setup" && (
+        <SessionSetup
+          patterns={patterns || []}
+          companies={companies || []}
+          onStart={handleStartSession}
+          isLoading={startSessionMutation.isPending}
+        />
+      )}
 
-        {view === "results" && sessionId && sessionConfig && (
-          <InterviewResults
-            sessionId={sessionId}
-            config={sessionConfig}
-            results={results}
-            onNewSession={handleNewSession}
-          />
-        )}
-      </main>
-    </div>
+      {view === "results" && sessionId && sessionConfig && (
+        <InterviewResults
+          sessionId={sessionId}
+          config={sessionConfig}
+          results={results}
+          onNewSession={handleNewSession}
+        />
+      )}
+    </AppLayout>
   );
 };
 
