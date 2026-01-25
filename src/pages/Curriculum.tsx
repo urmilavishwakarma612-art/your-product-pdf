@@ -3,8 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { Navbar } from "@/components/landing/Navbar";
-import { Footer } from "@/components/landing/Footer";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { UnifiedLevelCard } from "@/components/curriculum/UnifiedLevelCard";
 import { CurriculumOverallProgress } from "@/components/curriculum/CurriculumOverallProgress";
 import { CurriculumFilters } from "@/components/curriculum/CurriculumFilters";
@@ -73,7 +72,6 @@ const Curriculum = () => {
     const hash = location.hash;
     if (hash && hash.startsWith("#level-")) {
       const levelNumber = hash.replace("#level-", "");
-      // Wait for content to load, then scroll
       setTimeout(() => {
         const element = document.getElementById(`level-${levelNumber}`);
         if (element) {
@@ -314,135 +312,129 @@ const Curriculum = () => {
         />
       </Helmet>
 
-      <div className="min-h-screen bg-background">
-        <Navbar />
+      <AppLayout>
+        {/* Upgrade Banner for free users */}
+        {!isPremium && user && (
+          <UpgradeBanner 
+            onUpgradeClick={() => setShowUpgradeModal(true)}
+            completedPhase1={false}
+          />
+        )}
 
-        <main className="container mx-auto px-3 sm:px-4 pt-20 sm:pt-24 pb-8 sm:pb-12 max-w-5xl">
-          {/* Upgrade Banner for free users */}
-          {!isPremium && user && (
-            <UpgradeBanner 
-              onUpgradeClick={() => setShowUpgradeModal(true)}
-              completedPhase1={false}
-            />
-          )}
+        {/* Hero Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-8 sm:mb-12"
+        >
+          <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-4 sm:mb-6">
+            Pattern-First Learning
+          </span>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
+            <span className="gradient-text">18-Week DSA</span>{" "}
+            <span className="text-foreground">Curriculum</span>
+          </h1>
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+            Stop memorizing solutions. Start recognizing patterns.
+            Build interview intuition that lasts.
+          </p>
+        </motion.div>
 
-          {/* Hero Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-8 sm:mb-12"
-          >
-            <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-4 sm:mb-6">
-              Pattern-First Learning
-            </span>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
-              <span className="gradient-text">18-Week DSA</span>{" "}
-              <span className="text-foreground">Curriculum</span>
-            </h1>
-            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-              Stop memorizing solutions. Start recognizing patterns.
-              Build interview intuition that lasts.
-            </p>
-          </motion.div>
+        {/* Philosophy Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
+          {philosophyItems.map((item, index) => (
+            <motion.div
+              key={item.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="glass-card p-4 sm:p-5"
+            >
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2 sm:mb-3">
+                <item.icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              </div>
+              <h3 className="font-semibold text-sm sm:text-base mb-1">{item.title}</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">{item.description}</p>
+            </motion.div>
+          ))}
+        </div>
 
-          {/* Philosophy Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
-            {philosophyItems.map((item, index) => (
-              <motion.div
-                key={item.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="glass-card p-4 sm:p-5"
-              >
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2 sm:mb-3">
-                  <item.icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                </div>
-                <h3 className="font-semibold text-sm sm:text-base mb-1">{item.title}</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground">{item.description}</p>
-              </motion.div>
+        {/* Overall Progress */}
+        {user && (
+          <CurriculumOverallProgress
+            totalSolved={totalSolved}
+            totalQuestions={totalQuestions}
+            easySolved={easySolved}
+            easyTotal={easyQuestions.length}
+            mediumSolved={mediumSolved}
+            mediumTotal={mediumQuestions.length}
+            hardSolved={hardSolved}
+            hardTotal={hardQuestions.length}
+          />
+        )}
+
+        {/* Spaced Repetition */}
+        <SpacedRepetition />
+
+        {/* Week Timeline */}
+        <WeekTimeline levels={levels} />
+
+        {/* Filters */}
+        <div className="mt-8">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4">Learning Path</h2>
+          <CurriculumFilters
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            difficultyFilter={difficultyFilter}
+            setDifficultyFilter={setDifficultyFilter}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+            bookmarkFilter={bookmarkFilter}
+            setBookmarkFilter={setBookmarkFilter}
+            totalQuestions={totalQuestions}
+            totalSolved={totalSolved}
+            difficultyCounts={{
+              easy: easyQuestions.length,
+              medium: mediumQuestions.length,
+              hard: hardQuestions.length,
+            }}
+          />
+        </div>
+
+        {/* Levels */}
+        {levelsLoading ? (
+          <div className="space-y-4 sm:space-y-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-24 sm:h-32 bg-card/50 animate-pulse rounded-xl" />
             ))}
           </div>
-
-          {/* Overall Progress */}
-          {user && (
-            <CurriculumOverallProgress
-              totalSolved={totalSolved}
-              totalQuestions={totalQuestions}
-              easySolved={easySolved}
-              easyTotal={easyQuestions.length}
-              mediumSolved={mediumSolved}
-              mediumTotal={mediumQuestions.length}
-              hardSolved={hardSolved}
-              hardTotal={hardQuestions.length}
-            />
-          )}
-
-          {/* Spaced Repetition */}
-          <SpacedRepetition />
-
-          {/* Week Timeline */}
-          <WeekTimeline levels={levels} />
-
-          {/* Filters */}
-          <div className="mt-8">
-            <h2 className="text-xl sm:text-2xl font-bold mb-4">Learning Path</h2>
-            <CurriculumFilters
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              difficultyFilter={difficultyFilter}
-              setDifficultyFilter={setDifficultyFilter}
-              statusFilter={statusFilter}
-              setStatusFilter={setStatusFilter}
-              bookmarkFilter={bookmarkFilter}
-              setBookmarkFilter={setBookmarkFilter}
-              totalQuestions={totalQuestions}
-              totalSolved={totalSolved}
-              difficultyCounts={{
-                easy: easyQuestions.length,
-                medium: mediumQuestions.length,
-                hard: hardQuestions.length,
-              }}
-            />
+        ) : levels.length === 0 ? (
+          <div className="text-center py-16 sm:py-20">
+            <p className="text-muted-foreground">Curriculum coming soon...</p>
           </div>
-
-          {/* Levels */}
-          {levelsLoading ? (
-            <div className="space-y-4 sm:space-y-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-24 sm:h-32 bg-card/50 animate-pulse rounded-xl" />
-              ))}
-            </div>
-          ) : levels.length === 0 ? (
-            <div className="text-center py-16 sm:py-20">
-              <p className="text-muted-foreground">Curriculum coming soon...</p>
-            </div>
-          ) : (
-            <div className="space-y-4 sm:space-y-6">
-              {levels.map((level, index) => (
-                <UnifiedLevelCard
-                  key={level.id}
-                  level={level}
-                  modules={getModulesForLevel(level.id)}
-                  questions={questions}
-                  index={index}
-                  userProgress={userProgress}
-                  userBookmarks={userBookmarks}
-                  companyLogoMap={companyLogoMap}
-                  onToggleSolved={handleToggleSolved}
-                  onToggleBookmark={handleToggleBookmark}
-                  onOpenAIMentor={setSelectedQuestionForMentor}
-                  filterQuestion={filterQuestion}
-                  hasActiveFilters={hasActiveFilters}
-                />
-              ))}
-            </div>
-          )}
-        </main>
-
-        <Footer />
-      </div>
+        ) : (
+          <div className="space-y-4 sm:space-y-6">
+            {levels.map((level, index) => (
+              <UnifiedLevelCard
+                key={level.id}
+                level={level}
+                modules={getModulesForLevel(level.id)}
+                questions={questions}
+                index={index}
+                userProgress={userProgress}
+                userBookmarks={userBookmarks}
+                companyLogoMap={companyLogoMap}
+                onToggleSolved={handleToggleSolved}
+                onToggleBookmark={handleToggleBookmark}
+                onOpenAIMentor={setSelectedQuestionForMentor}
+                filterQuestion={filterQuestion}
+                hasActiveFilters={hasActiveFilters}
+              />
+            ))}
+          </div>
+        )}
+      </AppLayout>
 
       {/* AI Mentor */}
       <AIMentor 

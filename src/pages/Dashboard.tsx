@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Navbar } from "@/components/landing/Navbar";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { motion } from "framer-motion";
 import { Zap, Trophy, Flame, Target, LogOut, BookOpen, ArrowRight, User, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -99,174 +99,171 @@ const Dashboard = () => {
   const xpProgress = (xp % 100) / 100 * 100;
 
   return (
-    <div className="min-h-screen bg-background bg-grid">
-      <Navbar />
-      <main className="pt-20 pb-12 px-4">
-        <div className="container max-w-6xl mx-auto">
-          {/* Welcome Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
-          >
-            <div className="flex items-center justify-between flex-wrap gap-4">
+    <AppLayout>
+      <div className="bg-grid">
+        {/* Welcome Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">
+                Welcome back, <span className="gradient-text">{profile?.username || user?.email?.split("@")[0]}</span>!
+              </h1>
+              <p className="text-muted-foreground">Continue your DSA journey</p>
+            </div>
+            <div className="flex gap-3">
+              {isAdmin && (
+                <Button variant="outline" onClick={() => navigate("/admin")}>
+                  Admin Panel
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                onClick={() =>
+                  navigate(`/profile/${encodeURIComponent((profile?.username || "").trim())}`)
+                }
+              >
+                <User className="w-4 h-4 mr-2" /> View Profile
+              </Button>
+              <Button variant="ghost" onClick={signOut}>
+                <LogOut className="w-4 h-4 mr-2" /> Sign out
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Payment Failed Banner */}
+        <PaymentFailedBanner />
+
+        {/* Subscription Expiry Reminder */}
+        <SubscriptionExpiryReminder />
+
+        {/* Level Progress */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="glass-card p-6 mb-8"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-xl font-bold">
+                {level}
+              </div>
               <div>
-                <h1 className="text-3xl font-bold mb-2">
-                  Welcome back, <span className="gradient-text">{profile?.username || user?.email?.split("@")[0]}</span>!
-                </h1>
-                <p className="text-muted-foreground">Continue your DSA journey</p>
-              </div>
-              <div className="flex gap-3">
-                {isAdmin && (
-                  <Button variant="outline" onClick={() => navigate("/admin")}>
-                    Admin Panel
-                  </Button>
-                )}
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    navigate(`/profile/${encodeURIComponent((profile?.username || "").trim())}`)
-                  }
-                >
-                  <User className="w-4 h-4 mr-2" /> View Profile
-                </Button>
-                <Button variant="ghost" onClick={signOut}>
-                  <LogOut className="w-4 h-4 mr-2" /> Sign out
-                </Button>
+                <p className="font-semibold">Level {level}</p>
+                <p className="text-sm text-muted-foreground">{xp} XP total</p>
               </div>
             </div>
-          </motion.div>
-
-          {/* Payment Failed Banner */}
-          <PaymentFailedBanner />
-
-          {/* Subscription Expiry Reminder */}
-          <SubscriptionExpiryReminder />
-
-          {/* Level Progress */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="glass-card p-6 mb-8"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-xl font-bold">
-                  {level}
-                </div>
-                <div>
-                  <p className="font-semibold">Level {level}</p>
-                  <p className="text-sm text-muted-foreground">{xp} XP total</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground">Next level</p>
-                <p className="font-semibold">{xpForNextLevel - (xp % 100)} XP needed</p>
-              </div>
+            <div className="text-right">
+              <p className="text-sm text-muted-foreground">Next level</p>
+              <p className="font-semibold">{xpForNextLevel - (xp % 100)} XP needed</p>
             </div>
-            <Progress value={xpProgress} className="h-3" />
-          </motion.div>
+          </div>
+          <Progress value={xpProgress} className="h-3" />
+        </motion.div>
 
-          {/* Stats Row */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
-          >
-            <StatCard 
-              icon={<Zap className="w-5 h-5" />} 
-              label="Total XP" 
-              value={xp.toString()} 
-              colorClass="bg-primary/20 text-primary" 
-            />
-            <StatCard 
-              icon={<Flame className="w-5 h-5" />} 
-              label="Current Streak" 
-              value={`${profile?.current_streak || 0} days`} 
-              colorClass="bg-warning/20 text-warning" 
-            />
-            <StatCard 
-              icon={<Target className="w-5 h-5" />} 
-              label="Problems Solved" 
-              value={(progressStats?.solved || 0).toString()} 
-              colorClass="bg-success/20 text-success" 
-            />
-            <StatCard 
-              icon={<Trophy className="w-5 h-5" />} 
-              label="Badges Earned" 
-              value={(badgeCount || 0).toString()} 
-              colorClass="bg-secondary/20 text-secondary" 
-            />
-          </motion.div>
+        {/* Stats Row */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+        >
+          <StatCard 
+            icon={<Zap className="w-5 h-5" />} 
+            label="Total XP" 
+            value={xp.toString()} 
+            colorClass="bg-primary/20 text-primary" 
+          />
+          <StatCard 
+            icon={<Flame className="w-5 h-5" />} 
+            label="Current Streak" 
+            value={`${profile?.current_streak || 0} days`} 
+            colorClass="bg-warning/20 text-warning" 
+          />
+          <StatCard 
+            icon={<Target className="w-5 h-5" />} 
+            label="Problems Solved" 
+            value={(progressStats?.solved || 0).toString()} 
+            colorClass="bg-success/20 text-success" 
+          />
+          <StatCard 
+            icon={<Trophy className="w-5 h-5" />} 
+            label="Badges Earned" 
+            value={(badgeCount || 0).toString()} 
+            colorClass="bg-secondary/20 text-secondary" 
+          />
+        </motion.div>
 
-          {/* Tabbed Content */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-          >
-            <Tabs defaultValue={defaultTab} className="space-y-6">
-              <TabsList className="grid w-full max-w-md grid-cols-2">
-                <TabsTrigger value="overview">
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  Overview
-                </TabsTrigger>
-                <TabsTrigger value="analytics">
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Weakness Analytics
-                </TabsTrigger>
-              </TabsList>
+        {/* Tabbed Content */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <Tabs defaultValue={defaultTab} className="space-y-6">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="overview">
+                <BookOpen className="w-4 h-4 mr-2" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="analytics">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Weakness Analytics
+              </TabsTrigger>
+            </TabsList>
 
-              <TabsContent value="overview" className="space-y-8">
-                {/* Recent Patterns */}
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold">Continue Learning</h2>
-                    <Link to="/patterns" className="text-primary hover:underline text-sm flex items-center gap-1">
-                      View all patterns <ArrowRight className="w-4 h-4" />
-                    </Link>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {recentPatterns?.map((pattern) => (
-                      <Link key={pattern.id} to="/patterns">
-                        <div className="glass-card p-4 hover:bg-white/10 transition-colors cursor-pointer group">
-                          <div 
-                            className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-3"
-                            style={{ background: pattern.color || 'hsl(var(--primary) / 0.2)' }}
-                          >
-                            {pattern.icon || "📚"}
-                          </div>
-                          <h3 className="font-semibold group-hover:text-primary transition-colors">{pattern.name}</h3>
-                          <p className="text-sm text-muted-foreground">{pattern.total_questions} questions</p>
+            <TabsContent value="overview" className="space-y-8">
+              {/* Recent Patterns */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold">Continue Learning</h2>
+                  <Link to="/curriculum" className="text-primary hover:underline text-sm flex items-center gap-1">
+                    View all patterns <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {recentPatterns?.map((pattern) => (
+                    <Link key={pattern.id} to="/curriculum">
+                      <div className="glass-card p-4 hover:bg-white/10 transition-colors cursor-pointer group">
+                        <div 
+                          className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-3"
+                          style={{ background: pattern.color || 'hsl(var(--primary) / 0.2)' }}
+                        >
+                          {pattern.icon || "📚"}
                         </div>
-                      </Link>
-                    ))}
-                  </div>
+                        <h3 className="font-semibold group-hover:text-primary transition-colors">{pattern.name}</h3>
+                        <p className="text-sm text-muted-foreground">{pattern.total_questions} questions</p>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
+              </div>
 
-                {/* Quick Actions */}
-                <div className="glass-card p-8 text-center">
-                  <BookOpen className="w-12 h-12 text-primary mx-auto mb-4" />
-                  <h2 className="text-2xl font-bold mb-4">Ready to Continue?</h2>
-                  <p className="text-muted-foreground mb-6">
-                    Explore patterns, solve problems, and track your progress.
-                  </p>
-                  <Button className="btn-primary-glow" onClick={() => navigate("/patterns")}>
-                    Explore Patterns
-                  </Button>
-                </div>
-              </TabsContent>
+              {/* Quick Actions */}
+              <div className="glass-card p-8 text-center">
+                <BookOpen className="w-12 h-12 text-primary mx-auto mb-4" />
+                <h2 className="text-2xl font-bold mb-4">Ready to Continue?</h2>
+                <p className="text-muted-foreground mb-6">
+                  Explore patterns, solve problems, and track your progress.
+                </p>
+                <Button className="btn-primary-glow" onClick={() => navigate("/curriculum")}>
+                  Explore Patterns
+                </Button>
+              </div>
+            </TabsContent>
 
-              <TabsContent value="analytics">
-                <WeaknessAnalytics />
-              </TabsContent>
-            </Tabs>
-          </motion.div>
-        </div>
-      </main>
-    </div>
+            <TabsContent value="analytics">
+              <WeaknessAnalytics />
+            </TabsContent>
+          </Tabs>
+        </motion.div>
+      </div>
+    </AppLayout>
   );
 };
 
