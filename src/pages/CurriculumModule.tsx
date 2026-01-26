@@ -2,8 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { Navbar } from "@/components/landing/Navbar";
-import { Footer } from "@/components/landing/Footer";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { ModuleHeader } from "@/components/curriculum/ModuleHeader";
 import { WhySection } from "@/components/curriculum/WhySection";
 import { WhenNotSection } from "@/components/curriculum/WhenNotSection";
@@ -98,32 +97,28 @@ const CurriculumModule = () => {
 
   if (moduleLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="pt-32 pb-20 px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="animate-pulse space-y-6">
-              <div className="h-8 w-48 bg-card rounded" />
-              <div className="h-48 bg-card rounded-xl" />
-              <div className="h-32 bg-card rounded-xl" />
-            </div>
+      <AppLayout>
+        <div className="max-w-4xl mx-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 w-48 bg-card rounded" />
+            <div className="h-48 bg-card rounded-xl" />
+            <div className="h-32 bg-card rounded-xl" />
           </div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   if (!module) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="pt-32 pb-20 px-4 text-center">
+      <AppLayout>
+        <div className="text-center py-20">
           <h1 className="text-2xl font-bold mb-4">Module Not Found</h1>
           <Link to="/curriculum">
             <Button variant="outline">Back to Curriculum</Button>
           </Link>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
@@ -142,80 +137,74 @@ const CurriculumModule = () => {
         />
       </Helmet>
 
-      <div className="min-h-screen bg-background">
-        <Navbar />
+      <AppLayout>
+        <div className="max-w-4xl mx-auto space-y-8">
+          {/* Back Link */}
+          <Link
+            to="/curriculum"
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Curriculum
+          </Link>
 
-        <div className="pt-28 pb-20 px-4">
-          <div className="max-w-4xl mx-auto">
-            {/* Back Link */}
-            <Link
-              to="/curriculum"
-              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
+          {isLocked ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-card p-12 text-center"
             >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Curriculum
-            </Link>
-
-            {isLocked ? (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="glass-card p-12 text-center"
-              >
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-                  <Lock className="w-8 h-8 text-primary" />
-                </div>
-                <h2 className="text-2xl font-bold mb-3">Premium Module</h2>
-                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  This module is part of our premium curriculum. Upgrade to access all modules, sub-patterns, and practice problems.
-                </p>
-                <Link to="/pricing">
-                  <Button className="btn-primary-glow">Upgrade to Pro</Button>
-                </Link>
-              </motion.div>
-            ) : (
-              <div className="space-y-8">
-                <ModuleHeader module={module} level={level} userProgress={userProgress} />
-
-                {module.why_exists && <WhySection content={module.why_exists} />}
-
-                {module.when_not_to_use && <WhenNotSection content={module.when_not_to_use} />}
-
-                {module.mental_model && <MentalModel content={module.mental_model} />}
-
-                {module.pattern_template && <PatternTemplate content={module.pattern_template} />}
-
-                {subPatterns.length > 0 && (
-                  <section>
-                    <h2 className="text-xl font-bold mb-4">Sub-Patterns</h2>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {subPatterns.map((sp, index) => (
-                        <SubPatternCard key={sp.id} subPattern={sp} index={index} />
-                      ))}
-                    </div>
-                  </section>
-                )}
-
-                {questions.length > 0 && (
-                  <PracticeLadder questions={questions} patternId={module.pattern_id} />
-                )}
-
-                {trapProblems.length > 0 && <TrapProblems problems={trapProblems} />}
-
-                {module.exit_condition && (
-                  <ModuleCheckpoint
-                    moduleId={module.id}
-                    exitCondition={module.exit_condition}
-                    userProgress={userProgress}
-                  />
-                )}
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                <Lock className="w-8 h-8 text-primary" />
               </div>
-            )}
-          </div>
-        </div>
+              <h2 className="text-2xl font-bold mb-3">Premium Module</h2>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                This module is part of our premium curriculum. Upgrade to access all modules, sub-patterns, and practice problems.
+              </p>
+              <Link to="/pricing">
+                <Button className="btn-primary-glow">Upgrade to Pro</Button>
+              </Link>
+            </motion.div>
+          ) : (
+            <div className="space-y-8">
+              <ModuleHeader module={module} level={level} userProgress={userProgress} />
 
-        <Footer />
-      </div>
+              {module.why_exists && <WhySection content={module.why_exists} />}
+
+              {module.when_not_to_use && <WhenNotSection content={module.when_not_to_use} />}
+
+              {module.mental_model && <MentalModel content={module.mental_model} />}
+
+              {module.pattern_template && <PatternTemplate content={module.pattern_template} />}
+
+              {subPatterns.length > 0 && (
+                <section>
+                  <h2 className="text-xl font-bold mb-4">Sub-Patterns</h2>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {subPatterns.map((sp, index) => (
+                      <SubPatternCard key={sp.id} subPattern={sp} index={index} />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {questions.length > 0 && (
+                <PracticeLadder questions={questions} patternId={module.pattern_id} />
+              )}
+
+              {trapProblems.length > 0 && <TrapProblems problems={trapProblems} />}
+
+              {module.exit_condition && (
+                <ModuleCheckpoint
+                  moduleId={module.id}
+                  exitCondition={module.exit_condition}
+                  userProgress={userProgress}
+                />
+              )}
+            </div>
+          )}
+        </div>
+      </AppLayout>
     </>
   );
 };
