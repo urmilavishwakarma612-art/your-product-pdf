@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Navbar } from "@/components/landing/Navbar";
-import { Footer } from "@/components/landing/Footer";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { motion } from "framer-motion";
 import { format, differenceInDays } from "date-fns";
 import { 
@@ -15,7 +14,6 @@ import {
   RefreshCcw,
   Shield,
   HelpCircle,
-  ChevronDown,
   IndianRupee,
   Calendar,
   AlertTriangle
@@ -64,7 +62,6 @@ const Payments = () => {
     }
   }, [user, loading, navigate]);
 
-  // Fetch all payments
   const { data: payments = [], isLoading: paymentsLoading } = useQuery({
     queryKey: ["user-payments", user?.id],
     queryFn: async () => {
@@ -80,7 +77,6 @@ const Payments = () => {
     enabled: !!user?.id,
   });
 
-  // Fetch refund requests
   const { data: refundRequests = [] } = useQuery({
     queryKey: ["user-refund-requests-full", user?.id],
     queryFn: async () => {
@@ -168,28 +164,26 @@ const Payments = () => {
     },
   ];
 
-  // Check for failed/pending payments to show alert
   const hasFailedPayments = payments.some(p => p.status === "failed");
   const hasPendingPayments = payments.some(p => p.status === "pending" && differenceInDays(new Date(), new Date(p.created_at)) > 0);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-primary">Loading...</div>
-      </div>
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="animate-pulse text-primary">Loading...</div>
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <main className="container mx-auto px-4 pt-24 pb-12 max-w-4xl">
+    <AppLayout>
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
         >
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 rounded-xl bg-primary/10">
@@ -205,7 +199,6 @@ const Payments = () => {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6"
           >
             <Alert className="border-amber-500/30 bg-amber-500/10">
               <AlertTriangle className="h-4 w-4 text-amber-500" />
@@ -223,14 +216,14 @@ const Payments = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8"
+          className="grid grid-cols-2 sm:grid-cols-4 gap-3"
         >
           {[
             { icon: Shield, label: "Secure Payments", sublabel: "PCI-DSS Compliant" },
             { icon: RefreshCcw, label: "7-Day Refund", sublabel: "No Questions Asked" },
             { icon: CreditCard, label: "Multiple Options", sublabel: "Cards, UPI, Wallets" },
             { icon: CheckCircle, label: "Instant Access", sublabel: "On Payment Success" },
-          ].map((item, index) => (
+          ].map((item) => (
             <div key={item.label} className="glass-card p-3 sm:p-4 text-center">
               <item.icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary mx-auto mb-2" />
               <p className="text-xs sm:text-sm font-medium">{item.label}</p>
@@ -244,7 +237,6 @@ const Payments = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mb-8"
         >
           <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
             <CardHeader className="pb-4">
@@ -287,18 +279,15 @@ const Payments = () => {
                         transition={{ delay: index * 0.05 }}
                         className="relative"
                       >
-                        {/* Timeline connector */}
                         {index < payments.length - 1 && (
                           <div className="absolute left-[18px] top-12 bottom-0 w-0.5 bg-border/50 hidden sm:block" />
                         )}
                         
                         <div className="flex gap-3 sm:gap-4">
-                          {/* Status Icon */}
                           <div className="flex-shrink-0 w-9 h-9 rounded-full bg-muted/50 flex items-center justify-center z-10">
                             {getStatusIcon(payment.status)}
                           </div>
                           
-                          {/* Content */}
                           <div className="flex-1 p-3 sm:p-4 rounded-xl bg-muted/20 border border-border/30 space-y-2">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                               <div className="flex items-center gap-2 flex-wrap">
@@ -314,14 +303,12 @@ const Payments = () => {
                               </span>
                             </div>
                             
-                            {/* Discount info */}
                             {payment.coupon_code && payment.discount_amount && (
                               <p className="text-xs text-green-400">
                                 Coupon <span className="font-mono bg-green-500/10 px-1 rounded">{payment.coupon_code}</span> applied • Saved ₹{payment.discount_amount / 100}
                               </p>
                             )}
                             
-                            {/* Refund status if exists */}
                             {refund && (
                               <div className="flex items-center gap-2 pt-2 border-t border-border/30">
                                 {getRefundStatusBadge(refund.status)}
@@ -333,14 +320,12 @@ const Payments = () => {
                               </div>
                             )}
                             
-                            {/* Refund eligibility */}
                             {canRefund && (
                               <p className="text-xs text-primary">
                                 ✓ Eligible for refund ({7 - daysAgo} days remaining)
                               </p>
                             )}
 
-                            {/* Transaction ID */}
                             {payment.razorpay_payment_id && (
                               <p className="text-[10px] text-muted-foreground font-mono">
                                 ID: {payment.razorpay_payment_id}
@@ -362,7 +347,6 @@ const Payments = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="mb-8"
         >
           <RefundSection />
         </motion.div>
@@ -402,7 +386,7 @@ const Payments = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="mt-8 text-center"
+          className="text-center pb-8"
         >
           <p className="text-sm text-muted-foreground">
             Need help? Contact us at{" "}
@@ -411,10 +395,8 @@ const Payments = () => {
             </a>
           </p>
         </motion.div>
-      </main>
-
-      <Footer />
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 
