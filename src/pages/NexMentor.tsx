@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Clock,
   Code2,
@@ -65,6 +66,10 @@ import {
 } from "@/components/ui/resizable";
 import { LeetCodeProblemPanel } from "@/components/nexmentor/LeetCodeProblemPanel";
 import { TestCaseResults, type TestCaseResult } from "@/components/interview/TestCaseResults";
+import { MobileNexMentorLayout } from "@/components/nexmentor/MobileNexMentorLayout";
+import { MobileProblemPanel } from "@/components/nexmentor/MobileProblemPanel";
+import { MobileCodeEditor } from "@/components/nexmentor/MobileCodeEditor";
+import { MobileChatPanel } from "@/components/nexmentor/MobileChatPanel";
 
 // SIMPLIFIED 4-STEP FLOW
 const STEPS = [
@@ -164,6 +169,7 @@ function parseHintsArray(hints: any): string[] {
 
 export default function NexMentor() {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1155,56 +1161,194 @@ export default function NexMentor() {
     );
   }
 
-  // SESSION VIEW - 3-Section Resizable Layout
+  // Shared header component for both mobile and desktop
+  const SessionHeader = () => (
+    <header className="bg-card border-b border-border px-3 sm:px-4 py-2 flex-shrink-0">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={handleBackToSelection}>
+            <ArrowLeft className="w-4 h-4 sm:mr-1" />
+            <span className="hidden sm:inline">Back</span>
+          </Button>
+          <Link to="/" className="hidden sm:flex items-center gap-2">
+            <img src={logoImage} alt="NexAlgoTrix" className="w-7 h-7 object-contain" />
+          </Link>
+        </div>
+
+        {/* Mobile: Show title */}
+        {isMobile && (
+          <div className="flex items-center gap-2 flex-1 justify-center max-w-[40%]">
+            <span className="font-medium text-xs truncate">{selectedQuestion?.title}</span>
+          </div>
+        )}
+
+        {/* Desktop: Show title with badge */}
+        <div className="hidden md:flex items-center gap-2 flex-1 justify-center max-w-xl">
+          <span className="font-medium text-sm truncate">{selectedQuestion?.title}</span>
+          <Badge
+            variant="outline"
+            className={cn("text-xs", difficultyConfig[selectedQuestion?.difficulty as keyof typeof difficultyConfig]?.color)}
+          >
+            {difficultyConfig[selectedQuestion?.difficulty as keyof typeof difficultyConfig]?.label}
+          </Badge>
+        </div>
+
+        <div className="flex items-center gap-1 sm:gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2"
+            onClick={handleManualSave}
+            disabled={updateSessionMutation.isPending}
+          >
+            {updateSessionMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+          </Button>
+          <div className="flex items-center gap-1.5 bg-muted/50 px-2 py-1.5 rounded-full border border-border/30">
+            <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="font-mono text-xs">{formatTime(sessionTime)}</span>
+          </div>
+          {!isMobile && <ThemeToggle />}
+        </div>
+      </div>
+    </header>
+  );
+
+  // MOBILE SESSION VIEW
+  if (isMobile && viewMode === "session") {
+    return (
+      <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
+        <SessionHeader />
+        
+        {/* Mobile Swipeable Layout */}
+        <MobileNexMentorLayout
+          currentStep={currentStep}
+          problemPanel={
+            <MobileProblemPanel
+              title={selectedQuestion?.title || ""}
+              difficulty={selectedQuestion?.difficulty || "medium"}
+              description={selectedQuestion?.description || ""}
+              examples={parseTestCasesToExamples(selectedQuestion?.test_cases)}
+              constraints={parseConstraints(selectedQuestion?.description)}
+              hints={parseHintsArray(selectedQuestion?.hints)}
+              companies={selectedQuestion?.companies || []}
+              leetcodeLink={selectedQuestion?.leetcode_link}
+              isLeetcodeUnlocked={leetcodeUnlocked}
+            />
+          }
+          editorPanel={
+            <MobileCodeEditor
+              code={code}
+              onCodeChange={(value) => {
+                if (currentStep >= 4 && !firstKeystrokeAtRef.current && value.trim() && value !== LANGUAGE_CONFIG[language]?.template) {
+                  firstKeystrokeAtRef.current = Date.now();
+                }
+                setCode(value);
+              }}
+              language={language}
+              onLanguageChange={handleLanguageChange}
+              currentStep={currentStep}
+              isRunning={isRunningTests}
+              isSubmitting={isSubmittingCode}
+              onRun={handleRunCode}
+              onSubmit={handleSubmitCode}
+              editorRef={editorRef}
+              monacoRef={monacoRef}
+            />
+          }
+          chatPanel={
+            <MobileChatPanel
+              messages={messages}
+              inputMessage={inputMessage}
+              onInputChange={setInputMessage}
+              onSend={sendMessage}
+              isLoading={isLoading}
+              currentStep={currentStep}
+            />
+          }
+        />
+
+        {/* Test Results Dialog */}
+        <Dialog open={showTestResults} onOpenChange={setShowTestResults}>
+          <DialogContent className="max-w-[95vw] max-h-[80vh] overflow-auto">
+            <DialogHeader>
+              <DialogTitle>Test Results</DialogTitle>
+              <DialogDescription>
+                {lastRunSummary ? `${lastRunSummary.passed}/${lastRunSummary.total} passed` : ""}
+              </DialogDescription>
+            </DialogHeader>
+            <TestCaseResults
+              results={testResults}
+              passed={lastRunSummary?.passed || 0}
+              total={lastRunSummary?.total || 0}
+              isLoading={isRunningTests}
+            />
+          </DialogContent>
+        </Dialog>
+
+        {/* LeetCode Celebration Dialog */}
+        <Dialog open={showLeetCodeCelebration} onOpenChange={setShowLeetCodeCelebration}>
+          <DialogContent className="max-w-[90vw] text-center">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="py-4"
+            >
+              <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trophy className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-xl font-bold mb-2">🎉 Congratulations!</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Now submit your solution on LeetCode.
+              </p>
+              
+              <div className="space-y-2">
+                <Button
+                  className="w-full"
+                  size="sm"
+                  onClick={handleCopyCode}
+                >
+                  {codeCopied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
+                  {codeCopied ? "Copied!" : "Copy Code"}
+                </Button>
+                
+                {selectedQuestion?.leetcode_link && (
+                  <a
+                    href={selectedQuestion.leetcode_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
+                    <Button variant="outline" size="sm" className="w-full">
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Open LeetCode
+                    </Button>
+                  </a>
+                )}
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full"
+                  onClick={handleBackToSelection}
+                >
+                  Practice Another
+                </Button>
+              </div>
+            </motion.div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  // DESKTOP SESSION VIEW - 3-Section Resizable Layout
   return (
     <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
-      {/* Top Navigation */}
-      <header className="bg-card border-b border-border px-3 sm:px-4 py-2 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Button variant="ghost" size="sm" className="h-8 px-2" onClick={handleBackToSelection}>
-              <ArrowLeft className="w-4 h-4 sm:mr-1" />
-              <span className="hidden sm:inline">Back</span>
-            </Button>
-            <Link to="/" className="hidden sm:flex items-center gap-2">
-              <img src={logoImage} alt="NexAlgoTrix" className="w-7 h-7 object-contain" />
-            </Link>
-          </div>
-
-          <div className="hidden md:flex items-center gap-2 flex-1 justify-center max-w-xl">
-            <span className="font-medium text-sm truncate">{selectedQuestion?.title}</span>
-            <Badge
-              variant="outline"
-              className={cn("text-xs", difficultyConfig[selectedQuestion?.difficulty as keyof typeof difficultyConfig]?.color)}
-            >
-              {difficultyConfig[selectedQuestion?.difficulty as keyof typeof difficultyConfig]?.label}
-            </Badge>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2"
-              onClick={handleManualSave}
-              disabled={updateSessionMutation.isPending}
-            >
-              {updateSessionMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-              <span className="hidden sm:inline ml-1">Save</span>
-            </Button>
-            <div className="flex items-center gap-2 bg-muted/50 px-2 sm:px-3 py-1.5 rounded-full border border-border/30">
-              <Clock className="w-4 h-4 text-muted-foreground" />
-              <span className="font-mono text-xs sm:text-sm">{formatTime(sessionTime)}</span>
-            </div>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
-
+      <SessionHeader />
       {/* Step Progress */}
       <div className="bg-card border-b border-border px-4 py-2 flex-shrink-0">
         <div className="flex items-center justify-between gap-4 overflow-x-auto">
