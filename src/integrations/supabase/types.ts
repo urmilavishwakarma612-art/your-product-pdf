@@ -131,6 +131,13 @@ export type Database = {
             referencedRelation: "payments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "coupon_redemptions_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       coupons: {
@@ -1086,6 +1093,13 @@ export type Database = {
             referencedRelation: "payments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "refund_requests_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       sub_patterns: {
@@ -1544,7 +1558,54 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      payments_public: {
+        Row: {
+          amount: number | null
+          coupon_code: string | null
+          created_at: string | null
+          currency: string | null
+          discount_amount: number | null
+          id: string | null
+          original_amount: number | null
+          plan_type: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          coupon_code?: string | null
+          created_at?: string | null
+          currency?: string | null
+          discount_amount?: number | null
+          id?: string | null
+          original_amount?: number | null
+          plan_type?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          coupon_code?: string | null
+          created_at?: string | null
+          currency?: string | null
+          discount_amount?: number | null
+          id?: string | null
+          original_amount?: number | null
+          plan_type?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {

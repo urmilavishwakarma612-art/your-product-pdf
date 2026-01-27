@@ -26,8 +26,9 @@ const PaymentStatus = () => {
     queryKey: ['latest-payment', user?.id],
     queryFn: async () => {
       if (!user) return null;
+      // Use payments_public view for security (excludes razorpay_signature)
       const { data, error } = await supabase
-        .from('payments')
+        .from('payments_public')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
