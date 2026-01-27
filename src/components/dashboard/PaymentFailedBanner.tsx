@@ -15,8 +15,9 @@ export function PaymentFailedBanner() {
   const { data: failedPayments } = useQuery({
     queryKey: ["failed-payments-banner", user?.id],
     queryFn: async () => {
+      // Use payments_public view for security
       const { data, error } = await supabase
-        .from("payments")
+        .from("payments_public")
         .select("id, created_at, status, plan_type")
         .eq("user_id", user!.id)
         .in("status", ["failed", "pending"])

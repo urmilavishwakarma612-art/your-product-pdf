@@ -51,8 +51,9 @@ export function RefundSection() {
   const { data: eligiblePayments = [] } = useQuery({
     queryKey: ["eligible-refund-payments", user?.id],
     queryFn: async () => {
+      // Use payments_public view for security (excludes razorpay_signature)
       const { data, error } = await supabase
-        .from("payments")
+        .from("payments_public")
         .select("*")
         .eq("user_id", user!.id)
         .eq("status", "completed")

@@ -23,8 +23,9 @@ export function PaymentHistory() {
   const { data: payments = [], isLoading } = useQuery({
     queryKey: ["payments", user?.id],
     queryFn: async () => {
+      // Use payments_public view for security (excludes razorpay_signature)
       const { data, error } = await supabase
-        .from("payments")
+        .from("payments_public")
         .select("*")
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false });

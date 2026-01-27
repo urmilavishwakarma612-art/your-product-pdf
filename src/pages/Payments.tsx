@@ -65,8 +65,9 @@ const Payments = () => {
   const { data: payments = [], isLoading: paymentsLoading } = useQuery({
     queryKey: ["user-payments", user?.id],
     queryFn: async () => {
+      // Use payments_public view for security (excludes razorpay_signature)
       const { data, error } = await supabase
-        .from("payments")
+        .from("payments_public")
         .select("*")
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
