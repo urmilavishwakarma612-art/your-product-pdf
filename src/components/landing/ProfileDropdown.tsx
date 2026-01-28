@@ -111,7 +111,7 @@ export function ProfileDropdown() {
           {/* Profile & Settings */}
           <DropdownMenuItem asChild>
             <Link
-              to={`/profile/${encodeURIComponent((profile?.username || "").trim())}`}
+              to={profile?.username ? `/profile/${encodeURIComponent(profile.username.trim())}` : "/dashboard"}
               className="cursor-pointer"
             >
               <User className="mr-2 h-4 w-4" />

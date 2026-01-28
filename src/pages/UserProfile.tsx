@@ -188,6 +188,23 @@ export default function UserProfile() {
     );
   }
 
+  // Handle empty username case
+  if (!normalizedUsername) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center gap-4 min-h-[50vh]">
+          <h1 className="text-2xl font-bold">No username provided</h1>
+          <p className="text-muted-foreground">
+            Please set up your username in your profile settings.
+          </p>
+          <Button onClick={() => navigate("/dashboard")} variant="outline">
+            Go to Dashboard
+          </Button>
+        </div>
+      </AppLayout>
+    );
+  }
+
   if (!profile) {
     return (
       <AppLayout>
