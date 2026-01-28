@@ -1606,6 +1606,42 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles_public: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          current_level: number | null
+          current_streak: number | null
+          id: string | null
+          longest_streak: number | null
+          subscription_status: string | null
+          total_xp: number | null
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          current_level?: number | null
+          current_streak?: number | null
+          id?: string | null
+          longest_streak?: number | null
+          subscription_status?: string | null
+          total_xp?: number | null
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          current_level?: number | null
+          current_streak?: number | null
+          id?: string | null
+          longest_streak?: number | null
+          subscription_status?: string | null
+          total_xp?: number | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {

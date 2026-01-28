@@ -96,7 +96,7 @@ export function LeaderboardTab() {
     enabled: !!user?.id,
   });
 
-  // Fetch leaderboard (nearby users)
+  // Fetch leaderboard (nearby users) - use public view for other users' data
   const { data: leaderboard = [] } = useQuery({
     queryKey: ["leaderboard", currentProfile?.total_xp],
     queryFn: async () => {
@@ -105,9 +105,9 @@ export function LeaderboardTab() {
       const userXp = currentProfile.total_xp || 0;
       const userLeague = getLeague(userXp);
       
-      // Get users in the same league (±5 positions)
+      // Get users in the same league - use profiles_public view for security
       const { data } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("id, username, avatar_url, total_xp, current_streak, current_level")
         .gte("total_xp", userLeague.minXp)
         .lte("total_xp", userLeague.maxXp === Infinity ? 999999999 : userLeague.maxXp)
