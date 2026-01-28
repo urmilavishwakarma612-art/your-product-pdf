@@ -23,11 +23,12 @@ export default function UserProfile() {
   const rawUsername = params.username ? decodeURIComponent(params.username) : "";
   const normalizedUsername = rawUsername.trim();
 
-  const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ["profile", normalizedUsername],
+  // First, get minimal data from public view to find the user
+  const { data: publicProfile, isLoading: profileLoading } = useQuery({
+    queryKey: ["profile-public", normalizedUsername],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("*")
         .ilike("username", normalizedUsername)
         .maybeSingle();
@@ -36,6 +37,27 @@ export default function UserProfile() {
     },
     enabled: normalizedUsername.length > 0,
   });
+
+  // For own profile, fetch full data from base table (includes bio, social links)
+  const isOwnProfile = user?.id === publicProfile?.id;
+  
+  const { data: fullProfile } = useQuery({
+    queryKey: ["profile-full", publicProfile?.id],
+    queryFn: async () => {
+      if (!publicProfile?.id) return null;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", publicProfile.id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: isOwnProfile && !!publicProfile?.id,
+  });
+
+  // Use full profile for own profile, otherwise public profile
+  const profile = isOwnProfile && fullProfile ? fullProfile : publicProfile;
 
   const { data: badges = [] } = useQuery({
     queryKey: ["user-badges", profile?.id],
@@ -155,7 +177,6 @@ export default function UserProfile() {
   });
 
   const solvedCount = activityData.reduce((sum, d) => sum + d.count, 0);
-  const isOwnProfile = user?.id === profile?.id;
 
   if (profileLoading) {
     return (
@@ -197,19 +218,19 @@ export default function UserProfile() {
           Back
         </Button>
 
-        {/* Profile Header */}
+        {/* Profile Header - bio/social links only shown for own profile */}
         <ProfileHeader
           username={profile.username || "Anonymous"}
           avatarUrl={profile.avatar_url}
           level={profile.current_level}
           createdAt={profile.created_at}
           subscriptionStatus={profile.subscription_status}
-          bio={profile.bio}
-          githubUrl={profile.github_url}
-          linkedinUrl={profile.linkedin_url}
-          leetcodeUrl={profile.leetcode_url}
-          instagramUrl={profile.instagram_url}
-          twitterUrl={profile.twitter_url}
+          bio={'bio' in profile ? (profile.bio as string | null) : undefined}
+          githubUrl={'github_url' in profile ? (profile.github_url as string | null) : undefined}
+          linkedinUrl={'linkedin_url' in profile ? (profile.linkedin_url as string | null) : undefined}
+          leetcodeUrl={'leetcode_url' in profile ? (profile.leetcode_url as string | null) : undefined}
+          instagramUrl={'instagram_url' in profile ? (profile.instagram_url as string | null) : undefined}
+          twitterUrl={'twitter_url' in profile ? (profile.twitter_url as string | null) : undefined}
         />
 
         {/* Stats Grid */}

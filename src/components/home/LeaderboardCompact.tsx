@@ -62,11 +62,12 @@ export function LeaderboardCompact() {
   const currentLeague = getLeague(currentXP);
   const leagueProgress = getLeagueProgress(currentXP, currentLeague);
 
+  // Use profiles_public view for leaderboard - security hardened
   const { data: leaderboard = [] } = useQuery<LeaderboardUser[]>({
     queryKey: ["compact-leaderboard", currentLeague.name],
     queryFn: async () => {
       const { data } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("id, username, avatar_url, total_xp, current_level")
         .gte("total_xp", currentLeague.minXP)
         .lte("total_xp", currentLeague.maxXP === Infinity ? 999999999 : currentLeague.maxXP)

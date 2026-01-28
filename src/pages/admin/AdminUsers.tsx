@@ -22,11 +22,13 @@ interface Profile {
 }
 
 const AdminUsers = () => {
+  // Admin can view all profiles via profiles_public view
+  // Admins have full access through separate RLS policies if needed
   const { data: users, isLoading } = useQuery({
     queryKey: ["admin-users"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("*")
         .order("total_xp", { ascending: false });
       
