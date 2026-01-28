@@ -870,13 +870,20 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           avatar_url: string | null
           bio: string | null
+          cgpa: number | null
+          college: string | null
           created_at: string
           current_level: number
           current_streak: number
           curriculum_level: number | null
+          degree: string | null
+          email: string | null
+          full_name: string | null
           github_url: string | null
+          graduation_year: number | null
           id: string
           instagram_url: string | null
           last_freeze_used_at: string | null
@@ -884,6 +891,9 @@ export type Database = {
           leetcode_url: string | null
           linkedin_url: string | null
           longest_streak: number
+          mobile: string | null
+          portfolio_url: string | null
+          profile_completed_at: string | null
           skill_level: string | null
           streak_freeze_available: number | null
           subscription_expires_at: string | null
@@ -893,15 +903,23 @@ export type Database = {
           twitter_url: string | null
           updated_at: string
           username: string | null
+          work_experience: Json | null
         }
         Insert: {
+          address?: string | null
           avatar_url?: string | null
           bio?: string | null
+          cgpa?: number | null
+          college?: string | null
           created_at?: string
           current_level?: number
           current_streak?: number
           curriculum_level?: number | null
+          degree?: string | null
+          email?: string | null
+          full_name?: string | null
           github_url?: string | null
+          graduation_year?: number | null
           id: string
           instagram_url?: string | null
           last_freeze_used_at?: string | null
@@ -909,6 +927,9 @@ export type Database = {
           leetcode_url?: string | null
           linkedin_url?: string | null
           longest_streak?: number
+          mobile?: string | null
+          portfolio_url?: string | null
+          profile_completed_at?: string | null
           skill_level?: string | null
           streak_freeze_available?: number | null
           subscription_expires_at?: string | null
@@ -918,15 +939,23 @@ export type Database = {
           twitter_url?: string | null
           updated_at?: string
           username?: string | null
+          work_experience?: Json | null
         }
         Update: {
+          address?: string | null
           avatar_url?: string | null
           bio?: string | null
+          cgpa?: number | null
+          college?: string | null
           created_at?: string
           current_level?: number
           current_streak?: number
           curriculum_level?: number | null
+          degree?: string | null
+          email?: string | null
+          full_name?: string | null
           github_url?: string | null
+          graduation_year?: number | null
           id?: string
           instagram_url?: string | null
           last_freeze_used_at?: string | null
@@ -934,6 +963,9 @@ export type Database = {
           leetcode_url?: string | null
           linkedin_url?: string | null
           longest_streak?: number
+          mobile?: string | null
+          portfolio_url?: string | null
+          profile_completed_at?: string | null
           skill_level?: string | null
           streak_freeze_available?: number | null
           subscription_expires_at?: string | null
@@ -943,6 +975,7 @@ export type Database = {
           twitter_url?: string | null
           updated_at?: string
           username?: string | null
+          work_experience?: Json | null
         }
         Relationships: []
       }
