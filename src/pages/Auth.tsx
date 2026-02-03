@@ -8,6 +8,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import logoImage from "@/assets/logo.png";
 
 type AuthMode = "login" | "signup" | "forgot";
@@ -29,26 +30,12 @@ const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const PROD_ORIGIN = "https://nexalgotrix.vercel.app";
-  const currentOrigin = typeof window !== "undefined" ? window.location.origin : PROD_ORIGIN;
-
   const nextPath = useMemo(() => {
     const next = searchParams.get('next');
     return next && next.startsWith('/') ? next : '/dashboard';
   }, [searchParams]);
 
   const isUpgradeFlow = useMemo(() => searchParams.get('upgrade') === '1', [searchParams]);
-
-  // Prevent starting OAuth on preview domains (causes cross-domain confusion).
-  const isBlockedPreviewAuth = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    const host = window.location.hostname;
-    const isLocal = host === "localhost" || host === "127.0.0.1";
-    const isProd = currentOrigin === PROD_ORIGIN;
-    return !isProd && !isLocal;
-  }, [currentOrigin]);
-
-  const preferredOrigin = isBlockedPreviewAuth ? PROD_ORIGIN : currentOrigin;
 
   useEffect(() => {
     // If user is already logged in and landed on /auth via redirect, forward them.
@@ -93,7 +80,7 @@ const Auth = () => {
         }
       } else if (mode === "forgot") {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${preferredOrigin}/auth?reset=true`,
+          redirectTo: `${window.location.origin}/auth?reset=true`,
         });
         if (error) {
           toast({ title: "Reset failed", description: error.message, variant: "destructive" });
@@ -108,21 +95,16 @@ const Auth = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    if (isBlockedPreviewAuth) {
-      const target = `${PROD_ORIGIN}/auth?next=${encodeURIComponent(nextPath)}`;
-      window.location.href = target;
-      return;
-    }
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${PROD_ORIGIN}/auth?next=${encodeURIComponent(nextPath)}`,
-      },
+    // Use Lovable Cloud managed OAuth - redirects back to current origin
+    const { error } = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
     });
 
     if (error) {
       toast({ title: "Google sign in failed", description: error.message, variant: "destructive" });
+    } else {
+      // After successful OAuth, navigate to the intended path
+      navigate(nextPath, { replace: true });
     }
   };
 
@@ -145,35 +127,6 @@ const Auth = () => {
     return "Send reset link";
   };
 
-  if (isBlockedPreviewAuth) {
-    const target = `${PROD_ORIGIN}/auth?next=${encodeURIComponent(nextPath)}`;
-
-    return (
-      <div className="min-h-screen bg-background bg-grid flex items-center justify-center p-4 relative overflow-hidden">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="w-full max-w-md"
-        >
-          <div className="interactive-card p-8 md:p-10 text-center">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <img src={logoImage} alt="Nexalgotrix Logo" className="w-10 h-10 object-contain" />
-              <span className="font-bold text-xl">Nexalgotrix</span>
-            </div>
-            <h1 className="text-2xl font-bold mb-2">Login only on production</h1>
-            <p className="text-muted-foreground mb-6">
-              OAuth should start from <span className="font-medium">nexalgotrix.vercel.app</span> to avoid cross-domain issues.
-            </p>
-            <Button className="w-full btn-primary-glow h-12 rounded-xl" onClick={() => (window.location.href = target)}>
-              Continue to Login
-            </Button>
-            <p className="text-xs text-muted-foreground mt-4">(You’re currently on: {currentOrigin})</p>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background bg-grid flex items-center justify-center p-4 relative overflow-hidden">
