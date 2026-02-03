@@ -94,15 +94,56 @@ const Auth = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}${nextPath}`,
-      },
-    });
+    try {
+      setLoading(true);
 
-    if (error) {
-      toast({ title: "Google sign in failed", description: error.message, variant: "destructive" });
+      // Lovable preview/published domains use an auth-bridge that can rewrite redirects.
+      // On custom domains (e.g. Vercel), bypass the bridge by requesting the OAuth URL
+      // and manually redirecting.
+      const hostname = window.location.hostname;
+      const isLovableDomain = hostname.includes("lovable.app") || hostname.includes("lovableproject.com");
+      const redirectTo = `${window.location.origin}${nextPath}`;
+
+      if (!isLovableDomain) {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo,
+            // Critical: return provider URL instead of letting the bridge redirect us.
+            skipBrowserRedirect: true,
+          },
+        });
+
+        if (error) throw error;
+
+        if (!data?.url) throw new Error("Missing OAuth redirect URL");
+
+        // Security: prevent open-redirects by validating the host.
+        const oauthUrl = new URL(data.url);
+        const allowedHosts = ["accounts.google.com", "accounts.google.co.in"];
+        if (!allowedHosts.includes(oauthUrl.hostname)) {
+          throw new Error("Invalid OAuth redirect URL");
+        }
+
+        window.location.assign(data.url);
+        return;
+      }
+
+      // Lovable domains: normal flow
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo },
+      });
+
+      if (error) throw error;
+    } catch (err: any) {
+      toast({
+        title: "Google sign in failed",
+        description: err?.message ?? "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
