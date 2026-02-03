@@ -8,7 +8,6 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import logoImage from "@/assets/logo.png";
 
 type AuthMode = "login" | "signup" | "forgot";
@@ -95,16 +94,15 @@ const Auth = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    // Use Lovable Cloud managed OAuth - redirects back to current origin
-    const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}${nextPath}`,
+      },
     });
 
     if (error) {
       toast({ title: "Google sign in failed", description: error.message, variant: "destructive" });
-    } else {
-      // After successful OAuth, navigate to the intended path
-      navigate(nextPath, { replace: true });
     }
   };
 
