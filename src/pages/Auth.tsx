@@ -118,13 +118,6 @@ const Auth = () => {
 
         if (!data?.url) throw new Error("Missing OAuth redirect URL");
 
-        // Security: prevent open-redirects by validating the host.
-        const oauthUrl = new URL(data.url);
-        const allowedHosts = ["accounts.google.com", "accounts.google.co.in"];
-        if (!allowedHosts.includes(oauthUrl.hostname)) {
-          throw new Error("Invalid OAuth redirect URL");
-        }
-
         window.location.assign(data.url);
         return;
       }
