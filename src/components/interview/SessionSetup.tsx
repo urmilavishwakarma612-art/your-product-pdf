@@ -32,6 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { SessionConfig, SessionType } from "@/types/interview";
  import { Link } from "react-router-dom";
  import { format } from "date-fns";
@@ -171,80 +172,6 @@ export function SessionSetup({ patterns, companies, onStart, isLoading }: Sessio
         </p>
       </div>
 
-       {/* Past Sessions */}
-       {pastSessions && pastSessions.length > 0 && (
-         <motion.div
-           initial={{ opacity: 0, y: 10 }}
-           animate={{ opacity: 1, y: 0 }}
-           transition={{ delay: 0.05 }}
-           className="glass-card p-6"
-         >
-           <div className="flex items-center justify-between mb-4">
-             <div className="flex items-center gap-2">
-               <History className="w-5 h-5 text-primary" />
-               <h3 className="font-semibold">Past Attempts</h3>
-             </div>
-           </div>
-           <div className="space-y-3">
-             {sessionsLoading ? (
-               <div className="flex justify-center py-4">
-                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-               </div>
-             ) : (
-               pastSessions.map((session: any) => (
-                 <Link
-                   key={session.id}
-                   to={`/interview/results/${session.id}`}
-                   className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group"
-                 >
-                   <div className="flex items-center gap-3">
-                     <div className={`p-2 rounded-lg ${
-                       session.status === "completed" 
-                         ? "bg-emerald-500/20" 
-                         : "bg-amber-500/20"
-                     }`}>
-                       {session.status === "completed" ? (
-                         <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                       ) : (
-                         <XCircle className="w-4 h-4 text-amber-500" />
-                       )}
-                     </div>
-                     <div>
-                       <p className="font-medium text-sm">
-                         {getSessionTypeLabel(session.session_type)}
-                         {session.patterns?.name && (
-                           <span className="text-muted-foreground"> • {session.patterns.name}</span>
-                         )}
-                         {session.company_name && (
-                           <span className="text-muted-foreground"> • {session.company_name}</span>
-                         )}
-                       </p>
-                       <p className="text-xs text-muted-foreground">
-                         {format(new Date(session.created_at), "MMM d, yyyy 'at' h:mm a")} • {formatDuration(session.time_limit)}
-                         {session.mode === "interview" && (
-                           <span className="ml-2 text-primary">Interview Mode</span>
-                         )}
-                       </p>
-                     </div>
-                   </div>
-                   <div className="flex items-center gap-3">
-                     {session.total_score !== null && (
-                       <span className={`text-lg font-bold ${
-                         session.total_score >= 70 ? "text-emerald-500" :
-                         session.total_score >= 40 ? "text-amber-500" : "text-red-500"
-                       }`}>
-                         {session.total_score}%
-                       </span>
-                     )}
-                     <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                   </div>
-                 </Link>
-               ))
-             )}
-           </div>
-         </motion.div>
-       )}
- 
       {/* Mode Toggle */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -408,6 +335,105 @@ export function SessionSetup({ patterns, companies, onStart, isLoading }: Sessio
           )}
         </Button>
       </div>
+ 
+       {/* Past Attempts - Grouped by Session Type */}
+       {pastSessions && pastSessions.length > 0 && (
+         <motion.div
+           initial={{ opacity: 0, y: 10 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ delay: 0.3 }}
+           className="glass-card p-6"
+         >
+           <div className="flex items-center gap-2 mb-4">
+             <History className="w-5 h-5 text-primary" />
+             <h3 className="font-semibold">Past Attempts</h3>
+           </div>
+           
+           <Tabs defaultValue="all" className="w-full">
+             <TabsList className="w-full grid grid-cols-5 mb-4">
+               <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
+               <TabsTrigger value="quick" className="text-xs">Quick</TabsTrigger>
+               <TabsTrigger value="full" className="text-xs">Full</TabsTrigger>
+               <TabsTrigger value="pattern" className="text-xs">Pattern</TabsTrigger>
+               <TabsTrigger value="company" className="text-xs">Company</TabsTrigger>
+             </TabsList>
+             
+             {["all", "quick", "full", "pattern", "company"].map((tabType) => (
+               <TabsContent key={tabType} value={tabType} className="space-y-3 mt-0">
+                 {sessionsLoading ? (
+                   <div className="flex justify-center py-4">
+                     <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                   </div>
+                 ) : (
+                   (() => {
+                     const filtered = tabType === "all" 
+                       ? pastSessions 
+                       : pastSessions.filter((s: any) => s.session_type === tabType);
+                     
+                     if (filtered.length === 0) {
+                       return (
+                         <p className="text-sm text-muted-foreground text-center py-4">
+                           No {tabType === "all" ? "" : getSessionTypeLabel(tabType)} attempts yet
+                         </p>
+                       );
+                     }
+                     
+                     return filtered.map((session: any) => (
+                       <Link
+                         key={session.id}
+                         to={`/interview/results/${session.id}`}
+                         className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group"
+                       >
+                         <div className="flex items-center gap-3">
+                           <div className={`p-2 rounded-lg ${
+                             session.status === "completed" 
+                               ? "bg-emerald-500/20" 
+                               : "bg-amber-500/20"
+                           }`}>
+                             {session.status === "completed" ? (
+                               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                             ) : (
+                               <XCircle className="w-4 h-4 text-amber-500" />
+                             )}
+                           </div>
+                           <div>
+                             <p className="font-medium text-sm">
+                               {getSessionTypeLabel(session.session_type)}
+                               {session.patterns?.name && (
+                                 <span className="text-muted-foreground"> • {session.patterns.name}</span>
+                               )}
+                               {session.company_name && (
+                                 <span className="text-muted-foreground"> • {session.company_name}</span>
+                               )}
+                             </p>
+                             <p className="text-xs text-muted-foreground">
+                               {format(new Date(session.created_at), "MMM d, yyyy 'at' h:mm a")} • {formatDuration(session.time_limit)}
+                               {session.mode === "interview" && (
+                                 <span className="ml-2 text-primary">Interview Mode</span>
+                               )}
+                             </p>
+                           </div>
+                         </div>
+                         <div className="flex items-center gap-3">
+                           {session.total_score !== null && (
+                             <span className={`text-lg font-bold ${
+                               session.total_score >= 70 ? "text-emerald-500" :
+                               session.total_score >= 40 ? "text-amber-500" : "text-red-500"
+                             }`}>
+                               {session.total_score}%
+                             </span>
+                           )}
+                           <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                         </div>
+                       </Link>
+                     ));
+                   })()
+                 )}
+               </TabsContent>
+             ))}
+           </Tabs>
+         </motion.div>
+       )}
     </motion.div>
   );
 }
