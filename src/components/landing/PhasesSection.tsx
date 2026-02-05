@@ -81,13 +81,13 @@ export function PhasesSection() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 mb-6"
             >
               <Layers className="w-4 h-4 text-accent" />
-              <span className="text-sm font-medium text-accent">18-Week Curriculum</span>
+              <span className="text-sm font-medium text-accent">11 Levels • 20+ Patterns • 350+ Problems</span>
             </motion.div>
             <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 tracking-tight">
               Structured <span className="gradient-text-accent">Learning Path</span>
             </h2>
             <p className="text-base md:text-xl text-muted-foreground leading-relaxed px-4">
-              11 levels from foundation to interview mastery. Each level builds on the previous.
+              From foundation to interview mastery. Each level builds on the previous.
             </p>
           </motion.div>
 
@@ -153,13 +153,7 @@ interface LevelCardProps {
 function LevelCard({ level, index, isPremium, onClick }: LevelCardProps) {
   const isFree = level.is_free;
   const canAccess = isFree || isPremium;
-  const weekRange = level.week_start && level.week_end 
-    ? level.week_start === level.week_end 
-      ? `Week ${level.week_start}`
-      : `Week ${level.week_start}-${level.week_end}`
-    : level.level_number === 0 
-      ? "Foundation"
-      : null;
+  const levelLabel = level.level_number === 0 ? "Foundation" : `Level ${level.level_number}`;
 
   return (
     <motion.div
@@ -233,21 +227,12 @@ function LevelCard({ level, index, isPremium, onClick }: LevelCardProps) {
           </p>
         )}
         
-        {!level.description && weekRange && (
+        {!level.description && (
           <p className="text-muted-foreground text-xs md:text-sm">
-            {weekRange}
+            {levelLabel}
           </p>
         )}
       </div>
-
-      {/* Week Badge - Desktop only */}
-      {weekRange && level.description && (
-        <div className="text-right hidden lg:block">
-          <div className="text-xs text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-lg">
-            {weekRange}
-          </div>
-        </div>
-      )}
 
       {/* Arrow / Lock Icon */}
       <motion.div
