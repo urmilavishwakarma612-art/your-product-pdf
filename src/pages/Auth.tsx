@@ -318,7 +318,7 @@ const Auth = () => {
                       <button
                         type="button"
                         onClick={() => setMode("forgot")}
-                        className="text-xs text-primary hover:text-primary/80 transition-colors touch-manipulation"
+                        className="text-xs text-primary hover:text-primary/80 transition-colors touch-manipulation relative z-30 py-2 px-1 -my-2"
                       >
                         Forgot password?
                       </button>
