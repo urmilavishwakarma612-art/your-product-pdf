@@ -315,7 +315,7 @@ function PricingContent() {
               }`}
             >
               {selectedPlan === 'monthly' && (
-                <div className="absolute top-3 right-3">
+                <div className="absolute top-3 right-3 pointer-events-none">
                   <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
                     <Check className="w-3 h-3 text-primary-foreground" />
                   </div>
@@ -375,13 +375,13 @@ function PricingContent() {
                 selectedPlan === 'six_month' ? 'ring-2 ring-primary' : ''
               }`}
             >
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-secondary to-accent rounded-2xl blur opacity-30" />
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-secondary to-accent rounded-2xl blur opacity-30 pointer-events-none" />
               
               <div className="interactive-card p-4 sm:p-6 relative border-primary/30 hover:border-primary/50 h-full">
                 <motion.div 
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="absolute -top-3 left-1/2 -translate-x-1/2"
+                  className="absolute -top-3 left-1/2 -translate-x-1/2 pointer-events-none"
                 >
                   <motion.div 
                     animate={{ y: [0, -2, 0] }}
@@ -449,7 +449,7 @@ function PricingContent() {
               }`}
             >
               {selectedPlan === 'yearly' && (
-                <div className="absolute top-3 right-3">
+                <div className="absolute top-3 right-3 pointer-events-none">
                   <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
                     <Check className="w-3 h-3 text-primary-foreground" />
                   </div>
