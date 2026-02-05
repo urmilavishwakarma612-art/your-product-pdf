@@ -54,6 +54,7 @@ interface UnifiedLevelCardProps {
   onOpenAIMentor: (question: Question) => void;
   filterQuestion: (question: Question) => boolean;
   hasActiveFilters: boolean;
+  onUpgradeClick?: () => void;
 }
 
 const levelColors: Record<number, string> = {
@@ -82,6 +83,7 @@ export const UnifiedLevelCard = ({
   onOpenAIMentor,
   filterQuestion,
   hasActiveFilters,
+  onUpgradeClick,
 }: UnifiedLevelCardProps) => {
   const [isExpanded, setIsExpanded] = useState(index === 0);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
@@ -153,7 +155,13 @@ export const UnifiedLevelCard = ({
       >
         {/* Level Header */}
         <button
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={() => {
+            if (isLevelLocked && onUpgradeClick) {
+              onUpgradeClick();
+            } else {
+              setIsExpanded(!isExpanded);
+            }
+          }}
           className="w-full p-4 sm:p-5 flex items-center justify-between text-left"
         >
           <div className="flex items-center gap-3 sm:gap-4">

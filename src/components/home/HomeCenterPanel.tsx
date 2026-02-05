@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -61,6 +62,7 @@ interface HomeCenterPanelProps {
 
 export function HomeCenterPanel({ searchQuery }: HomeCenterPanelProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [localSearch, setLocalSearch] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState<Set<string>>(new Set());
@@ -68,6 +70,14 @@ export function HomeCenterPanel({ searchQuery }: HomeCenterPanelProps) {
   const [showBookmarked, setShowBookmarked] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [selectedQuestionForMentor, setSelectedQuestionForMentor] = useState<Question | null>(null);
+
+  const handleUpgradeClick = () => {
+    setUpgradeModalOpen(true);
+    // Navigate to pricing after a short delay to show the modal first
+    setTimeout(() => {
+      navigate("/pricing");
+    }, 300);
+  };
 
   // Fetch curriculum levels
   const { data: levels = [], isLoading: levelsLoading } = useQuery({
@@ -283,7 +293,7 @@ export function HomeCenterPanel({ searchQuery }: HomeCenterPanelProps) {
       <ProgressSummaryBar />
 
       {/* Level Timeline */}
-      <LevelTimeline levels={levels} onLevelClick={handleLevelClick} />
+      <LevelTimeline levels={levels} onLevelClick={handleLevelClick} onUpgradeClick={handleUpgradeClick} />
 
       {/* Filters Header */}
       <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
@@ -401,6 +411,7 @@ export function HomeCenterPanel({ searchQuery }: HomeCenterPanelProps) {
               onOpenAIMentor={setSelectedQuestionForMentor}
               filterQuestion={filterQuestion}
               hasActiveFilters={hasActiveFilters}
+              onUpgradeClick={handleUpgradeClick}
             />
           ))
         ) : (
