@@ -1,4 +1,7 @@
 import { useState } from "react";
+ import { useQuery } from "@tanstack/react-query";
+ import { supabase } from "@/integrations/supabase/client";
+ import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 import { 
   Clock, 
@@ -10,7 +13,12 @@ import {
   Trophy,
   Timer,
   Shield,
-  BookOpen
+   BookOpen,
+   History,
+   CheckCircle2,
+   XCircle,
+   ChevronRight,
+   Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +33,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { SessionConfig, SessionType } from "@/types/interview";
+ import { Link } from "react-router-dom";
+ import { format } from "date-fns";
 
 interface SessionSetupProps {
   patterns: { id: string; name: string }[];
@@ -77,13 +87,53 @@ const SESSION_TYPES = [
 ];
 
 export function SessionSetup({ patterns, companies, onStart, isLoading }: SessionSetupProps) {
+   const { user } = useAuth();
   const [selectedType, setSelectedType] = useState<SessionType | null>(null);
   const [selectedPattern, setSelectedPattern] = useState<string>("");
   const [selectedCompany, setSelectedCompany] = useState<string>("");
   const [isInterviewMode, setIsInterviewMode] = useState(true);
+ 
+   // Fetch past sessions
+   const { data: pastSessions, isLoading: sessionsLoading } = useQuery({
+     queryKey: ["interview-history", user?.id],
+     queryFn: async () => {
+       if (!user) return [];
+       const { data, error } = await supabase
+         .from("interview_sessions")
+         .select(`
+           id,
+           session_type,
+           mode,
+           status,
+           total_score,
+           time_limit,
+           created_at,
+           completed_at,
+           pattern_id,
+           company_name,
+           patterns(name)
+         `)
+         .eq("user_id", user.id)
+         .order("created_at", { ascending: false })
+         .limit(5);
+       if (error) throw error;
+       return data || [];
+     },
+     enabled: !!user,
+   });
 
   const selectedConfig = SESSION_TYPES.find(s => s.type === selectedType);
 
+   const getSessionTypeLabel = (type: string) => {
+     const config = SESSION_TYPES.find(s => s.type === type);
+     return config?.title || type;
+   };
+ 
+   const formatDuration = (seconds: number) => {
+     const m = Math.floor(seconds / 60);
+     return `${m} min`;
+   };
+ 
   const canStart = () => {
     if (!selectedType) return false;
     if (selectedType === "pattern" && !selectedPattern) return false;
@@ -121,6 +171,80 @@ export function SessionSetup({ patterns, companies, onStart, isLoading }: Sessio
         </p>
       </div>
 
+       {/* Past Sessions */}
+       {pastSessions && pastSessions.length > 0 && (
+         <motion.div
+           initial={{ opacity: 0, y: 10 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ delay: 0.05 }}
+           className="glass-card p-6"
+         >
+           <div className="flex items-center justify-between mb-4">
+             <div className="flex items-center gap-2">
+               <History className="w-5 h-5 text-primary" />
+               <h3 className="font-semibold">Past Attempts</h3>
+             </div>
+           </div>
+           <div className="space-y-3">
+             {sessionsLoading ? (
+               <div className="flex justify-center py-4">
+                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+               </div>
+             ) : (
+               pastSessions.map((session: any) => (
+                 <Link
+                   key={session.id}
+                   to={`/interview/results/${session.id}`}
+                   className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group"
+                 >
+                   <div className="flex items-center gap-3">
+                     <div className={`p-2 rounded-lg ${
+                       session.status === "completed" 
+                         ? "bg-emerald-500/20" 
+                         : "bg-amber-500/20"
+                     }`}>
+                       {session.status === "completed" ? (
+                         <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                       ) : (
+                         <XCircle className="w-4 h-4 text-amber-500" />
+                       )}
+                     </div>
+                     <div>
+                       <p className="font-medium text-sm">
+                         {getSessionTypeLabel(session.session_type)}
+                         {session.patterns?.name && (
+                           <span className="text-muted-foreground"> • {session.patterns.name}</span>
+                         )}
+                         {session.company_name && (
+                           <span className="text-muted-foreground"> • {session.company_name}</span>
+                         )}
+                       </p>
+                       <p className="text-xs text-muted-foreground">
+                         {format(new Date(session.created_at), "MMM d, yyyy 'at' h:mm a")} • {formatDuration(session.time_limit)}
+                         {session.mode === "interview" && (
+                           <span className="ml-2 text-primary">Interview Mode</span>
+                         )}
+                       </p>
+                     </div>
+                   </div>
+                   <div className="flex items-center gap-3">
+                     {session.total_score !== null && (
+                       <span className={`text-lg font-bold ${
+                         session.total_score >= 70 ? "text-emerald-500" :
+                         session.total_score >= 40 ? "text-amber-500" : "text-red-500"
+                       }`}>
+                         {session.total_score}%
+                       </span>
+                     )}
+                     <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                   </div>
+                 </Link>
+               ))
+             )}
+           </div>
+         </motion.div>
+       )}
+ 
       {/* Mode Toggle */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}

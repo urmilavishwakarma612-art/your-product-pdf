@@ -50,6 +50,7 @@ const AdminJobs = lazy(() => import("./pages/admin/AdminJobs"));
 const AdminCoupons = lazy(() => import("./pages/admin/AdminCoupons"));
 const AdminRefunds = lazy(() => import("./pages/admin/AdminRefunds"));
 const Payments = lazy(() => import("./pages/Payments"));
+ const InterviewResultsPage = lazy(() => import("./pages/InterviewResultsPage"));
 
 const queryClient = new QueryClient();
 
@@ -93,6 +94,7 @@ const App = () => (
               <Route path="/payment-status" element={<ProtectedRoute><PaymentStatus /></ProtectedRoute>} />
               <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
               <Route path="/interview" element={<ProtectedRoute><InterviewSimulator /></ProtectedRoute>} />
+               <Route path="/interview/results/:sessionId" element={<ProtectedRoute><InterviewResultsPage /></ProtectedRoute>} />
               <Route path="/curriculum" element={<ProtectedRoute><Curriculum /></ProtectedRoute>} />
               <Route path="/curriculum/module/:id" element={<ProtectedRoute><CurriculumModule /></ProtectedRoute>} />
               <Route path="/tutor" element={<ProtectedRoute><NexMentor /></ProtectedRoute>} />
