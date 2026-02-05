@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
 import { PageLoader } from "@/components/ui/LogoSpinner";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 // Eager load critical pages
 import Index from "./pages/Index";
@@ -64,11 +65,11 @@ const App = () => (
               <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/patterns" element={<Navigate to="/curriculum" replace />} />
-              <Route path="/question/:id" element={<Question />} />
-              <Route path="/profile/:username" element={<UserProfile />} />
-              <Route path="/admin" element={<AdminLayout />}>
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/patterns" element={<ProtectedRoute><Navigate to="/curriculum" replace /></ProtectedRoute>} />
+              <Route path="/question/:id" element={<ProtectedRoute><Question /></ProtectedRoute>} />
+              <Route path="/profile/:username" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="topics" element={<AdminTopics />} />
                 <Route path="patterns" element={<AdminPatterns />} />
@@ -89,20 +90,20 @@ const App = () => (
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsConditions />} />
               <Route path="/refund" element={<RefundPolicy />} />
-              <Route path="/payment-status" element={<PaymentStatus />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/interview" element={<InterviewSimulator />} />
-              <Route path="/curriculum" element={<Curriculum />} />
-              <Route path="/curriculum/module/:id" element={<CurriculumModule />} />
-              <Route path="/tutor" element={<NexMentor />} />
-              <Route path="/practice" element={<Navigate to="/tutor" replace />} />
-              <Route path="/nexmentor" element={<Navigate to="/tutor" replace />} />
-              <Route path="/events" element={<Events />} />
-              <Route path="/gamification" element={<Gamification />} />
-              <Route path="/referral" element={<Referral />} />
-              <Route path="/profile-settings" element={<ProfileManagement />} />
-              <Route path="/jobs" element={<Jobs />} />
-              <Route path="/payments" element={<Payments />} />
+              <Route path="/payment-status" element={<ProtectedRoute><PaymentStatus /></ProtectedRoute>} />
+              <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
+              <Route path="/interview" element={<ProtectedRoute><InterviewSimulator /></ProtectedRoute>} />
+              <Route path="/curriculum" element={<ProtectedRoute><Curriculum /></ProtectedRoute>} />
+              <Route path="/curriculum/module/:id" element={<ProtectedRoute><CurriculumModule /></ProtectedRoute>} />
+              <Route path="/tutor" element={<ProtectedRoute><NexMentor /></ProtectedRoute>} />
+              <Route path="/practice" element={<ProtectedRoute><Navigate to="/tutor" replace /></ProtectedRoute>} />
+              <Route path="/nexmentor" element={<ProtectedRoute><Navigate to="/tutor" replace /></ProtectedRoute>} />
+              <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
+              <Route path="/gamification" element={<ProtectedRoute><Gamification /></ProtectedRoute>} />
+              <Route path="/referral" element={<ProtectedRoute><Referral /></ProtectedRoute>} />
+              <Route path="/profile-settings" element={<ProtectedRoute><ProfileManagement /></ProtectedRoute>} />
+              <Route path="/jobs" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
+              <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

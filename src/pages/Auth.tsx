@@ -4,7 +4,7 @@ import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, CheckCircle2 } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,11 +24,18 @@ const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
 
   const nextPath = useMemo(() => {
+    // First check if we have a redirect path from ProtectedRoute
+    const stateFrom = (location.state as { from?: string })?.from;
+    if (stateFrom && stateFrom.startsWith('/')) {
+      return stateFrom;
+    }
+    // Then check URL params
     const next = searchParams.get('next');
     return next && next.startsWith('/') ? next : '/dashboard';
-  }, [searchParams]);
+  }, [searchParams, location.state]);
 
   const isUpgradeFlow = useMemo(() => searchParams.get('upgrade') === '1', [searchParams]);
 
