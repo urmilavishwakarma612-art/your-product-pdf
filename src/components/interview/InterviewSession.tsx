@@ -16,6 +16,7 @@ import {
   Play,
   Shield,
   X,
+   ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +43,7 @@ import { ProblemPanel } from "./ProblemPanel";
 import { SubmissionResult, EvaluationResult } from "./SubmissionResult";
 import { TestCaseResults, TestCaseResult } from "./TestCaseResults";
 import type { SessionConfig, InterviewQuestion, QuestionResult } from "@/types/interview";
+ import { useNavigate } from "react-router-dom";
 
 interface InterviewSessionProps {
   sessionId: string;
@@ -68,6 +70,7 @@ interface QuestionState {
 }
 
 export function InterviewSession({ sessionId, config, questions, onEnd }: InterviewSessionProps) {
+   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(config.timeLimit);
   const [questionStates, setQuestionStates] = useState<Record<string, QuestionState>>(() => {
@@ -443,6 +446,15 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
   const timePercent = (timeRemaining / config.timeLimit) * 100;
   const solvedCount = Object.values(questionStates).filter(s => s.is_solved).length;
 
+   const handleBackToInterview = () => {
+     if (Object.values(questionStates).some(s => s.code.trim().length > 50)) {
+       // If user has written code, show confirmation
+       setShowEndDialog(true);
+     } else {
+       navigate("/interview");
+     }
+   };
+ 
   // Mobile layout
   if (isMobile) {
     return (
@@ -451,6 +463,14 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
         <div className={`p-2 border-b ${timeRemaining < 60 ? "border-destructive" : "border-border"}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
+               <Button 
+                 variant="ghost" 
+                 size="icon" 
+                 className="h-8 w-8 mr-1" 
+                 onClick={handleBackToInterview}
+               >
+                 <ArrowLeft className="w-4 h-4" />
+               </Button>
               <Clock className={`w-4 h-4 ${urgencyColor}`} />
               <span className={`font-mono font-bold ${urgencyColor}`}>
                 {formatTime(timeRemaining)}
@@ -664,6 +684,15 @@ export function InterviewSession({ sessionId, config, questions, onEnd }: Interv
       <div className={`px-4 py-2 border-b ${timeRemaining < 60 ? "border-destructive bg-destructive/5" : "border-border"}`}>
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-4">
+             <Button 
+               variant="ghost" 
+               size="sm" 
+               onClick={handleBackToInterview}
+               className="mr-2"
+             >
+               <ArrowLeft className="w-4 h-4 mr-1" />
+               Back
+             </Button>
             <div className="flex items-center gap-2">
               <Clock className={`w-5 h-5 ${urgencyColor}`} />
               <span className={`text-2xl font-mono font-bold ${urgencyColor}`}>
