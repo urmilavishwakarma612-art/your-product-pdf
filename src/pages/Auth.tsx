@@ -181,7 +181,7 @@ const Auth = () => {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-md relative z-10"
+        className="w-full max-w-sm relative z-10"
       >
         {/* Back button */}
         <motion.div
@@ -191,18 +191,18 @@ const Auth = () => {
         >
           <Link 
             to="/" 
-            className="inline-flex items-center gap-2 text-white/50 hover:text-white mb-8 group transition-all duration-300"
+            className="inline-flex items-center gap-2 text-white/50 hover:text-white mb-4 group transition-all duration-300"
           >
-            <span className="p-2 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors">
+            <span className="p-1.5 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors">
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             </span>
-            <span className="text-sm font-medium">Back to home</span>
+            <span className="text-xs font-medium">Back to home</span>
           </Link>
         </motion.div>
 
         {/* Main card */}
         <motion.div
-          className="relative rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-8 md:p-10 shadow-2xl shadow-primary/5"
+          className="relative rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-6 shadow-2xl shadow-primary/5"
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1, duration: 0.5 }}
@@ -216,16 +216,16 @@ const Auth = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="flex items-center justify-center gap-3 mb-10"
+            className="flex items-center justify-center gap-2 mb-6"
           >
             <motion.div
               whileHover={{ scale: 1.05 }}
-              className="relative w-14 h-14 flex items-center justify-center"
+              className="relative w-10 h-10 flex items-center justify-center"
             >
               <div className="absolute inset-0 bg-primary/20 rounded-xl blur-xl" />
-              <img src={logoImage} alt="Nexalgotrix" className="w-12 h-12 object-contain relative z-10" />
+              <img src={logoImage} alt="Nexalgotrix" className="w-9 h-9 object-contain relative z-10" />
             </motion.div>
-            <span className="font-bold text-2xl text-white tracking-tight">Nexalgotrix</span>
+            <span className="font-bold text-xl text-white tracking-tight">Nexalgotrix</span>
           </motion.div>
 
           {/* Title section with icon */}
@@ -236,20 +236,20 @@ const Auth = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="text-center mb-8"
+              className="text-center mb-5"
             >
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
-                className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 mb-4"
+                className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 mb-3"
               >
-                <IconComponent className="w-6 h-6 text-primary" />
+                <IconComponent className="w-5 h-5 text-primary" />
               </motion.div>
-              <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+              <h1 className="text-xl font-bold text-white mb-1">
                 {currentConfig.title}
               </h1>
-              <p className="text-white/50 text-sm">
+              <p className="text-white/50 text-xs">
                 {currentConfig.subtitle}
               </p>
             </motion.div>
@@ -258,7 +258,7 @@ const Auth = () => {
           {/* Form */}
           <motion.form
             onSubmit={handleSubmit}
-            className="space-y-4"
+            className="space-y-3"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
@@ -271,9 +271,9 @@ const Auth = () => {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="space-y-2"
+                  className="space-y-1.5"
                 >
-                  <Label htmlFor="username" className="text-sm font-medium text-white/70">Username</Label>
+                  <Label htmlFor="username" className="text-xs font-medium text-white/70">Username</Label>
                   <div className="relative group">
                     <div className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center pointer-events-none">
                       <User className="w-4 h-4 text-white/30 group-focus-within:text-primary transition-colors duration-300" />
@@ -284,7 +284,7 @@ const Auth = () => {
                       placeholder="johndoe"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      className="pl-12 h-12 rounded-xl border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-primary/50 focus:bg-white/[0.07] focus:ring-1 focus:ring-primary/20 transition-all duration-300"
+                      className="pl-10 h-10 rounded-lg border-white/10 bg-white/5 text-white text-sm placeholder:text-white/30 focus:border-primary/50 focus:bg-white/[0.07] focus:ring-1 focus:ring-primary/20 transition-all duration-300"
                     />
                   </div>
                 </motion.div>
@@ -292,12 +292,12 @@ const Auth = () => {
             </AnimatePresence>
 
             {/* Email field */}
-            <div className="space-y-2 relative">
+            <div className="space-y-1.5 relative">
               {mode !== "reset" && (
                 <>
-                  <Label htmlFor="email" className="text-sm font-medium text-white/70">Email Address</Label>
+                  <Label htmlFor="email" className="text-xs font-medium text-white/70">Email</Label>
                   <div className="relative group">
-                    <div className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center pointer-events-none">
+                    <div className="absolute left-0 top-0 bottom-0 w-10 flex items-center justify-center pointer-events-none">
                       <Mail className="w-4 h-4 text-white/30 group-focus-within:text-primary transition-colors duration-300" />
                     </div>
                     <Input
@@ -306,7 +306,7 @@ const Auth = () => {
                       placeholder="you@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-12 h-12 rounded-xl border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-primary/50 focus:bg-white/[0.07] focus:ring-1 focus:ring-primary/20 transition-all duration-300"
+                      className="pl-10 h-10 rounded-lg border-white/10 bg-white/5 text-white text-sm placeholder:text-white/30 focus:border-primary/50 focus:bg-white/[0.07] focus:ring-1 focus:ring-primary/20 transition-all duration-300"
                       required
                     />
                   </div>
@@ -322,10 +322,10 @@ const Auth = () => {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="space-y-2"
+                  className="space-y-1.5"
                 >
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-sm font-medium text-white/70">
+                    <Label htmlFor="password" className="text-xs font-medium text-white/70">
                       {mode === "reset" ? "New Password" : "Password"}
                     </Label>
                     {mode === "login" && (
@@ -339,7 +339,7 @@ const Auth = () => {
                     )}
                   </div>
                   <div className="relative group">
-                    <div className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center pointer-events-none">
+                    <div className="absolute left-0 top-0 bottom-0 w-10 flex items-center justify-center pointer-events-none">
                       <Lock className="w-4 h-4 text-white/30 group-focus-within:text-primary transition-colors duration-300" />
                     </div>
                     <Input
@@ -348,14 +348,14 @@ const Auth = () => {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-12 pr-12 h-12 rounded-xl border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-primary/50 focus:bg-white/[0.07] focus:ring-1 focus:ring-primary/20 transition-all duration-300"
+                      className="pl-10 pr-10 h-10 rounded-lg border-white/10 bg-white/5 text-white text-sm placeholder:text-white/30 focus:border-primary/50 focus:bg-white/[0.07] focus:ring-1 focus:ring-primary/20 transition-all duration-300"
                       required
                       minLength={6}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-0 top-0 bottom-0 w-12 flex items-center justify-center text-white/30 hover:text-white/60 transition-colors"
+                      className="absolute right-0 top-0 bottom-0 w-10 flex items-center justify-center text-white/30 hover:text-white/60 transition-colors"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -372,11 +372,11 @@ const Auth = () => {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="space-y-2"
+                  className="space-y-1.5"
                 >
-                  <Label htmlFor="confirmPassword" className="text-sm font-medium text-white/70">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword" className="text-xs font-medium text-white/70">Confirm Password</Label>
                   <div className="relative group">
-                    <div className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center pointer-events-none">
+                    <div className="absolute left-0 top-0 bottom-0 w-10 flex items-center justify-center pointer-events-none">
                       <Lock className="w-4 h-4 text-white/30 group-focus-within:text-primary transition-colors duration-300" />
                     </div>
                     <Input
@@ -385,7 +385,7 @@ const Auth = () => {
                       placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pl-12 h-12 rounded-xl border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-primary/50 focus:bg-white/[0.07] focus:ring-1 focus:ring-primary/20 transition-all duration-300"
+                      className="pl-10 h-10 rounded-lg border-white/10 bg-white/5 text-white text-sm placeholder:text-white/30 focus:border-primary/50 focus:bg-white/[0.07] focus:ring-1 focus:ring-primary/20 transition-all duration-300"
                       required
                       minLength={6}
                     />
@@ -398,11 +398,11 @@ const Auth = () => {
             <motion.div 
               whileHover={{ scale: 1.01 }} 
               whileTap={{ scale: 0.98 }}
-              className="pt-2"
+              className="pt-1"
             >
               <Button 
                 type="submit" 
-                className="relative w-full h-12 rounded-xl text-base font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all duration-300 overflow-hidden group"
+                className="relative w-full h-10 rounded-lg text-sm font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all duration-300 overflow-hidden group"
                 disabled={loading}
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
@@ -423,7 +423,7 @@ const Auth = () => {
           </motion.form>
 
           {/* Divider */}
-          <div className="relative my-8">
+          <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-white/10" />
             </div>
@@ -434,7 +434,7 @@ const Auth = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="text-center text-sm text-white/50 relative z-20"
+            className="text-center text-xs text-white/50 relative z-20"
           >
             {mode === "login" && (
               <p>
@@ -480,9 +480,9 @@ const Auth = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
-          className="flex items-center justify-center gap-2 mt-8 text-white/30 text-xs"
+          className="flex items-center justify-center gap-1.5 mt-5 text-white/25 text-[10px]"
         >
-          <Shield className="w-3.5 h-3.5" />
+          <Shield className="w-3 h-3" />
           <span>Secured with end-to-end encryption</span>
         </motion.div>
       </motion.div>
