@@ -14,7 +14,8 @@ import {
   Briefcase,
   Ticket,
   RefreshCcw,
-  Award
+  Award,
+  Clock
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, Link } from "react-router-dom";
@@ -35,6 +36,7 @@ const menuItems = [
   { title: "Users", url: "/admin/users", icon: Users },
   { title: "Subscriptions", url: "/admin/subscriptions", icon: Crown },
   { title: "Coupons", url: "/admin/coupons", icon: Ticket },
+  { title: "Launch Offer", url: "/admin/launch-offer", icon: Clock },
   { title: "Refunds", url: "/admin/refunds", icon: RefreshCcw },
   { title: "Curriculum", url: "/admin/curriculum", icon: GraduationCap },
   { title: "Modules", url: "/admin/modules", icon: BookOpen },

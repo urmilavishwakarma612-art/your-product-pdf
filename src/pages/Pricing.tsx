@@ -13,6 +13,8 @@ import { PaymentOverlay } from "@/components/premium/PaymentOverlay";
 import { CouponInput } from "@/components/checkout/CouponInput";
 import { LiveCoupons } from "@/components/checkout/LiveCoupons";
 import { Helmet } from "react-helmet-async";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 type PlanType = 'monthly' | 'six_month' | 'yearly';
 type PaymentStatus = 'loading' | 'success' | 'error' | null;
@@ -25,8 +27,16 @@ interface AppliedCoupon {
   discountType?: "fixed" | "percentage";
 }
 
+interface LaunchOfferSettings {
+  id: string;
+  title: string;
+  description: string | null;
+  end_date: string;
+  is_active: boolean;
+}
+
 // Countdown Timer Component
-const CountdownTimer = () => {
+const CountdownTimer = ({ offer }: { offer: LaunchOfferSettings | null }) => {
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -35,8 +45,9 @@ const CountdownTimer = () => {
   });
 
   useEffect(() => {
-    const endDate = new Date();
-    endDate.setDate(endDate.getDate() + 7);
+    if (!offer) return;
+    
+    const endDate = new Date(offer.end_date);
 
     const timer = setInterval(() => {
       const now = new Date().getTime();
@@ -49,11 +60,20 @@ const CountdownTimer = () => {
           minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
           seconds: Math.floor((distance % (1000 * 60)) / 1000),
         });
+      } else {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [offer]);
+
+  if (!offer) return null;
+
+  // Don't show if offer has expired
+  const now = new Date().getTime();
+  const endTime = new Date(offer.end_date).getTime();
+  if (endTime <= now) return null;
 
   const TimeBox = ({ value, label }: { value: number; label: string }) => (
     <div className="flex flex-col items-center">
@@ -77,10 +97,13 @@ const CountdownTimer = () => {
       className="mb-8"
     >
       <div className="glass-card p-4 sm:p-5 border-primary/30 bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5 max-w-sm mx-auto">
-        <div className="flex items-center justify-center gap-2 mb-3">
+        <div className="flex items-center justify-center gap-2 mb-2">
           <Clock className="w-4 h-4 text-primary animate-pulse" />
-          <span className="text-xs sm:text-sm font-semibold text-primary">Launch Offer Ends In</span>
+          <span className="text-xs sm:text-sm font-semibold text-primary">{offer.title}</span>
         </div>
+        {offer.description && (
+          <p className="text-xs text-muted-foreground text-center mb-3">{offer.description}</p>
+        )}
         <div className="flex items-center justify-center gap-1.5 sm:gap-2">
           <TimeBox value={timeLeft.days} label="Days" />
           <span className="text-lg font-bold text-primary/50 mt-[-16px]">:</span>
@@ -118,6 +141,23 @@ function PricingContent() {
   const [errorMessage, setErrorMessage] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('six_month');
+
+  // Fetch launch offer settings
+  const { data: launchOffer } = useQuery({
+    queryKey: ["launch-offer"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("launch_offer_settings")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data as LaunchOfferSettings | null;
+    },
+  });
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -282,7 +322,7 @@ function PricingContent() {
           </motion.div>
 
           {/* Countdown Timer */}
-          <CountdownTimer />
+          <CountdownTimer offer={launchOffer ?? null} />
 
           {/* Live Coupons Display */}
           <LiveCoupons />

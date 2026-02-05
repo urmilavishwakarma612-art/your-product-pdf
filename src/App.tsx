@@ -49,8 +49,9 @@ const Jobs = lazy(() => import("./pages/Jobs"));
 const AdminJobs = lazy(() => import("./pages/admin/AdminJobs"));
 const AdminCoupons = lazy(() => import("./pages/admin/AdminCoupons"));
 const AdminRefunds = lazy(() => import("./pages/admin/AdminRefunds"));
+const AdminLaunchOffer = lazy(() => import("./pages/admin/AdminLaunchOffer"));
 const Payments = lazy(() => import("./pages/Payments"));
- const InterviewResultsPage = lazy(() => import("./pages/InterviewResultsPage"));
+const InterviewResultsPage = lazy(() => import("./pages/InterviewResultsPage"));
 
 const queryClient = new QueryClient();
 
@@ -85,6 +86,7 @@ const App = () => (
                 <Route path="modules" element={<AdminModules />} />
                 <Route path="jobs" element={<AdminJobs />} />
                 <Route path="coupons" element={<AdminCoupons />} />
+                <Route path="launch-offer" element={<AdminLaunchOffer />} />
                 <Route path="refunds" element={<AdminRefunds />} />
               </Route>
               <Route path="/shipping" element={<ShippingPolicy />} />
