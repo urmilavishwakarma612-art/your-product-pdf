@@ -129,7 +129,10 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex">
       {/* Left Side - CTA Section (Desktop Only) */}
       <div className="hidden lg:flex lg:w-1/2 bg-black relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-black/90" />
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-black" />
+        {/* Subtle glow effects */}
+        <div className="absolute top-1/4 -left-20 w-72 h-72 bg-primary/20 rounded-full blur-[100px]" />
+        <div className="absolute bottom-1/4 right-0 w-60 h-60 bg-primary/15 rounded-full blur-[80px]" />
         <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20 text-white">
           <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-8 group transition-colors">
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
@@ -168,20 +171,22 @@ const Auth = () => {
 
       {/* Right Side - Auth Form */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md bg-card border border-border rounded-xl p-8 shadow-sm">
           {/* Mobile Back Button */}
-          <Link 
-            to="/" 
-            className="lg:hidden inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 group transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            <span className="text-sm font-medium">Back to home</span>
-          </Link>
+          <div className="lg:hidden">
+            <Link 
+              to="/" 
+              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 group transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              <span className="text-sm font-medium">Back to home</span>
+            </Link>
 
-          {/* Mobile Logo */}
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <img src={logoImage} alt="Nexalgotrix" className="w-10 h-10 object-contain" />
-            <span className="font-bold text-xl text-foreground">Nexalgotrix</span>
+            {/* Mobile Logo */}
+            <div className="flex items-center gap-2 mb-8">
+              <img src={logoImage} alt="Nexalgotrix" className="w-10 h-10 object-contain" />
+              <span className="font-bold text-xl text-foreground">Nexalgotrix</span>
+            </div>
           </div>
 
           {/* Title */}
