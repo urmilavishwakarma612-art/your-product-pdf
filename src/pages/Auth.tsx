@@ -128,8 +128,8 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Left Side - CTA Section (Desktop Only) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/80" />
+      <div className="hidden lg:flex lg:w-1/2 bg-black relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-black/90" />
         <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20 text-white">
           <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-8 group transition-colors">
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
