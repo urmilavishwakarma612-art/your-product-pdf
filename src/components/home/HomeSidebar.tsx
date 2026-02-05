@@ -35,6 +35,7 @@ const navItems = [
   { href: "/tutor", label: "NexMentor", icon: Bot },
   { href: "/interview", label: "Interview", icon: Video },
   { href: "/jobs", label: "Jobs", icon: Briefcase },
+  { href: "/pricing", label: "Upgrade Pro", icon: Crown },
   { href: "/referral", label: "Referrals", icon: Gift },
   { href: "/dashboard?tab=analytics", label: "Analytics", icon: BarChart3 },
 ];
