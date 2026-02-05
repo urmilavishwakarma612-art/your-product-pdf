@@ -173,8 +173,8 @@ export function HeroSection() {
           >
             {[
               { value: "11", label: "Levels", gradient: "gradient-text" },
-              { value: "18", label: "Weeks Roadmap", gradient: "gradient-text-accent" },
-              { value: "150+", label: "Problems", gradient: "text-success" },
+              { value: "20+", label: "Patterns", gradient: "gradient-text-accent" },
+              { value: "350+", label: "Problems", gradient: "text-success" },
             ].map((stat, index) => (
               <motion.div
                 key={stat.label}
