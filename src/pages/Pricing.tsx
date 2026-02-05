@@ -310,7 +310,14 @@ function PricingContent() {
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
               whileHover={{ y: -4 }}
               onClick={() => setSelectedPlan('monthly')}
-              className={`interactive-card p-4 sm:p-6 relative cursor-pointer transition-all ${
+              onPointerUp={() => setSelectedPlan('monthly')}
+              onTouchEnd={() => setSelectedPlan('monthly')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') setSelectedPlan('monthly');
+              }}
+              className={`interactive-card p-4 sm:p-6 relative cursor-pointer transition-all select-none ${
                 selectedPlan === 'monthly' ? 'ring-2 ring-primary border-primary' : ''
               }`}
             >
@@ -371,13 +378,31 @@ function PricingContent() {
               transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
               whileHover={{ y: -4 }}
               onClick={() => setSelectedPlan('six_month')}
-              className={`relative cursor-pointer ${
+              onPointerUp={() => setSelectedPlan('six_month')}
+              onTouchEnd={() => setSelectedPlan('six_month')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') setSelectedPlan('six_month');
+              }}
+              className={`relative cursor-pointer select-none ${
                 selectedPlan === 'six_month' ? 'ring-2 ring-primary' : ''
               }`}
             >
               <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-secondary to-accent rounded-2xl blur opacity-30 pointer-events-none" />
               
-              <div className="interactive-card p-4 sm:p-6 relative border-primary/30 hover:border-primary/50 h-full">
+              <div
+                className="interactive-card p-4 sm:p-6 relative border-primary/30 hover:border-primary/50 h-full"
+                onClick={(e) => {
+                  // Ensure taps on inner content always select the plan
+                  e.stopPropagation();
+                  setSelectedPlan('six_month');
+                }}
+                onPointerUp={(e) => {
+                  e.stopPropagation();
+                  setSelectedPlan('six_month');
+                }}
+              >
                 <motion.div 
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -444,7 +469,14 @@ function PricingContent() {
               transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
               whileHover={{ y: -4 }}
               onClick={() => setSelectedPlan('yearly')}
-              className={`interactive-card p-4 sm:p-6 relative cursor-pointer transition-all ${
+              onPointerUp={() => setSelectedPlan('yearly')}
+              onTouchEnd={() => setSelectedPlan('yearly')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') setSelectedPlan('yearly');
+              }}
+              className={`interactive-card p-4 sm:p-6 relative cursor-pointer transition-all select-none ${
                 selectedPlan === 'yearly' ? 'ring-2 ring-primary border-primary' : ''
               }`}
             >
