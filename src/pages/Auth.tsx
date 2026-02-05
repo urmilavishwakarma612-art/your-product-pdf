@@ -141,7 +141,7 @@ const Auth = () => {
           
           <div className="flex items-center gap-3 mb-8">
             <img src={logoImage} alt="Nexalgotrix" className="w-12 h-12 object-contain" />
-            <span className="font-bold text-2xl">Nexalgotrix</span>
+            <span className="font-bold text-2xl text-primary">Nexalgotrix</span>
           </div>
           
           <h1 className="text-4xl xl:text-5xl font-bold mb-6 leading-tight">
