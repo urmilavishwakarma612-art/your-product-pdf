@@ -948,6 +948,10 @@ export default function NexMentor() {
         <header className="bg-card border-b border-border px-4 py-3 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => navigate("/")}>
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                <span>Home</span>
+              </Button>
               <Link to="/" className="flex items-center gap-2 group">
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="w-8 h-8">
                   <img src={logoImage} alt="NexAlgoTrix" className="w-8 h-8 object-contain" />
@@ -1166,9 +1170,13 @@ export default function NexMentor() {
     <header className="bg-card border-b border-border px-3 sm:px-4 py-2 flex-shrink-0">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 sm:gap-3">
-          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={handleBackToSelection}>
+          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => navigate("/")}>
             <ArrowLeft className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">Back</span>
+            <span className="hidden sm:inline">Home</span>
+          </Button>
+          <Button variant="outline" size="sm" className="h-8 px-2" onClick={handleBackToSelection}>
+            <BookOpen className="w-4 h-4 sm:mr-1" />
+            <span className="hidden sm:inline">Problems</span>
           </Button>
           <Link to="/" className="hidden sm:flex items-center gap-2">
             <img src={logoImage} alt="NexAlgoTrix" className="w-7 h-7 object-contain" />
