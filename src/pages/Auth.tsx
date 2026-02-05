@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Mail, Lock, User, ArrowLeft, Sparkles, Eye, EyeOff, KeyRound, Shield } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -117,118 +117,74 @@ const Auth = () => {
   };
 
   const modeConfig = {
-    login: { title: "Welcome back", subtitle: "Continue your DSA mastery journey", button: "Sign In", icon: KeyRound },
-    signup: { title: "Join the Elite", subtitle: "Start mastering patterns like a pro", button: "Create Account", icon: Shield },
-    forgot: { title: "Reset Password", subtitle: "We'll send you a magic link", button: "Send Reset Link", icon: Mail },
-    reset: { title: "New Password", subtitle: "Choose a strong password", button: "Update Password", icon: Lock },
+    login: { title: "Welcome back", subtitle: "Continue your DSA mastery journey", button: "Sign In" },
+    signup: { title: "Create an account", subtitle: "Start mastering patterns like a pro", button: "Create Account" },
+    forgot: { title: "Reset Password", subtitle: "We'll send you a magic link", button: "Send Reset Link" },
+    reset: { title: "New Password", subtitle: "Choose a strong password", button: "Update Password" },
   };
 
   const currentConfig = modeConfig[mode];
-  const IconComponent = currentConfig.icon;
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Premium gradient background */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(232,9,72,0.15),transparent_50%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(232,9,72,0.1),transparent_50%)]" />
-      
-      {/* Grid pattern overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px]" />
-      
-      {/* Animated gradient orbs */}
-      <motion.div
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.3, 0.5, 0.3],
-        }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute -top-32 -right-32 w-96 h-96 bg-primary/20 rounded-full blur-[128px] pointer-events-none"
-      />
-      <motion.div
-        animate={{
-          scale: [1.2, 1, 1.2],
-          opacity: [0.2, 0.4, 0.2],
-        }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute -bottom-32 -left-32 w-96 h-96 bg-primary/15 rounded-full blur-[128px] pointer-events-none"
-      />
-
-      {/* Floating particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(20)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-primary/30 rounded-full"
-            initial={{
-              x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1000),
-              y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 800),
-            }}
-            animate={{
-              y: [null, Math.random() * -300 - 100],
-              opacity: [0, 1, 0],
-            }}
-            transition={{
-              duration: Math.random() * 4 + 3,
-              repeat: Infinity,
-              delay: Math.random() * 2,
-              ease: "easeOut",
-            }}
-          />
-        ))}
+    <div className="min-h-screen bg-background flex">
+      {/* Left Side - CTA Section (Desktop Only) */}
+      <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/80" />
+        <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20 text-white">
+          <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-8 group transition-colors">
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-sm font-medium">Back to home</span>
+          </Link>
+          
+          <div className="flex items-center gap-3 mb-8">
+            <img src={logoImage} alt="Nexalgotrix" className="w-12 h-12 object-contain" />
+            <span className="font-bold text-2xl">Nexalgotrix</span>
+          </div>
+          
+          <h1 className="text-4xl xl:text-5xl font-bold mb-6 leading-tight">
+            Master DSA Patterns.<br />
+            Crack Any Interview.
+          </h1>
+          
+          <p className="text-lg text-white/80 mb-8 max-w-md">
+            Join thousands of developers who've transformed their problem-solving skills with our pattern-based learning approach.
+          </p>
+          
+          <div className="space-y-4">
+            {[
+              "15+ proven DSA patterns",
+              "AI-powered personalized tutoring",
+              "Real interview simulations",
+              "Track progress & earn badges"
+            ].map((feature, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-white/90" />
+                <span className="text-white/90">{feature}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-sm relative z-10"
-      >
-        {/* Back button */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-        >
+      {/* Right Side - Auth Form */}
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
+        <div className="w-full max-w-md">
+          {/* Mobile Back Button */}
           <Link 
             to="/" 
-            className="inline-flex items-center gap-2 text-white/50 hover:text-white mb-4 group transition-all duration-300"
+            className="lg:hidden inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 group transition-colors"
           >
-            <span className="p-1.5 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors">
-              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-            </span>
-            <span className="text-xs font-medium">Back to home</span>
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-sm font-medium">Back to home</span>
           </Link>
-        </motion.div>
 
-        {/* Main card */}
-        <motion.div
-          className="relative rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-6 shadow-2xl shadow-primary/5"
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1, duration: 0.5 }}
-        >
-          {/* Glow effect on card */}
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-primary/10 via-transparent to-transparent opacity-50 pointer-events-none" />
-          <div className="absolute inset-px rounded-2xl bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
-          
-          {/* Logo */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="flex items-center justify-center gap-2 mb-6"
-          >
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="relative w-10 h-10 flex items-center justify-center"
-            >
-              <div className="absolute inset-0 bg-primary/20 rounded-xl blur-xl" />
-              <img src={logoImage} alt="Nexalgotrix" className="w-9 h-9 object-contain relative z-10" />
-            </motion.div>
-            <span className="font-bold text-xl text-white tracking-tight">Nexalgotrix</span>
-          </motion.div>
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex items-center gap-2 mb-8">
+            <img src={logoImage} alt="Nexalgotrix" className="w-10 h-10 object-contain" />
+            <span className="font-bold text-xl text-foreground">Nexalgotrix</span>
+          </div>
 
-          {/* Title section with icon */}
+          {/* Title */}
           <AnimatePresence mode="wait">
             <motion.div
               key={mode}
@@ -236,33 +192,19 @@ const Auth = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="text-center mb-5"
+              className="mb-8"
             >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
-                className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 mb-3"
-              >
-                <IconComponent className="w-5 h-5 text-primary" />
-              </motion.div>
-              <h1 className="text-xl font-bold text-white mb-1">
+              <h1 className="text-2xl font-bold text-foreground mb-2">
                 {currentConfig.title}
               </h1>
-              <p className="text-white/50 text-xs">
+              <p className="text-muted-foreground">
                 {currentConfig.subtitle}
               </p>
             </motion.div>
           </AnimatePresence>
 
           {/* Form */}
-          <motion.form
-            onSubmit={handleSubmit}
-            className="space-y-3"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Username field for signup */}
             <AnimatePresence mode="wait">
               {mode === "signup" && (
@@ -271,20 +213,18 @@ const Auth = () => {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="space-y-1.5"
+                  className="space-y-2"
                 >
-                  <Label htmlFor="username" className="text-xs font-medium text-white/70">Username</Label>
-                  <div className="relative group">
-                    <div className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center pointer-events-none">
-                      <User className="w-4 h-4 text-white/30 group-focus-within:text-primary transition-colors duration-300" />
-                    </div>
+                  <Label htmlFor="username">Username</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       id="username"
                       type="text"
                       placeholder="johndoe"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      className="pl-10 h-10 rounded-lg border-white/10 bg-white/5 text-white text-sm placeholder:text-white/30 focus:border-primary/50 focus:bg-white/[0.07] focus:ring-1 focus:ring-primary/20 transition-all duration-300"
+                      className="pl-10"
                     />
                   </div>
                 </motion.div>
@@ -292,70 +232,64 @@ const Auth = () => {
             </AnimatePresence>
 
             {/* Email field */}
-            <div className="space-y-1.5 relative">
-              {mode !== "reset" && (
-                <>
-                  <Label htmlFor="email" className="text-xs font-medium text-white/70">Email</Label>
-                  <div className="relative group">
-                    <div className="absolute left-0 top-0 bottom-0 w-10 flex items-center justify-center pointer-events-none">
-                      <Mail className="w-4 h-4 text-white/30 group-focus-within:text-primary transition-colors duration-300" />
-                    </div>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 h-10 rounded-lg border-white/10 bg-white/5 text-white text-sm placeholder:text-white/30 focus:border-primary/50 focus:bg-white/[0.07] focus:ring-1 focus:ring-primary/20 transition-all duration-300"
-                      required
-                    />
-                  </div>
-                </>
-              )}
-            </div>
+            {mode !== "reset" && (
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Password field */}
             <AnimatePresence mode="wait">
-              {(mode !== "forgot") && (
+              {mode !== "forgot" && (
                 <motion.div
                   key="password"
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="space-y-1.5"
+                  className="space-y-2"
                 >
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-xs font-medium text-white/70">
+                    <Label htmlFor="password">
                       {mode === "reset" ? "New Password" : "Password"}
                     </Label>
                     {mode === "login" && (
                       <button
                         type="button"
                         onClick={() => setMode("forgot")}
-                        className="text-xs text-primary hover:text-primary/80 transition-colors touch-manipulation relative z-30 py-2 px-2 -my-2 rounded-md hover:bg-primary/10"
+                        className="text-sm text-primary hover:text-primary/80 transition-colors"
                       >
                         Forgot password?
                       </button>
                     )}
                   </div>
-                  <div className="relative group">
-                    <div className="absolute left-0 top-0 bottom-0 w-10 flex items-center justify-center pointer-events-none">
-                      <Lock className="w-4 h-4 text-white/30 group-focus-within:text-primary transition-colors duration-300" />
-                    </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 pr-10 h-10 rounded-lg border-white/10 bg-white/5 text-white text-sm placeholder:text-white/30 focus:border-primary/50 focus:bg-white/[0.07] focus:ring-1 focus:ring-primary/20 transition-all duration-300"
+                      className="pl-10 pr-10"
                       required
                       minLength={6}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-0 top-0 bottom-0 w-10 flex items-center justify-center text-white/30 hover:text-white/60 transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -372,20 +306,18 @@ const Auth = () => {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="space-y-1.5"
+                  className="space-y-2"
                 >
-                  <Label htmlFor="confirmPassword" className="text-xs font-medium text-white/70">Confirm Password</Label>
-                  <div className="relative group">
-                    <div className="absolute left-0 top-0 bottom-0 w-10 flex items-center justify-center pointer-events-none">
-                      <Lock className="w-4 h-4 text-white/30 group-focus-within:text-primary transition-colors duration-300" />
-                    </div>
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       id="confirmPassword"
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pl-10 h-10 rounded-lg border-white/10 bg-white/5 text-white text-sm placeholder:text-white/30 focus:border-primary/50 focus:bg-white/[0.07] focus:ring-1 focus:ring-primary/20 transition-all duration-300"
+                      className="pl-10"
                       required
                       minLength={6}
                     />
@@ -395,54 +327,35 @@ const Auth = () => {
             </AnimatePresence>
 
             {/* Submit button */}
-            <motion.div 
-              whileHover={{ scale: 1.01 }} 
-              whileTap={{ scale: 0.98 }}
-              className="pt-1"
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={loading}
             >
-              <Button 
-                type="submit" 
-                className="relative w-full h-10 rounded-lg text-sm font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all duration-300 overflow-hidden group"
-                disabled={loading}
-              >
-                <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                {loading ? (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
-                  />
-                ) : (
-                  <span className="flex items-center gap-2">
-                    {currentConfig.button}
-                    <Sparkles className="w-4 h-4 ml-2" />
-                  </span>
-                )}
-              </Button>
-            </motion.div>
-          </motion.form>
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                currentConfig.button
+              )}
+            </Button>
+          </form>
 
           {/* Divider */}
-          <div className="relative my-5">
+          <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10" />
+              <div className="w-full border-t border-border" />
             </div>
           </div>
 
           {/* Mode switch */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="text-center text-xs text-white/50 relative z-20"
-          >
+          <div className="text-center text-sm text-muted-foreground">
             {mode === "login" && (
               <p>
                 New to Nexalgotrix?{" "}
                 <button
                   type="button"
                   onClick={() => setMode("signup")}
-                  className="text-primary hover:text-primary/80 font-semibold transition-colors px-2 py-1 -mx-2 rounded-md hover:bg-primary/10 touch-manipulation"
+                  className="text-primary hover:text-primary/80 font-semibold transition-colors"
                 >
                   Create an account
                 </button>
@@ -454,7 +367,7 @@ const Auth = () => {
                 <button
                   type="button"
                   onClick={() => setMode("login")}
-                  className="text-primary hover:text-primary/80 font-semibold transition-colors px-2 py-1 -mx-2 rounded-md hover:bg-primary/10 touch-manipulation"
+                  className="text-primary hover:text-primary/80 font-semibold transition-colors"
                 >
                   Sign in
                 </button>
@@ -466,26 +379,15 @@ const Auth = () => {
                 <button
                   type="button"
                   onClick={() => setMode("login")}
-                  className="text-primary hover:text-primary/80 font-semibold transition-colors px-2 py-1 -mx-2 rounded-md hover:bg-primary/10 touch-manipulation"
+                  className="text-primary hover:text-primary/80 font-semibold transition-colors"
                 >
                   Back to sign in
                 </button>
               </p>
             )}
-          </motion.div>
-        </motion.div>
-
-        {/* Security badge */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="flex items-center justify-center gap-1.5 mt-5 text-white/25 text-[10px]"
-        >
-          <Shield className="w-3 h-3" />
-          <span>Secured with end-to-end encryption</span>
-        </motion.div>
-      </motion.div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
