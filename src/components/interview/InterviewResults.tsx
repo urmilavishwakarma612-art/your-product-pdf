@@ -14,12 +14,18 @@ import {
   RotateCcw,
   Bot,
   Loader2,
+  TrendingUp,
+  AlertTriangle,
+  BookOpen,
+  Calendar,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Link } from "react-router-dom";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { SessionConfig, QuestionResult } from "@/types/interview";
 
 interface InterviewResultsProps {
@@ -41,6 +47,11 @@ export function InterviewResults({ sessionId, config, results, onNewSession }: I
   const avgTimePerQuestion = Math.round(totalTimeSpent / totalQuestions);
   const scorePercent = Math.round((solvedCount / totalQuestions) * 100);
 
+  // Time analysis
+  const avgTimeEasy = results.filter(r => r.difficulty === 'easy');
+  const avgTimeMedium = results.filter(r => r.difficulty === 'medium');
+  const avgTimeHard = results.filter(r => r.difficulty === 'hard');
+
   // Get AI feedback
   const { data: aiFeedback, isLoading: feedbackLoading, refetch: fetchFeedback } = useQuery({
     queryKey: ["interview-feedback", sessionId],
@@ -58,6 +69,7 @@ export function InterviewResults({ sessionId, config, results, onNewSession }: I
             time_spent: r.time_spent,
             hints_used: r.hints_used,
             skipped: r.skipped,
+            submitted_code: r.submitted_code,
           })),
         },
       });
@@ -84,6 +96,79 @@ export function InterviewResults({ sessionId, config, results, onNewSession }: I
     easy: "bg-emerald-500/20 text-emerald-500",
     medium: "bg-amber-500/20 text-amber-500",
     hard: "bg-red-500/20 text-red-500",
+  };
+
+  // Parse AI feedback into sections for better rendering
+  const renderFeedback = (feedback: string) => {
+    const sections = feedback.split(/### /g).filter(Boolean);
+    
+    const getSectionIcon = (title: string) => {
+      if (title.includes('PERFORMANCE') || title.includes('VERDICT')) return <Trophy className="w-5 h-5 text-primary" />;
+      if (title.includes('TIME')) return <Clock className="w-5 h-5 text-blue-500" />;
+      if (title.includes('PROBLEM') || title.includes('PATTERN')) return <Target className="w-5 h-5 text-purple-500" />;
+      if (title.includes('TECHNICAL') || title.includes('GAP')) return <AlertTriangle className="w-5 h-5 text-amber-500" />;
+      if (title.includes('IMPROVEMENT') || title.includes('ROADMAP')) return <TrendingUp className="w-5 h-5 text-emerald-500" />;
+      if (title.includes('NEXT') || title.includes('RECOMMENDATION')) return <Sparkles className="w-5 h-5 text-pink-500" />;
+      return <BookOpen className="w-5 h-5 text-muted-foreground" />;
+    };
+
+    const getSectionColor = (title: string) => {
+      if (title.includes('PERFORMANCE') || title.includes('VERDICT')) return 'border-primary/30 bg-primary/5';
+      if (title.includes('TIME')) return 'border-blue-500/30 bg-blue-500/5';
+      if (title.includes('PROBLEM') || title.includes('PATTERN')) return 'border-purple-500/30 bg-purple-500/5';
+      if (title.includes('TECHNICAL') || title.includes('GAP')) return 'border-amber-500/30 bg-amber-500/5';
+      if (title.includes('IMPROVEMENT') || title.includes('ROADMAP')) return 'border-emerald-500/30 bg-emerald-500/5';
+      if (title.includes('NEXT') || title.includes('RECOMMENDATION')) return 'border-pink-500/30 bg-pink-500/5';
+      return 'border-border bg-muted/30';
+    };
+
+    return (
+      <div className="space-y-4">
+        {sections.map((section, idx) => {
+          const lines = section.split('\n');
+          const title = lines[0]?.trim() || '';
+          const content = lines.slice(1).join('\n').trim();
+          
+          return (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.1 }}
+              className={`rounded-xl border p-4 ${getSectionColor(title)}`}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                {getSectionIcon(title)}
+                <h4 className="font-semibold text-sm">{title.replace(/[📊⏱️💡🔧📈🎯]/g, '').trim()}</h4>
+              </div>
+              <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                {content.split('\n').map((line, lineIdx) => {
+                  // Style bullet points
+                  if (line.trim().startsWith('-')) {
+                    return (
+                      <div key={lineIdx} className="flex gap-2 mb-1">
+                        <span className="text-primary">•</span>
+                        <span>{line.replace(/^-\s*/, '')}</span>
+                      </div>
+                    );
+                  }
+                  // Style day plans
+                  if (line.trim().match(/^Day \d/i)) {
+                    return (
+                      <div key={lineIdx} className="flex items-center gap-2 mb-1 font-medium text-foreground">
+                        <Calendar className="w-3 h-3" />
+                        <span>{line}</span>
+                      </div>
+                    );
+                  }
+                  return <p key={lineIdx} className="mb-1">{line}</p>;
+                })}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    );
   };
 
   return (
@@ -205,32 +290,44 @@ export function InterviewResults({ sessionId, config, results, onNewSession }: I
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bot className="w-5 h-5 text-primary" />
-            AI Performance Analysis
+            Senior Mentor Analysis
           </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Detailed performance review with actionable improvement roadmap
+          </p>
         </CardHeader>
         <CardContent>
           {!showAIFeedback ? (
-            <div className="text-center py-6">
+            <div className="text-center py-8">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <Bot className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="font-semibold mb-2">Get Expert Feedback</h3>
               <p className="text-muted-foreground mb-4">
-                Get personalized feedback and recommendations from our AI coach
+                Our AI mentor will analyze your time management, problem-solving patterns, and provide a personalized improvement roadmap
               </p>
               <Button onClick={handleGetFeedback} className="btn-primary-glow">
-                <Bot className="w-4 h-4 mr-2" />
-                Get AI Feedback
+                <Sparkles className="w-4 h-4 mr-2" />
+                Generate Mentor Report
               </Button>
             </div>
           ) : feedbackLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
-              <span>Analyzing your performance...</span>
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Bot className="w-8 h-8 text-primary" />
+                </div>
+                <div className="absolute inset-0 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+              </div>
+              <p className="mt-4 font-medium">Analyzing Your Performance...</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Reviewing time patterns, problem-solving approach, and code quality
+              </p>
             </div>
           ) : (
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <div 
-                className="whitespace-pre-wrap"
-                dangerouslySetInnerHTML={{ __html: aiFeedback?.replace(/\n/g, '<br/>') || '' }}
-              />
-            </div>
+            <ScrollArea className="max-h-[600px] pr-4">
+              {aiFeedback && renderFeedback(aiFeedback)}
+            </ScrollArea>
           )}
         </CardContent>
       </Card>
