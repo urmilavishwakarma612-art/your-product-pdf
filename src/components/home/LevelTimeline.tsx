@@ -13,6 +13,7 @@ interface CurriculumLevel {
 interface LevelTimelineProps {
   levels: CurriculumLevel[];
   onLevelClick: (level: CurriculumLevel) => void;
+  onUpgradeClick?: () => void;
 }
 
 const levelColors: Record<number, string> = {
@@ -29,8 +30,17 @@ const levelColors: Record<number, string> = {
   10: "bg-violet-500",
 };
 
-export function LevelTimeline({ levels, onLevelClick }: LevelTimelineProps) {
+export function LevelTimeline({ levels, onLevelClick, onUpgradeClick }: LevelTimelineProps) {
   const { isPremium } = useSubscription();
+
+  const handleClick = (level: CurriculumLevel) => {
+    const isLocked = !level.is_free && !isPremium;
+    if (isLocked && onUpgradeClick) {
+      onUpgradeClick();
+    } else {
+      onLevelClick(level);
+    }
+  };
 
   return (
     <div className="bg-card border border-border rounded-xl p-4">
@@ -47,7 +57,7 @@ export function LevelTimeline({ levels, onLevelClick }: LevelTimelineProps) {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.05 }}
-              onClick={() => onLevelClick(level)}
+              onClick={() => handleClick(level)}
               className={cn(
                 "relative flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center",
                 "font-bold text-sm transition-all hover:scale-110",
