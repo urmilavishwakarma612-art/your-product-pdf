@@ -7,7 +7,6 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { UnifiedLevelCard } from "@/components/curriculum/UnifiedLevelCard";
 import { CurriculumOverallProgress } from "@/components/curriculum/CurriculumOverallProgress";
 import { CurriculumFilters } from "@/components/curriculum/CurriculumFilters";
-import { WeekTimeline } from "@/components/curriculum/WeekTimeline";
 import { AIMentor } from "@/components/patterns/AIMentor";
 import { SpacedRepetition } from "@/components/patterns/SpacedRepetition";
 import { UpgradeBanner } from "@/components/premium/UpgradeBanner";
@@ -305,10 +304,10 @@ const Curriculum = () => {
   return (
     <>
       <Helmet>
-        <title>DSA Curriculum - Pattern-First Learning | NexAlgoTrix</title>
+        <title>DSA Curriculum - 11 Levels, 20+ Patterns | NexAlgoTrix</title>
         <meta
           name="description"
-          content="18-week structured DSA curriculum with pattern-first learning. Stop memorizing, start recognizing patterns."
+          content="11-level structured DSA curriculum with 20+ patterns and 350+ problems. Stop memorizing, start recognizing patterns."
         />
       </Helmet>
 
@@ -332,7 +331,7 @@ const Curriculum = () => {
             Pattern-First Learning
           </span>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
-            <span className="gradient-text">18-Week DSA</span>{" "}
+            <span className="gradient-text">Pattern-First DSA</span>{" "}
             <span className="text-foreground">Curriculum</span>
           </h1>
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -376,9 +375,6 @@ const Curriculum = () => {
 
         {/* Spaced Repetition */}
         <SpacedRepetition />
-
-        {/* Week Timeline */}
-        <WeekTimeline levels={levels} />
 
         {/* Filters */}
         <div className="mt-8">
