@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, Lock, User, ArrowLeft, Sparkles } from "lucide-react";
+import { Mail, Lock, User, ArrowLeft, Sparkles, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logoImage from "@/assets/logo.png";
 
-type AuthMode = "login" | "signup" | "forgot";
+type AuthMode = "login" | "signup" | "forgot" | "reset";
 
 type PendingUpgrade = {
   plan?: 'monthly' | 'lifetime';
@@ -22,8 +22,10 @@ const Auth = () => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -37,6 +39,17 @@ const Auth = () => {
   const isUpgradeFlow = useMemo(() => searchParams.get('upgrade') === '1', [searchParams]);
 
   useEffect(() => {
+    // Check if this is a password reset callback
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+    const type = hashParams.get('type');
+    
+    if (accessToken && type === 'recovery') {
+      setMode("reset");
+      // Supabase will automatically set the session from the hash
+      return;
+    }
+
     // If user is already logged in and landed on /auth via redirect, forward them.
     if (user) {
       navigate(nextPath, { replace: true });
@@ -59,7 +72,31 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      if (mode === "login") {
+      if (mode === "reset") {
+        // Handle password reset
+        if (password !== confirmPassword) {
+          toast({ title: "Passwords don't match", description: "Please ensure both passwords are the same.", variant: "destructive" });
+          setLoading(false);
+          return;
+        }
+        if (password.length < 6) {
+          toast({ title: "Password too short", description: "Password must be at least 6 characters.", variant: "destructive" });
+          setLoading(false);
+          return;
+        }
+
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) {
+          toast({ title: "Password reset failed", description: error.message, variant: "destructive" });
+        } else {
+          toast({ title: "Password updated!", description: "You can now log in with your new password." });
+          // Clear the hash and redirect to login
+          window.history.replaceState(null, '', window.location.pathname);
+          setMode("login");
+          setPassword("");
+          setConfirmPassword("");
+        }
+      } else if (mode === "login") {
         const { error } = await signIn(email, password);
         if (error) {
           toast({ title: "Login failed", description: error.message, variant: "destructive" });
@@ -96,18 +133,21 @@ const Auth = () => {
   const getTitle = () => {
     if (mode === "login") return "Welcome back";
     if (mode === "signup") return "Create your account";
+    if (mode === "reset") return "Set new password";
     return "Reset your password";
   };
 
   const getSubtitle = () => {
     if (mode === "login") return "Log in to continue your DSA journey";
     if (mode === "signup") return "Start mastering DSA through patterns";
+    if (mode === "reset") return "Enter your new password below";
     return "Enter your email to receive a reset link";
   };
 
   const getButtonText = () => {
     if (mode === "login") return "Log in";
     if (mode === "signup") return "Create account";
+    if (mode === "reset") return "Update password";
     return "Send reset link";
   };
 
@@ -244,23 +284,27 @@ const Auth = () => {
             </AnimatePresence>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">Email</Label>
-              <div className="relative group">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 h-12 rounded-xl border-border/50 bg-muted/30 focus:bg-muted/50 transition-all"
-                  required
-                />
-              </div>
+              {mode !== "reset" && (
+                <>
+                  <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                  <div className="relative group">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10 h-12 rounded-xl border-border/50 bg-muted/30 focus:bg-muted/50 transition-all"
+                      required
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             <AnimatePresence mode="wait">
-              {mode !== "forgot" && (
+              {(mode !== "forgot") && (
                 <motion.div 
                   key="password"
                   initial={{ opacity: 0, height: 0 }}
@@ -284,11 +328,45 @@ const Auth = () => {
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <Input
                       id="password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 h-12 rounded-xl border-border/50 bg-muted/30 focus:bg-muted/50 transition-all"
+                      className="pl-10 pr-10 h-12 rounded-xl border-border/50 bg-muted/30 focus:bg-muted/50 transition-all"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence mode="wait">
+              {mode === "reset" && (
+                <motion.div 
+                  key="confirm-password"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-2"
+                >
+                  <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirm Password</Label>
+                  <div className="relative group">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <Input
+                      id="confirmPassword"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="pl-10 pr-10 h-12 rounded-xl border-border/50 bg-muted/30 focus:bg-muted/50 transition-all"
                       required
                       minLength={6}
                     />
@@ -314,7 +392,6 @@ const Auth = () => {
               </Button>
             </motion.div>
           </motion.form>
-
 
           <motion.div 
             initial={{ opacity: 0 }}
@@ -346,7 +423,7 @@ const Auth = () => {
                 </button>
               </>
             )}
-            {mode === "forgot" && (
+            {(mode === "forgot" || mode === "reset") && (
               <>
                 Remember your password?{" "}
                 <button
