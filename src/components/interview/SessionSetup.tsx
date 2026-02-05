@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useMemo } from "react";
  import { useQuery } from "@tanstack/react-query";
  import { supabase } from "@/integrations/supabase/client";
  import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +25,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -36,6 +37,7 @@ import {
 import type { SessionConfig, SessionType } from "@/types/interview";
  import { Link } from "react-router-dom";
  import { format } from "date-fns";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 interface SessionSetupProps {
   patterns: { id: string; name: string }[];
@@ -116,12 +118,36 @@ export function SessionSetup({ patterns, companies, onStart, isLoading }: Sessio
          `)
          .eq("user_id", user.id)
          .order("created_at", { ascending: false })
-         .limit(5);
+      ;
        if (error) throw error;
        return data || [];
      },
      enabled: !!user,
    });
+
+  // Calculate stats for the progress chart
+  const progressStats = useMemo(() => {
+    if (!pastSessions || pastSessions.length === 0) return null;
+    
+    const completed = pastSessions.filter((s: any) => s.status === "completed");
+    const totalAttempts = pastSessions.length;
+    const completedCount = completed.length;
+    const avgScore = completed.length > 0 
+      ? Math.round(completed.reduce((acc: number, s: any) => acc + (s.total_score || 0), 0) / completed.length)
+      : 0;
+    
+    // Get last 10 completed sessions for the chart (oldest first for timeline)
+    const chartData = completed
+      .slice(0, 10)
+      .reverse()
+      .map((s: any, idx: number) => ({
+        name: `#${idx + 1}`,
+        score: s.total_score || 0,
+        date: format(new Date(s.created_at), "MMM d"),
+      }));
+    
+    return { totalAttempts, completedCount, avgScore, chartData };
+  }, [pastSessions]);
 
   const selectedConfig = SESSION_TYPES.find(s => s.type === selectedType);
 
@@ -337,101 +363,175 @@ export function SessionSetup({ patterns, companies, onStart, isLoading }: Sessio
       </div>
  
        {/* Past Attempts - Grouped by Session Type */}
-       {pastSessions && pastSessions.length > 0 && (
+       {pastSessions && pastSessions.length > 0 && progressStats && (
          <motion.div
            initial={{ opacity: 0, y: 10 }}
            animate={{ opacity: 1, y: 0 }}
            transition={{ delay: 0.3 }}
-           className="glass-card p-6"
+          className="space-y-6"
          >
-           <div className="flex items-center gap-2 mb-4">
-             <History className="w-5 h-5 text-primary" />
-             <h3 className="font-semibold">Past Attempts</h3>
-           </div>
-           
-           <Tabs defaultValue="all" className="w-full">
-             <TabsList className="w-full grid grid-cols-5 mb-4">
-               <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
-               <TabsTrigger value="quick" className="text-xs">Quick</TabsTrigger>
-               <TabsTrigger value="full" className="text-xs">Full</TabsTrigger>
-               <TabsTrigger value="pattern" className="text-xs">Pattern</TabsTrigger>
-               <TabsTrigger value="company" className="text-xs">Company</TabsTrigger>
-             </TabsList>
-             
-             {["all", "quick", "full", "pattern", "company"].map((tabType) => (
-               <TabsContent key={tabType} value={tabType} className="space-y-3 mt-0">
-                 {sessionsLoading ? (
-                   <div className="flex justify-center py-4">
-                     <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                   </div>
-                 ) : (
-                   (() => {
-                     const filtered = tabType === "all" 
-                       ? pastSessions 
-                       : pastSessions.filter((s: any) => s.session_type === tabType);
-                     
-                     if (filtered.length === 0) {
-                       return (
-                         <p className="text-sm text-muted-foreground text-center py-4">
-                           No {tabType === "all" ? "" : getSessionTypeLabel(tabType)} attempts yet
-                         </p>
-                       );
-                     }
-                     
-                     return filtered.map((session: any) => (
-                       <Link
-                         key={session.id}
-                         to={`/interview/results/${session.id}`}
-                         className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group"
-                       >
-                         <div className="flex items-center gap-3">
-                           <div className={`p-2 rounded-lg ${
-                             session.status === "completed" 
-                               ? "bg-emerald-500/20" 
-                               : "bg-amber-500/20"
-                           }`}>
-                             {session.status === "completed" ? (
-                               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                             ) : (
-                               <XCircle className="w-4 h-4 text-amber-500" />
-                             )}
-                           </div>
-                           <div>
-                             <p className="font-medium text-sm">
-                               {getSessionTypeLabel(session.session_type)}
-                               {session.patterns?.name && (
-                                 <span className="text-muted-foreground"> • {session.patterns.name}</span>
-                               )}
-                               {session.company_name && (
-                                 <span className="text-muted-foreground"> • {session.company_name}</span>
-                               )}
-                             </p>
-                             <p className="text-xs text-muted-foreground">
-                               {format(new Date(session.created_at), "MMM d, yyyy 'at' h:mm a")} • {formatDuration(session.time_limit)}
-                               {session.mode === "interview" && (
-                                 <span className="ml-2 text-primary">Interview Mode</span>
-                               )}
-                             </p>
-                           </div>
-                         </div>
-                         <div className="flex items-center gap-3">
-                           {session.total_score !== null && (
-                             <span className={`text-lg font-bold ${
-                               session.total_score >= 70 ? "text-emerald-500" :
-                               session.total_score >= 40 ? "text-amber-500" : "text-red-500"
-                             }`}>
-                               {session.total_score}%
-                             </span>
-                           )}
-                           <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                         </div>
-                       </Link>
-                     ));
-                   })()
-                 )}
-               </TabsContent>
-             ))}
-           </Tabs>
+          {/* Progress Overview Card */}
+          <div className="glass-card p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Trophy className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold">Your Progress</h3>
+            </div>
+            
+            {/* Stats Row */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="text-center p-3 rounded-lg bg-muted/30">
+                <p className="text-2xl font-bold text-primary">{progressStats.totalAttempts}</p>
+                <p className="text-xs text-muted-foreground">Total Attempts</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-muted/30">
+                <p className="text-2xl font-bold text-emerald-500">{progressStats.completedCount}</p>
+                <p className="text-xs text-muted-foreground">Completed</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-muted/30">
+                <p className={`text-2xl font-bold ${
+                  progressStats.avgScore >= 70 ? "text-emerald-500" :
+                  progressStats.avgScore >= 40 ? "text-amber-500" : "text-red-500"
+                }`}>{progressStats.avgScore}%</p>
+                <p className="text-xs text-muted-foreground">Avg Score</p>
+              </div>
+            </div>
+            
+            {/* Score Trend Chart */}
+            {progressStats.chartData.length > 1 && (
+              <div className="mt-4">
+                <p className="text-sm text-muted-foreground mb-3">Score Trend (Last 10 Sessions)</p>
+                <div className="h-40">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={progressStats.chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                        axisLine={{ stroke: "hsl(var(--muted))" }}
+                      />
+                      <YAxis 
+                        domain={[0, 100]} 
+                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                        axisLine={{ stroke: "hsl(var(--muted))" }}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: "hsl(var(--card))", 
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                          fontSize: "12px"
+                        }}
+                        formatter={(value: number) => [`${value}%`, "Score"]}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="score" 
+                        stroke="hsl(var(--primary))" 
+                        strokeWidth={2}
+                        dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 6, fill: "hsl(var(--primary))" }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Past Attempts List */}
+          <div className="glass-card p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <History className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold">Past Attempts</h3>
+              <Badge variant="secondary" className="ml-auto">{pastSessions.length} total</Badge>
+            </div>
+            
+            <Tabs defaultValue="all" className="w-full">
+              <TabsList className="w-full grid grid-cols-5 mb-4">
+                <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
+                <TabsTrigger value="quick" className="text-xs">Quick</TabsTrigger>
+                <TabsTrigger value="full" className="text-xs">Full</TabsTrigger>
+                <TabsTrigger value="pattern" className="text-xs">Pattern</TabsTrigger>
+                <TabsTrigger value="company" className="text-xs">Company</TabsTrigger>
+              </TabsList>
+              
+              {["all", "quick", "full", "pattern", "company"].map((tabType) => (
+                <TabsContent key={tabType} value={tabType} className="mt-0">
+                  <div className="max-h-80 overflow-y-auto space-y-3 pr-1">
+                    {sessionsLoading ? (
+                      <div className="flex justify-center py-4">
+                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : (
+                      (() => {
+                        const filtered = tabType === "all" 
+                          ? pastSessions 
+                          : pastSessions.filter((s: any) => s.session_type === tabType);
+                        
+                        if (filtered.length === 0) {
+                          return (
+                            <p className="text-sm text-muted-foreground text-center py-4">
+                              No {tabType === "all" ? "" : getSessionTypeLabel(tabType)} attempts yet
+                            </p>
+                          );
+                        }
+                        
+                        return filtered.map((session: any) => (
+                          <Link
+                            key={session.id}
+                            to={`/interview/results/${session.id}`}
+                            className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`p-2 rounded-lg ${
+                                session.status === "completed" 
+                                  ? "bg-emerald-500/20" 
+                                  : "bg-amber-500/20"
+                              }`}>
+                                {session.status === "completed" ? (
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                ) : (
+                                  <XCircle className="w-4 h-4 text-amber-500" />
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-medium text-sm">
+                                  {getSessionTypeLabel(session.session_type)}
+                                  {session.patterns?.name && (
+                                    <span className="text-muted-foreground"> • {session.patterns.name}</span>
+                                  )}
+                                  {session.company_name && (
+                                    <span className="text-muted-foreground"> • {session.company_name}</span>
+                                  )}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {format(new Date(session.created_at), "MMM d, yyyy 'at' h:mm a")} • {formatDuration(session.time_limit)}
+                                  {session.mode === "interview" && (
+                                    <span className="ml-2 text-primary">Interview Mode</span>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              {session.total_score !== null && (
+                                <span className={`text-lg font-bold ${
+                                  session.total_score >= 70 ? "text-emerald-500" :
+                                  session.total_score >= 40 ? "text-amber-500" : "text-red-500"
+                                }`}>
+                                  {session.total_score}%
+                                </span>
+                              )}
+                              <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                            </div>
+                          </Link>
+                        ));
+                      })()
+                    )}
+                  </div>
+                </TabsContent>
+              ))}
+            </Tabs>
+          </div>
          </motion.div>
        )}
     </motion.div>
