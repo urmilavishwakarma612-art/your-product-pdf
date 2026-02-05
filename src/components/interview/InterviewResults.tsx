@@ -241,9 +241,9 @@ export function InterviewResults({ sessionId, config, results, onNewSession }: I
           <RotateCcw className="w-4 h-4 mr-2" />
           Start New Session
         </Button>
-        <Link to="/curriculum">
+        <Link to="/interview">
           <Button size="lg" variant="outline">
-            Back to Curriculum
+            Back to Interview
           </Button>
         </Link>
       </div>
