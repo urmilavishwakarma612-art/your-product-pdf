@@ -11,6 +11,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useRazorpay } from "@/hooks/useRazorpay";
 import { PaymentOverlay } from "@/components/premium/PaymentOverlay";
 import { CouponInput } from "@/components/checkout/CouponInput";
+import { LiveCoupons } from "@/components/checkout/LiveCoupons";
 import { Helmet } from "react-helmet-async";
 
 type PlanType = 'monthly' | 'six_month' | 'yearly';
@@ -145,16 +146,21 @@ function PricingContent() {
           : appliedCoupon.yearlyDiscount;
 
     const discountType = appliedCoupon.discountType || "fixed";
+    // Coupon values are stored in rupees, convert to paise
+    const rawPaise = raw * 100;
     const discountPaise =
-      discountType === "percentage" ? Math.round(basePrice * (raw / 100)) : raw;
+      discountType === "percentage" ? Math.round(basePrice * (raw / 100)) : rawPaise;
 
-    return Math.min(Math.max(0, discountPaise), basePrice);
+    // Cap discount to ensure minimum ₹10 (1000 paise) final payment
+    const maxDiscount = basePrice - 1000;
+    return Math.min(Math.max(0, discountPaise), Math.max(0, maxDiscount));
   };
 
   const getDiscountedPrice = (plan: PlanType) => {
     const basePrice = getBasePrice(plan);
     const discountPaise = getDiscountPaise(plan);
-    return Math.max(0, basePrice - discountPaise);
+    // Ensure minimum ₹10 payment
+    return Math.max(1000, basePrice - discountPaise);
   };
 
   const formatRupees = (paise: number) => Math.round(paise / 100);
@@ -273,22 +279,8 @@ function PricingContent() {
           {/* Countdown Timer */}
           <CountdownTimer />
 
-          {/* Coupon Hint */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="max-w-md mx-auto mb-4"
-          >
-            <div className="glass-card p-3 border-primary/30 bg-gradient-to-r from-primary/5 to-secondary/5">
-              <div className="flex items-center justify-center gap-2 text-sm">
-                <Tag className="w-4 h-4 text-primary" />
-                <span className="font-medium text-primary">Launch Offer:</span>
-                <code className="px-2 py-0.5 rounded bg-primary/10 text-primary font-bold">NEX100</code>
-                <span className="text-muted-foreground">• Save up to ₹300</span>
-              </div>
-            </div>
-          </motion.div>
+          {/* Live Coupons Display */}
+          <LiveCoupons />
 
           {/* Coupon Input */}
           <motion.div
@@ -570,8 +562,8 @@ export default function Pricing() {
     return (
       <>
         <Helmet>
-          <title>Pricing - NexAlgoTrix | Student-First DSA Learning Plans</title>
-          <meta name="description" content="Simple, fair, student-first pricing. All features in every plan. Monthly ₹199, 6 Months ₹999, Yearly ₹1,499. No feature locking." />
+          <title>Upgrade Pro - NexAlgoTrix | Unlock Full DSA Learning</title>
+          <meta name="description" content="Upgrade to NexAlgoTrix Pro. All features in every plan. Monthly ₹199, 6 Months ₹999, Yearly ₹1,499. No feature locking." />
         </Helmet>
         <AppLayout>
           <PricingContent />
@@ -584,8 +576,8 @@ export default function Pricing() {
   return (
     <>
       <Helmet>
-        <title>Pricing - NexAlgoTrix | Student-First DSA Learning Plans</title>
-        <meta name="description" content="Simple, fair, student-first pricing. All features in every plan. Monthly ₹199, 6 Months ₹999, Yearly ₹1,499. No feature locking." />
+        <title>Upgrade Pro - NexAlgoTrix | Unlock Full DSA Learning</title>
+        <meta name="description" content="Upgrade to NexAlgoTrix Pro. All features in every plan. Monthly ₹199, 6 Months ₹999, Yearly ₹1,499. No feature locking." />
       </Helmet>
       <div className="min-h-screen bg-background">
         <Navbar />

@@ -129,9 +129,10 @@ serve(async (req) => {
                 ? (coupon.six_month_discount ?? 0)
                 : (coupon.yearly_discount ?? 0);
 
+          // Convert rupees to paise for discount
           discountAmount = Math.max(0, Math.round(discountRupees * 100));
           appliedCouponCode = coupon.code;
-          console.log('Coupon applied:', appliedCouponCode, 'discount:', discountAmount);
+          console.log('Coupon applied:', appliedCouponCode, 'discount paise:', discountAmount);
         } else {
           console.log('Coupon not applicable:', {
             code: coupon.code,
@@ -145,7 +146,11 @@ serve(async (req) => {
     }
 
     const originalAmount = selectedPlan.amount;
-    const finalAmount = Math.max(100, originalAmount - discountAmount); // Razorpay min amount safety
+    // Ensure minimum amount is ₹10 (1000 paise) to avoid Razorpay issues
+    // Also cap discount so final amount is at least ₹10
+    const maxDiscount = originalAmount - 1000; // Leave at least ₹10
+    const cappedDiscount = Math.min(discountAmount, Math.max(0, maxDiscount));
+    const finalAmount = originalAmount - cappedDiscount;
 
     // Create a short receipt ID (max 40 chars)
     // Use last 8 chars of user ID + timestamp in base36 for uniqueness
