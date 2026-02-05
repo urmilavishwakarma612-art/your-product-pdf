@@ -85,6 +85,11 @@ export const UpgradeModal = ({ isOpen, onClose, triggerContext, initialPlan }: U
         console.error('Payment error:', error);
         setPaymentStatus('error');
         setErrorMessage(error || 'An unexpected error occurred');
+      },
+      undefined, // no coupon in modal context
+      () => {
+        // On dismiss - reset loading state but keep modal open
+        setPaymentStatus(null);
       }
     );
   };

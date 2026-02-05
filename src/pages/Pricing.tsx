@@ -190,7 +190,11 @@ function PricingContent() {
         setPaymentStatus('error');
         setErrorMessage(error || 'An unexpected error occurred');
       },
-      appliedCoupon?.code
+      appliedCoupon?.code,
+      () => {
+        // On dismiss - stay on pricing page, reset loading state
+        setPaymentStatus(null);
+      }
     );
   };
 

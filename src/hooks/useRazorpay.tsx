@@ -67,7 +67,8 @@ export const useRazorpay = () => {
     planType: PlanType,
     onSuccess: () => void,
     onError?: (error: string) => void,
-    couponCode?: string
+    couponCode?: string,
+    onDismiss?: () => void
   ) => {
     setIsLoading(true);
 
@@ -176,6 +177,7 @@ export const useRazorpay = () => {
         modal: {
           ondismiss: () => {
             setIsLoading(false);
+            onDismiss?.();
           },
           escape: true,
           backdropclose: false,

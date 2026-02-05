@@ -101,11 +101,23 @@ export function Navbar() {
             <ThemeToggle />
             {user ? (
               <div className="flex items-center gap-2">
-                {isPremium && (
+                {isPremium ? (
                   <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30">
                     <Crown className="w-3.5 h-3.5 text-amber-500" />
                     <span className="text-xs font-medium text-amber-500">PRO</span>
                   </div>
+                ) : (
+                  <Link to="/pricing">
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button 
+                        size="sm" 
+                        className="rounded-full px-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 transition-all duration-300"
+                      >
+                        <Crown className="w-3.5 h-3.5 mr-1.5" />
+                        Upgrade Pro
+                      </Button>
+                    </motion.div>
+                  </Link>
                 )}
                 <ProfileDropdown />
               </div>
@@ -248,6 +260,20 @@ export function Navbar() {
                   >
                     <Settings className="w-4 h-4" />
                     Edit Profile
+                  </Link>
+                </div>
+              )}
+
+              {/* Upgrade Pro CTA for non-premium logged-in users */}
+              {user && !isPremium && (
+                <div className="pt-2 border-t border-border/30">
+                  <Link to="/pricing" onClick={() => setIsOpen(false)}>
+                    <Button 
+                      className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+                    >
+                      <Crown className="w-4 h-4 mr-2" />
+                      Upgrade to Pro
+                    </Button>
                   </Link>
                 </div>
               )}
