@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -10,7 +10,6 @@ import { CurriculumFilters } from "@/components/curriculum/CurriculumFilters";
 import { AIMentor } from "@/components/patterns/AIMentor";
 import { SpacedRepetition } from "@/components/patterns/SpacedRepetition";
 import { UpgradeBanner } from "@/components/premium/UpgradeBanner";
-import { UpgradeModal } from "@/components/premium/UpgradeModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Helmet } from "react-helmet-async";
@@ -57,6 +56,7 @@ const Curriculum = () => {
   const { isPremium } = useSubscription();
   const queryClient = useQueryClient();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Filters state
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,7 +64,6 @@ const Curriculum = () => {
   const [statusFilter, setStatusFilter] = useState<"all" | "solved" | "unsolved">("all");
   const [bookmarkFilter, setBookmarkFilter] = useState(false);
   const [selectedQuestionForMentor, setSelectedQuestionForMentor] = useState<Question | null>(null);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Handle scroll to level from hash
   useEffect(() => {
@@ -315,7 +314,7 @@ const Curriculum = () => {
         {/* Upgrade Banner for free users */}
         {!isPremium && user && (
           <UpgradeBanner 
-            onUpgradeClick={() => setShowUpgradeModal(true)}
+            onUpgradeClick={() => navigate("/pricing")}
             completedPhase1={false}
           />
         )}
@@ -438,13 +437,6 @@ const Curriculum = () => {
         questionDescription={selectedQuestionForMentor?.title}
         isOpen={!!selectedQuestionForMentor}
         onClose={() => setSelectedQuestionForMentor(null)}
-      />
-
-      {/* Upgrade Modal */}
-      <UpgradeModal 
-        isOpen={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        triggerContext={"curriculum"}
       />
     </>
   );
