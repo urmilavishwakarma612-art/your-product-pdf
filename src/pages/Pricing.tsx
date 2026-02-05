@@ -138,7 +138,8 @@ function PricingContent() {
     if (!appliedCoupon) return 0;
     const basePrice = getBasePrice(plan);
 
-    const raw =
+    // Coupon values are stored in PAISE in the database
+    const discountPaise =
       plan === "monthly"
         ? appliedCoupon.monthlyDiscount
         : plan === "six_month"
@@ -146,14 +147,14 @@ function PricingContent() {
           : appliedCoupon.yearlyDiscount;
 
     const discountType = appliedCoupon.discountType || "fixed";
-    // Coupon values are stored in rupees, convert to paise
-    const rawPaise = raw * 100;
-    const discountPaise =
-      discountType === "percentage" ? Math.round(basePrice * (raw / 100)) : rawPaise;
+    
+    // For percentage type, calculate percentage of base price
+    const actualDiscount =
+      discountType === "percentage" ? Math.round(basePrice * (discountPaise / 100)) : discountPaise;
 
     // Cap discount to ensure minimum ₹10 (1000 paise) final payment
     const maxDiscount = basePrice - 1000;
-    return Math.min(Math.max(0, discountPaise), Math.max(0, maxDiscount));
+    return Math.min(Math.max(0, actualDiscount), Math.max(0, maxDiscount));
   };
 
   const getDiscountedPrice = (plan: PlanType) => {

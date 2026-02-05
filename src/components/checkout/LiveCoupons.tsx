@@ -54,8 +54,10 @@ export function LiveCoupons() {
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
+  // Convert paise to rupees for display
   const getMaxDiscount = (coupon: Coupon) => {
-    return Math.max(coupon.monthly_discount, coupon.six_month_discount, coupon.yearly_discount);
+    const maxPaise = Math.max(coupon.monthly_discount, coupon.six_month_discount, coupon.yearly_discount);
+    return Math.round(maxPaise / 100);
   };
 
   const getRemainingSlots = (coupon: Coupon) => {
@@ -118,7 +120,7 @@ export function LiveCoupons() {
               </div>
               <div className="text-right">
                 <span className="text-xs font-medium text-success bg-success/10 px-2 py-1 rounded-full">
-                  {coupon.discount_type === "percentage" ? `${getMaxDiscount(coupon)}% OFF` : `₹${getMaxDiscount(coupon)} OFF`}
+                  {coupon.discount_type === "percentage" ? `${getMaxDiscount(coupon)}% OFF` : `Up to ₹${getMaxDiscount(coupon)} OFF`}
                 </span>
               </div>
             </div>

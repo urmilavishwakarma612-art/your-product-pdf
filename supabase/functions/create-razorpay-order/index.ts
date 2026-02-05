@@ -122,15 +122,15 @@ serve(async (req) => {
         }
 
         if (coupon.is_active && isWithinWindow && hasRemaining && !existingRedemption) {
-          const discountRupees =
+          // Discount values are stored in PAISE in the database
+          discountAmount =
             plan_type === 'monthly'
               ? (coupon.monthly_discount ?? 0)
               : plan_type === 'six_month'
                 ? (coupon.six_month_discount ?? 0)
                 : (coupon.yearly_discount ?? 0);
 
-          // Convert rupees to paise for discount
-          discountAmount = Math.max(0, Math.round(discountRupees * 100));
+          discountAmount = Math.max(0, discountAmount);
           appliedCouponCode = coupon.code;
           console.log('Coupon applied:', appliedCouponCode, 'discount paise:', discountAmount);
         } else {
