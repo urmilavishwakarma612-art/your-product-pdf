@@ -478,6 +478,13 @@ export default function NexMentor() {
     }
   }, [questionId, questions, sessionIdParam, savedSessions, user]);
 
+  // Ensure timer runs when in session mode
+  useEffect(() => {
+    if (viewMode === "session" && currentSessionId && !isSessionActive) {
+      setIsSessionActive(true);
+    }
+  }, [viewMode, currentSessionId, isSessionActive]);
+
   // Session timer
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -867,38 +874,171 @@ export default function NexMentor() {
   }, []);
 
   const quickAnalyzeCode = useCallback((source: string) => {
-    // Minimal, fast heuristics (2s loop) — avoids spamming AI calls.
+    // Enhanced code analysis with IDE-like error detection
     const markers: any[] = [];
     const lines = source.split("\n");
+    const monaco = monacoRef.current;
+    if (!monaco) return markers;
 
-    const addMarker = (line: number, message: string, severity: "error" | "warning" = "warning") => {
+    const addMarker = (
+      line: number, 
+      message: string, 
+      severity: "error" | "warning" | "info" = "warning",
+      startCol?: number,
+      endCol?: number
+    ) => {
+      const lineContent = lines[line - 1] || "";
       markers.push({
         startLineNumber: line,
         endLineNumber: line,
-        startColumn: 1,
-        endColumn: Math.max(1, (lines[line - 1] || "").length),
+        startColumn: startCol || 1,
+        endColumn: endCol || Math.max(1, lineContent.length + 1),
         message,
         severity:
-          severity === "error"
-            ? monacoRef.current?.MarkerSeverity?.Error
-            : monacoRef.current?.MarkerSeverity?.Warning,
+          severity === "error" ? monaco.MarkerSeverity?.Error :
+          severity === "warning" ? monaco.MarkerSeverity?.Warning :
+          monaco.MarkerSeverity?.Info,
       });
     };
 
+    // Check for code too short
     if (source.trim().length < 40) {
       addMarker(1, "Code too short — implement the full solution.", "warning");
     }
 
+    // Track bracket/paren balance for syntax errors
+    let parenBalance = 0;
+    let braceBalance = 0;
+    let bracketBalance = 0;
+    const openPositions: { char: string; line: number; col: number }[] = [];
+
     lines.forEach((ln, idx) => {
       const lineNo = idx + 1;
-      if (/\bpass\b/.test(ln)) addMarker(lineNo, "Placeholder 'pass' found — write real logic.");
-      if (/placeholder/i.test(ln)) addMarker(lineNo, "Placeholder comment found — replace with solution.");
-      if (/while\s*\(\s*true\s*\)/i.test(ln)) addMarker(lineNo, "Potential infinite loop detected.", "warning");
-      if (/console\.log\(/.test(ln)) addMarker(lineNo, "Remove debug prints before final submit.", "warning");
+      const trimmed = ln.trim();
+      
+      // Skip comments
+      if (trimmed.startsWith("//") || trimmed.startsWith("#") || trimmed.startsWith("/*")) {
+        return;
+      }
+
+      // ===== SYNTAX CHECKS =====
+      
+      // Track brackets for balance
+      for (let i = 0; i < ln.length; i++) {
+        const char = ln[i];
+        if (char === '(') { parenBalance++; openPositions.push({ char: '(', line: lineNo, col: i + 1 }); }
+        if (char === ')') { 
+          parenBalance--;
+          if (parenBalance < 0) {
+            addMarker(lineNo, "Unmatched closing parenthesis ')'", "error", i + 1, i + 2);
+            parenBalance = 0;
+          } else {
+            openPositions.pop();
+          }
+        }
+        if (char === '{') { braceBalance++; openPositions.push({ char: '{', line: lineNo, col: i + 1 }); }
+        if (char === '}') { 
+          braceBalance--;
+          if (braceBalance < 0) {
+            addMarker(lineNo, "Unmatched closing brace '}'", "error", i + 1, i + 2);
+            braceBalance = 0;
+          } else {
+            openPositions.pop();
+          }
+        }
+        if (char === '[') { bracketBalance++; openPositions.push({ char: '[', line: lineNo, col: i + 1 }); }
+        if (char === ']') { 
+          bracketBalance--;
+          if (bracketBalance < 0) {
+            addMarker(lineNo, "Unmatched closing bracket ']'", "error", i + 1, i + 2);
+            bracketBalance = 0;
+          } else {
+            openPositions.pop();
+          }
+        }
+      }
+
+      // Detect common syntax errors
+      
+      // Missing semicolon (for JS/Java/C++ - NOT Python)
+      if (language !== "python") {
+        const needsSemicolon = /^(return|let|const|var|int|long|double|float|string|String|boolean|bool|char|void)\s+.+[^{;,]$/.test(trimmed) ||
+          /^\w+\s*=\s*.+[^{;,]$/.test(trimmed);
+        if (needsSemicolon && !trimmed.endsWith(";") && !trimmed.endsWith("{") && !trimmed.endsWith(",")) {
+          addMarker(lineNo, "Possible missing semicolon", "warning", ln.length, ln.length + 1);
+        }
+      }
+
+      // Python indentation check
+      if (language === "python") {
+        const prevLine = idx > 0 ? lines[idx - 1].trim() : "";
+        if (prevLine.endsWith(":") && !ln.startsWith(" ") && !ln.startsWith("\t") && trimmed !== "") {
+          addMarker(lineNo, "Expected indented block after ':'", "error");
+        }
+      }
+
+      // ===== PLACEHOLDER CHECKS =====
+      if (/\bpass\b/.test(ln) && language === "python") {
+        const col = ln.indexOf("pass") + 1;
+        addMarker(lineNo, "Placeholder 'pass' found — write real logic.", "warning", col, col + 4);
+      }
+      if (/placeholder/i.test(ln)) {
+        addMarker(lineNo, "Placeholder comment found — replace with solution.", "info");
+      }
+      if (/TODO|FIXME/i.test(ln)) {
+        addMarker(lineNo, "TODO/FIXME found — complete before submitting.", "info");
+      }
+
+      // ===== COMMON BUGS =====
+      if (/while\s*\(\s*true\s*\)/i.test(ln) || /while\s+True\s*:/i.test(ln)) {
+        addMarker(lineNo, "Potential infinite loop detected.", "warning");
+      }
+      if (/console\.log\(/.test(ln) || /print\s*\(/.test(ln) && language === "python") {
+        addMarker(lineNo, "Remove debug prints before final submit.", "info");
+      }
+      
+      // Assignment vs comparison in conditions
+      if (/if\s*\([^=]*=[^=][^=]*\)/.test(ln) && !/==|!=|<=|>=/.test(ln)) {
+        addMarker(lineNo, "Possible assignment in condition — did you mean '=='?", "error");
+      }
+      
+      // Array index out of bounds patterns
+      if (/\[\s*\w+\s*\+\s*1\s*\]/.test(ln) || /\[\s*i\s*\+\s*1\s*\]/.test(ln)) {
+        addMarker(lineNo, "Possible array index out of bounds (i+1)", "info");
+      }
+      
+      // Empty return in non-void function
+      if (/^\s*return\s*;?\s*$/.test(ln) && !ln.includes("return;")) {
+        addMarker(lineNo, "Empty return statement — should return a value?", "warning");
+      }
+      
+      // Unused variable pattern (simple heuristic)
+      const varMatch = ln.match(/^\s*(let|const|var|int|long|double|float)\s+(\w+)\s*[=;]/);
+      if (varMatch) {
+        const varName = varMatch[2];
+        const restOfCode = lines.slice(idx + 1).join("\n");
+        if (!new RegExp(`\\b${varName}\\b`).test(restOfCode)) {
+          addMarker(lineNo, `Variable '${varName}' may be unused`, "info");
+        }
+      }
     });
 
+    // Report unclosed brackets at end of file
+    if (parenBalance > 0) {
+      const last = openPositions.filter(p => p.char === '(').pop();
+      if (last) addMarker(last.line, "Unclosed parenthesis '('", "error", last.col, last.col + 1);
+    }
+    if (braceBalance > 0) {
+      const last = openPositions.filter(p => p.char === '{').pop();
+      if (last) addMarker(last.line, "Unclosed brace '{'", "error", last.col, last.col + 1);
+    }
+    if (bracketBalance > 0) {
+      const last = openPositions.filter(p => p.char === '[').pop();
+      if (last) addMarker(last.line, "Unclosed bracket '['", "error", last.col, last.col + 1);
+    }
+
     return markers;
-  }, []);
+  }, [language]);
 
   // Step 4: analyze every ~2s (debounced on code changes)
   useEffect(() => {
@@ -1384,10 +1524,10 @@ export default function NexMentor() {
         </div>
       </div>
 
-      {/* Main Content - 3 Section Resizable Layout */}
+      {/* Main Content - Dynamic Layout based on Step */}
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         {/* LEFT: Problem Description */}
-        <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+        <ResizablePanel defaultSize={currentStep >= 4 ? 30 : 25} minSize={20} maxSize={45}>
           <div className="h-full overflow-hidden border-r border-border">
             <LeetCodeProblemPanel
               title={selectedQuestion?.title || ""}
@@ -1406,8 +1546,8 @@ export default function NexMentor() {
 
         <ResizableHandle withHandle />
 
-        {/* MIDDLE: Code Editor (Fixed, locked until step 4) */}
-        <ResizablePanel defaultSize={40} minSize={30} maxSize={50}>
+        {/* MIDDLE/RIGHT: Code Editor - Expands when Step 4 (Chat hidden) */}
+        <ResizablePanel defaultSize={currentStep >= 4 ? 70 : 40} minSize={currentStep >= 4 ? 50 : 30} maxSize={currentStep >= 4 ? 80 : 50}>
           <div className="h-full flex flex-col bg-[#1e1e1e] relative">
             {/* Lock Overlay for Steps 1-3 */}
             {currentStep < 4 && (
@@ -1540,93 +1680,90 @@ export default function NexMentor() {
           </div>
         </ResizablePanel>
 
-        <ResizableHandle withHandle />
-
-        {/* RIGHT: NexMentor Chat */}
-        <ResizablePanel defaultSize={35} minSize={25} maxSize={45}>
-          <div className="h-full flex flex-col bg-card">
-            {/* Chat Header */}
-            <div className="px-4 py-3 border-b border-border flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                  <Brain className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-sm">NexMentor</h3>
-                  <p className="text-xs text-muted-foreground">Step {currentStep}/4 • {STEPS[currentStep - 1]?.name}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Messages */}
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4">
-                {messages.map((message, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={cn(
-                      "flex",
-                      message.role === "user" ? "justify-end" : "justify-start"
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "max-w-[90%] rounded-2xl px-4 py-3",
-                        message.role === "user"
-                          ? "bg-primary text-primary-foreground rounded-br-md"
-                          : "bg-muted rounded-bl-md"
-                      )}
-                    >
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+        {/* RIGHT: NexMentor Chat - Hidden at Step 4 */}
+        {currentStep < 4 && (
+          <>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={35} minSize={25} maxSize={45}>
+              <div className="h-full flex flex-col bg-card">
+                {/* Chat Header */}
+                <div className="px-4 py-3 border-b border-border flex-shrink-0">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                      <Brain className="w-4 h-4 text-primary" />
                     </div>
-                  </motion.div>
-                ))}
-                {isLoading && (
-                  <div className="flex justify-start">
-                    <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
-                      <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                    <div>
+                      <h3 className="font-semibold text-sm">NexMentor</h3>
+                      <p className="text-xs text-muted-foreground">Step {currentStep}/4 • {STEPS[currentStep - 1]?.name}</p>
                     </div>
                   </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollArea>
+                </div>
 
-            {/* Input (Steps 1-3 only). Step 4 = code in editor, not chat. */}
-            <div className="p-4 border-t border-border flex-shrink-0">
-              {currentStep < 4 ? (
-                <div className="flex gap-2">
-                  <Textarea
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    placeholder="Type your answer..."
-                    className="min-h-[50px] max-h-[100px] resize-none bg-muted/50"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMessage();
-                      }
-                    }}
-                    disabled={isLoading}
-                  />
-                  <Button
-                    onClick={sendMessage}
-                    disabled={isLoading || !inputMessage.trim()}
-                    className="h-auto px-4"
-                  >
-                    <Send className="w-4 h-4" />
-                  </Button>
+                {/* Messages */}
+                <ScrollArea className="flex-1 p-4">
+                  <div className="space-y-4">
+                    {messages.map((message, idx) => (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={cn(
+                          "flex",
+                          message.role === "user" ? "justify-end" : "justify-start"
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "max-w-[90%] rounded-2xl px-4 py-3",
+                            message.role === "user"
+                              ? "bg-primary text-primary-foreground rounded-br-md"
+                              : "bg-muted rounded-bl-md"
+                          )}
+                        >
+                          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                        </div>
+                      </motion.div>
+                    ))}
+                    {isLoading && (
+                      <div className="flex justify-start">
+                        <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
+                          <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                        </div>
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
+
+                {/* Chat Input */}
+                <div className="p-4 border-t border-border flex-shrink-0">
+                  <div className="flex gap-2">
+                    <Textarea
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      placeholder="Type your answer..."
+                      className="min-h-[50px] max-h-[100px] resize-none bg-muted/50"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          sendMessage();
+                        }
+                      }}
+                      disabled={isLoading}
+                    />
+                    <Button
+                      onClick={sendMessage}
+                      disabled={isLoading || !inputMessage.trim()}
+                      className="h-auto px-4"
+                    >
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-              ) : (
-                <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-                  Step 4 active — code editor me coding karo. Chat me code nahi. Run/Submit buttons use karo.
-                </div>
-              )}
-            </div>
-          </div>
-        </ResizablePanel>
+              </div>
+            </ResizablePanel>
+          </>
+        )}
       </ResizablePanelGroup>
 
       {/* Test Results Dialog */}
