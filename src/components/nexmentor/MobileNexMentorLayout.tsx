@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { 
@@ -16,13 +16,13 @@ interface MobileNexMentorLayoutProps {
   currentStep: number;
 }
 
-const TABS = [
+const ALL_TABS = [
   { id: "problem", label: "Problem", icon: BookOpen },
   { id: "editor", label: "Code", icon: Code2 },
   { id: "chat", label: "Chat", icon: MessageSquare },
 ] as const;
 
-type TabId = typeof TABS[number]["id"];
+type TabId = typeof ALL_TABS[number]["id"];
 
 export function MobileNexMentorLayout({
   problemPanel,
@@ -30,8 +30,19 @@ export function MobileNexMentorLayout({
   chatPanel,
   currentStep,
 }: MobileNexMentorLayoutProps) {
-  const [activeTab, setActiveTab] = useState<TabId>("problem");
+  // At Step 4, hide chat tab
+  const isStep4 = currentStep >= 4;
+  const TABS = isStep4 ? ALL_TABS.filter(t => t.id !== "chat") : ALL_TABS;
+  
+  const [activeTab, setActiveTab] = useState<TabId>(isStep4 ? "editor" : "problem");
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Auto-switch to editor when Step 4 is unlocked
+  useEffect(() => {
+    if (isStep4 && activeTab === "chat") {
+      setActiveTab("editor");
+    }
+  }, [isStep4, activeTab]);
   
   const activeIndex = TABS.findIndex(t => t.id === activeTab);
 
