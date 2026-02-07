@@ -136,13 +136,13 @@ export default function ProfileManagement() {
         const filePath = `${user.id}/avatar.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
-          .from("company-logos")
+          .from("user-avatars")
           .upload(filePath, avatarFile, { upsert: true });
 
         if (uploadError) throw uploadError;
 
         const { data: urlData } = supabase.storage
-          .from("company-logos")
+          .from("user-avatars")
           .getPublicUrl(filePath);
 
         avatarUrl = urlData.publicUrl;
