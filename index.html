@@ -3,26 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Nexalgotrix - Master DSA with Pattern-Based Learning</title>
+
   <meta name="description" content="Master Data Structures & Algorithms with pattern-based learning, AI mentorship, and gamified progress tracking.">
   <meta name="author" content="Nexalgotrix" />
 
   <!-- Favicon -->
   <link rel="icon" href="/favicon.png" type="image/png" />
 
-  <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.json" />
+  <!-- PWA Manifest (Cache Buster Added) -->
+  <link rel="manifest" href="/manifest.json?v=1" />
   <meta name="theme-color" content="#0f172a" />
 
   <!-- Apple PWA -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Nexalgotrix" />
+
   <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
   <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png" />
 
-  <!-- Social / Open Graph -->
+  <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Nexalgotrix - Master DSA with Pattern-Based Learning" />
   <meta property="og:description" content="Master Data Structures & Algorithms with pattern-based learning, AI mentorship, and gamified progress tracking." />
@@ -36,8 +39,22 @@
   <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/VngIPm90h2QhNge7Vkw0FNkzq483/social-images/social-1769002653377-NEXALGOTRIX.png" />
 
 </head>
+
 <body>
+
   <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
+
+  <!-- Main App Script (Cache Buster Added) -->
+  <script type="module" src="/src/main.tsx?v=1"></script>
+
+  <!-- Auto Reload on Service Worker Update -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        window.location.reload();
+      });
+    }
+  </script>
+
 </body>
 </html>
