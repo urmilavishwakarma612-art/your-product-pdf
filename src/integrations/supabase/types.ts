@@ -1173,6 +1173,7 @@ export type Database = {
           id: string
           module_id: string | null
           name: string
+          pattern_id: string | null
           template: string | null
         }
         Insert: {
@@ -1182,6 +1183,7 @@ export type Database = {
           id?: string
           module_id?: string | null
           name: string
+          pattern_id?: string | null
           template?: string | null
         }
         Update: {
@@ -1191,6 +1193,7 @@ export type Database = {
           id?: string
           module_id?: string | null
           name?: string
+          pattern_id?: string | null
           template?: string | null
         }
         Relationships: [
@@ -1199,6 +1202,13 @@ export type Database = {
             columns: ["module_id"]
             isOneToOne: false
             referencedRelation: "curriculum_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_patterns_pattern_id_fkey"
+            columns: ["pattern_id"]
+            isOneToOne: false
+            referencedRelation: "patterns"
             referencedColumns: ["id"]
           },
         ]
