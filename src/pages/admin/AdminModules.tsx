@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2, ChevronDown, ChevronUp, GripVertical } from "lucide-react";
+import { Plus, Edit, Trash2, ChevronDown, ChevronUp, GripVertical, Layers, BookOpen } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,11 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Label } from "@/components/ui/label";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface Module {
   id: string;
@@ -47,9 +52,21 @@ interface Module {
   display_order: number | null;
 }
 
+interface Pattern {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  topic_id: string | null;
+  phase: number;
+  display_order: number;
+  is_free: boolean;
+}
+
 interface SubPattern {
   id: string;
   module_id: string | null;
+  pattern_id: string | null;
   name: string;
   description: string | null;
   template: string | null;
@@ -63,7 +80,9 @@ export default function AdminModules() {
   const [isSubPatternDialogOpen, setIsSubPatternDialogOpen] = useState(false);
   const [editingModule, setEditingModule] = useState<Module | null>(null);
   const [editingSubPattern, setEditingSubPattern] = useState<SubPattern | null>(null);
-  const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+  const [expandedPatterns, setExpandedPatterns] = useState<Set<string>>(new Set());
+  const [activePatternId, setActivePatternId] = useState<string | null>(null);
 
   const [moduleForm, setModuleForm] = useState({
     level_id: "",
@@ -82,6 +101,7 @@ export default function AdminModules() {
 
   const [subPatternForm, setSubPatternForm] = useState({
     module_id: "",
+    pattern_id: "",
     name: "",
     description: "",
     template: "",
@@ -100,7 +120,7 @@ export default function AdminModules() {
     },
   });
 
-  // Fetch patterns
+  // Fetch all patterns
   const { data: patterns } = useQuery({
     queryKey: ["patterns"],
     queryFn: async () => {
@@ -109,17 +129,17 @@ export default function AdminModules() {
         .select("*")
         .order("display_order");
       if (error) throw error;
-      return data;
+      return data as Pattern[];
     },
   });
 
-  // Fetch modules
+  // Fetch modules with level info
   const { data: modules, isLoading } = useQuery({
     queryKey: ["curriculum-modules", selectedLevel],
     queryFn: async () => {
       let query = supabase
         .from("curriculum_modules")
-        .select("*, curriculum_levels(name, level_number), patterns(name)")
+        .select("*, curriculum_levels(name, level_number)")
         .order("display_order");
       
       if (selectedLevel !== "all") {
@@ -132,7 +152,7 @@ export default function AdminModules() {
     },
   });
 
-  // Fetch sub-patterns
+  // Fetch sub-patterns (now with pattern_id support)
   const { data: subPatterns } = useQuery({
     queryKey: ["sub-patterns"],
     queryFn: async () => {
@@ -141,9 +161,38 @@ export default function AdminModules() {
         .select("*")
         .order("display_order");
       if (error) throw error;
-      return data;
+      return data as SubPattern[];
     },
   });
+
+  // Get patterns linked to a module (via pattern_id in modules)
+  const getModulePatterns = (moduleId: string, modulePatternId: string | null) => {
+    // Get the directly linked pattern plus any patterns that have sub-patterns under this module
+    const linkedPatternIds = new Set<string>();
+    
+    if (modulePatternId) {
+      linkedPatternIds.add(modulePatternId);
+    }
+    
+    // Also get patterns from sub_patterns that are linked to this module
+    subPatterns?.forEach(sp => {
+      if (sp.module_id === moduleId && sp.pattern_id) {
+        linkedPatternIds.add(sp.pattern_id);
+      }
+    });
+    
+    return patterns?.filter(p => linkedPatternIds.has(p.id)) || [];
+  };
+
+  // Get sub-patterns for a specific pattern
+  const getPatternSubPatterns = (patternId: string) => {
+    return subPatterns?.filter((sp) => sp.pattern_id === patternId) || [];
+  };
+
+  // Get sub-patterns for a module (legacy - linked via module_id without pattern_id)
+  const getModuleSubPatterns = (moduleId: string) => {
+    return subPatterns?.filter((sp) => sp.module_id === moduleId && !sp.pattern_id) || [];
+  };
 
   // Module mutations
   const createModule = useMutation({
@@ -201,7 +250,11 @@ export default function AdminModules() {
   // Sub-pattern mutations
   const createSubPattern = useMutation({
     mutationFn: async (data: typeof subPatternForm) => {
-      const { error } = await supabase.from("sub_patterns").insert(data);
+      const { error } = await supabase.from("sub_patterns").insert({
+        ...data,
+        module_id: data.module_id || null,
+        pattern_id: data.pattern_id || null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -215,7 +268,11 @@ export default function AdminModules() {
 
   const updateSubPattern = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: typeof subPatternForm }) => {
-      const { error } = await supabase.from("sub_patterns").update(data).eq("id", id);
+      const { error } = await supabase.from("sub_patterns").update({
+        ...data,
+        module_id: data.module_id || null,
+        pattern_id: data.pattern_id || null,
+      }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -260,6 +317,7 @@ export default function AdminModules() {
   const resetSubPatternForm = () => {
     setSubPatternForm({
       module_id: "",
+      pattern_id: "",
       name: "",
       description: "",
       template: "",
@@ -289,6 +347,7 @@ export default function AdminModules() {
     setEditingSubPattern(subPattern);
     setSubPatternForm({
       module_id: subPattern.module_id || "",
+      pattern_id: subPattern.pattern_id || "",
       name: subPattern.name,
       description: subPattern.description || "",
       template: subPattern.template || "",
@@ -296,10 +355,11 @@ export default function AdminModules() {
     setIsSubPatternDialogOpen(true);
   };
 
-  const handleAddSubPattern = (moduleId: string) => {
-    setActiveModuleId(moduleId);
+  const handleAddSubPatternToPattern = (patternId: string, moduleId: string) => {
+    setActivePatternId(patternId);
     setSubPatternForm({
       module_id: moduleId,
+      pattern_id: patternId,
       name: "",
       description: "",
       template: "",
@@ -307,16 +367,50 @@ export default function AdminModules() {
     setIsSubPatternDialogOpen(true);
   };
 
-  const getModuleSubPatterns = (moduleId: string) => {
-    return subPatterns?.filter((sp) => sp.module_id === moduleId) || [];
+  const handleAddSubPatternToModule = (moduleId: string) => {
+    setSubPatternForm({
+      module_id: moduleId,
+      pattern_id: "",
+      name: "",
+      description: "",
+      template: "",
+    });
+    setIsSubPatternDialogOpen(true);
+  };
+
+  const toggleModuleExpand = (moduleId: string) => {
+    setExpandedModules(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(moduleId)) {
+        newSet.delete(moduleId);
+      } else {
+        newSet.add(moduleId);
+      }
+      return newSet;
+    });
+  };
+
+  const togglePatternExpand = (patternId: string) => {
+    setExpandedPatterns(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(patternId)) {
+        newSet.delete(patternId);
+      } else {
+        newSet.add(patternId);
+      }
+      return newSet;
+    });
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold">Curriculum Modules</h1>
-          <p className="text-muted-foreground">Manage modules and sub-patterns</p>
+          <p className="text-muted-foreground">Manage modules, patterns, and sub-patterns</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Structure: Level → Module → Pattern → Sub-Pattern → Questions
+          </p>
         </div>
         <Dialog open={isModuleDialogOpen} onOpenChange={setIsModuleDialogOpen}>
           <DialogTrigger asChild>
@@ -349,7 +443,7 @@ export default function AdminModules() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Linked Pattern (optional)</Label>
+                  <Label>Primary Pattern (optional)</Label>
                   <Select
                     value={moduleForm.pattern_id}
                     onValueChange={(value) => setModuleForm({ ...moduleForm, pattern_id: value })}
@@ -358,6 +452,7 @@ export default function AdminModules() {
                       <SelectValue placeholder="Select pattern" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="">None</SelectItem>
                       {patterns?.map((pattern) => (
                         <SelectItem key={pattern.id} value={pattern.id}>
                           {pattern.name}
@@ -392,7 +487,7 @@ export default function AdminModules() {
                 <Input
                   value={moduleForm.name}
                   onChange={(e) => setModuleForm({ ...moduleForm, name: e.target.value })}
-                  placeholder="e.g., Two Pointer Pattern"
+                  placeholder="e.g., Stack"
                 />
               </div>
 
@@ -401,7 +496,7 @@ export default function AdminModules() {
                 <Input
                   value={moduleForm.subtitle}
                   onChange={(e) => setModuleForm({ ...moduleForm, subtitle: e.target.value })}
-                  placeholder="e.g., Signal: sorted array, pairs, palindrome"
+                  placeholder="e.g., LIFO operations, monotonic patterns"
                 />
               </div>
 
@@ -461,7 +556,7 @@ export default function AdminModules() {
                   value={moduleForm.exit_condition}
                   onChange={(e) => setModuleForm({ ...moduleForm, exit_condition: e.target.value })}
                   rows={2}
-                  placeholder="e.g., Can identify Two Pointer in < 5 seconds"
+                  placeholder="e.g., Can identify Stack pattern in < 5 seconds"
                 />
               </div>
 
@@ -483,7 +578,7 @@ export default function AdminModules() {
       </div>
 
       {/* Filter by Level */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 flex-wrap">
         <Label>Filter by Level:</Label>
         <Select value={selectedLevel} onValueChange={setSelectedLevel}>
           <SelectTrigger className="w-64">
@@ -505,96 +600,207 @@ export default function AdminModules() {
         <div className="text-center py-8">Loading...</div>
       ) : (
         <div className="space-y-4">
-          {modules?.map((module: any) => (
-            <Card key={module.id}>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
-                    <div>
-                      <CardTitle className="text-lg">
-                        Module {module.module_number}: {module.name}
-                      </CardTitle>
-                      {module.subtitle && (
-                        <p className="text-sm text-muted-foreground">{module.subtitle}</p>
+          {modules?.map((module: any) => {
+            const modulePatterns = getModulePatterns(module.id, module.pattern_id);
+            const legacySubPatterns = getModuleSubPatterns(module.id);
+            const isExpanded = expandedModules.has(module.id);
+
+            return (
+              <Card key={module.id} className="overflow-hidden">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => toggleModuleExpand(module.id)}
+                      >
+                        {isExpanded ? (
+                          <ChevronUp className="w-4 h-4" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4" />
+                        )}
+                      </Button>
+                      <div>
+                        <CardTitle className="text-lg">
+                          Module {module.module_number}: {module.name}
+                        </CardTitle>
+                        {module.subtitle && (
+                          <p className="text-sm text-muted-foreground">{module.subtitle}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {module.curriculum_levels && (
+                        <Badge variant="outline">
+                          Level {module.curriculum_levels.level_number}
+                        </Badge>
                       )}
+                      <Badge variant="secondary">
+                        <BookOpen className="w-3 h-3 mr-1" />
+                        {modulePatterns.length} patterns
+                      </Badge>
+                      <Badge>{module.estimated_hours}h</Badge>
+                      <Button variant="ghost" size="icon" onClick={() => handleEditModule(module)}>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteModule.mutate(module.id)}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {module.curriculum_levels && (
-                      <Badge variant="outline">
-                        Level {module.curriculum_levels.level_number}
-                      </Badge>
-                    )}
-                    {module.patterns && (
-                      <Badge variant="secondary">{module.patterns.name}</Badge>
-                    )}
-                    <Badge>{module.estimated_hours}h</Badge>
-                    <Button variant="ghost" size="icon" onClick={() => handleEditModule(module)}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteModule.mutate(module.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Accordion type="single" collapsible>
-                  <AccordionItem value="sub-patterns">
-                    <AccordionTrigger className="text-sm">
-                      Sub-Patterns ({getModuleSubPatterns(module.id).length})
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-2 pt-2">
-                        {getModuleSubPatterns(module.id).map((sp) => (
-                          <div
-                            key={sp.id}
-                            className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                          >
-                            <div>
-                              <p className="font-medium">{sp.name}</p>
-                              {sp.description && (
-                                <p className="text-sm text-muted-foreground">{sp.description}</p>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleEditSubPattern(sp)}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => deleteSubPattern.mutate(sp.id)}
-                              >
-                                <Trash2 className="w-4 h-4 text-destructive" />
-                              </Button>
+                </CardHeader>
+
+                {isExpanded && (
+                  <CardContent className="pt-4 border-t">
+                    <div className="space-y-4">
+                      {/* Patterns within this module */}
+                      <div>
+                        <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                          <BookOpen className="w-4 h-4" />
+                          Patterns in this Module
+                        </h4>
+                        
+                        {modulePatterns.length === 0 ? (
+                          <p className="text-sm text-muted-foreground italic">
+                            No patterns linked yet. Link a primary pattern in module settings or add sub-patterns under specific patterns.
+                          </p>
+                        ) : (
+                          <div className="space-y-2">
+                            {modulePatterns.map(pattern => {
+                              const patternSubPatterns = getPatternSubPatterns(pattern.id);
+                              const isPatternExpanded = expandedPatterns.has(pattern.id);
+
+                              return (
+                                <div key={pattern.id} className="border rounded-lg">
+                                  <div className="flex items-center justify-between p-3 bg-muted/30">
+                                    <div className="flex items-center gap-2">
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6"
+                                        onClick={() => togglePatternExpand(pattern.id)}
+                                      >
+                                        {isPatternExpanded ? (
+                                          <ChevronUp className="w-3 h-3" />
+                                        ) : (
+                                          <ChevronDown className="w-3 h-3" />
+                                        )}
+                                      </Button>
+                                      <span className="font-medium">{pattern.name}</span>
+                                      <Badge variant="outline" className="text-xs">
+                                        {patternSubPatterns.length} sub-patterns
+                                      </Badge>
+                                    </div>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleAddSubPatternToPattern(pattern.id, module.id)}
+                                    >
+                                      <Plus className="w-3 h-3 mr-1" /> Add Sub-Pattern
+                                    </Button>
+                                  </div>
+
+                                  {isPatternExpanded && patternSubPatterns.length > 0 && (
+                                    <div className="p-3 pt-0 space-y-2">
+                                      {patternSubPatterns.map(sp => (
+                                        <div
+                                          key={sp.id}
+                                          className="flex items-center justify-between p-2 bg-background rounded border"
+                                        >
+                                          <div className="flex items-center gap-2">
+                                            <Layers className="w-3 h-3 text-muted-foreground" />
+                                            <div>
+                                              <p className="text-sm font-medium">{sp.name}</p>
+                                              {sp.description && (
+                                                <p className="text-xs text-muted-foreground">{sp.description}</p>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center gap-1">
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-7 w-7"
+                                              onClick={() => handleEditSubPattern(sp)}
+                                            >
+                                              <Edit className="w-3 h-3" />
+                                            </Button>
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-7 w-7"
+                                              onClick={() => deleteSubPattern.mutate(sp.id)}
+                                            >
+                                              <Trash2 className="w-3 h-3 text-destructive" />
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* Option to add sub-pattern directly under module (legacy support) */}
+                        {legacySubPatterns.length > 0 && (
+                          <div className="mt-4">
+                            <h5 className="text-xs font-semibold text-muted-foreground mb-2">
+                              Legacy Sub-Patterns (not linked to specific pattern)
+                            </h5>
+                            <div className="space-y-2">
+                              {legacySubPatterns.map(sp => (
+                                <div
+                                  key={sp.id}
+                                  className="flex items-center justify-between p-2 bg-muted/30 rounded border"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Layers className="w-3 h-3 text-muted-foreground" />
+                                    <div>
+                                      <p className="text-sm font-medium">{sp.name}</p>
+                                      {sp.description && (
+                                        <p className="text-xs text-muted-foreground">{sp.description}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      onClick={() => handleEditSubPattern(sp)}
+                                    >
+                                      <Edit className="w-3 h-3" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      onClick={() => deleteSubPattern.mutate(sp.id)}
+                                    >
+                                      <Trash2 className="w-3 h-3 text-destructive" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
-                        ))}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleAddSubPattern(module.id)}
-                          className="w-full"
-                        >
-                          <Plus className="w-4 h-4 mr-2" /> Add Sub-Pattern
-                        </Button>
+                        )}
                       </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </CardContent>
-            </Card>
-          ))}
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
+            );
+          })}
         </div>
       )}
 
@@ -607,6 +813,46 @@ export default function AdminModules() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Parent Pattern</Label>
+                <Select
+                  value={subPatternForm.pattern_id}
+                  onValueChange={(value) => setSubPatternForm({ ...subPatternForm, pattern_id: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select pattern" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None (Legacy)</SelectItem>
+                    {patterns?.map((pattern) => (
+                      <SelectItem key={pattern.id} value={pattern.id}>
+                        {pattern.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Parent Module (optional)</Label>
+                <Select
+                  value={subPatternForm.module_id}
+                  onValueChange={(value) => setSubPatternForm({ ...subPatternForm, module_id: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select module" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {modules?.map((module: any) => (
+                      <SelectItem key={module.id} value={module.id}>
+                        Module {module.module_number}: {module.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div className="space-y-2">
               <Label>Name</Label>
               <Input

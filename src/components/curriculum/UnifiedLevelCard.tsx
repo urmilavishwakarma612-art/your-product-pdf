@@ -343,13 +343,14 @@ export const UnifiedLevelCard = ({
                               </Link>
                             )}
 
-                            {/* View Module Detail Link */}
+                            {/* View Module Detail Link - visible on mobile and desktop */}
                             {hasQuestions && !isLevelLocked && (
                               <Link
                                 to={`/curriculum/module/${module.id}`}
-                                className="px-3 py-2 text-xs text-primary hover:underline shrink-0 hidden sm:block"
+                                className="px-2 sm:px-3 py-2 text-[10px] sm:text-xs text-primary hover:underline shrink-0"
                               >
-                                Details →
+                                <span className="hidden sm:inline">Details →</span>
+                                <span className="sm:hidden">📖</span>
                               </Link>
                             )}
                           </div>
